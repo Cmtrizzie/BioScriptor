@@ -8,7 +8,32 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for demo user first (development mode)
+    // In development mode, auto-create demo user if Firebase is not configured
+    if (import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY) {
+      let demoUser = localStorage.getItem('demo_user');
+      if (!demoUser) {
+        const newDemoUser = {
+          uid: 'demo-user-12345',
+          email: 'demo@biobuddy.dev',
+          displayName: 'Demo User',
+          photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0ea5e9&color=fff'
+        };
+        localStorage.setItem('demo_user', JSON.stringify(newDemoUser));
+        demoUser = JSON.stringify(newDemoUser);
+      }
+      
+      const parsedUser = JSON.parse(demoUser);
+      setUser({
+        uid: parsedUser.uid,
+        email: parsedUser.email,
+        displayName: parsedUser.displayName,
+        photoURL: parsedUser.photoURL,
+      } as User);
+      setLoading(false);
+      return;
+    }
+
+    // Check for existing demo user
     const demoUser = localStorage.getItem('demo_user');
     if (demoUser && import.meta.env.DEV) {
       const parsedUser = JSON.parse(demoUser);

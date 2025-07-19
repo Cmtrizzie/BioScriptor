@@ -17,7 +17,16 @@ export async function apiRequest(
   
   // Add Firebase auth headers if user is authenticated
   const user = auth.currentUser;
-  if (user) {
+  
+  // In development mode, check for demo user
+  const demoUser = localStorage.getItem('demo_user');
+  if (demoUser && import.meta.env.DEV) {
+    const parsedUser = JSON.parse(demoUser);
+    headers['x-firebase-uid'] = parsedUser.uid;
+    headers['x-firebase-email'] = parsedUser.email;
+    headers['x-firebase-display-name'] = parsedUser.displayName;
+    headers['x-firebase-photo-url'] = parsedUser.photoURL;
+  } else if (user) {
     headers['x-firebase-uid'] = user.uid;
     headers['x-firebase-email'] = user.email || '';
     headers['x-firebase-display-name'] = user.displayName || '';
@@ -45,7 +54,16 @@ export const getQueryFn: <T>(options: {
     
     // Add Firebase auth headers if user is authenticated
     const user = auth.currentUser;
-    if (user) {
+    
+    // In development mode, check for demo user
+    const demoUser = localStorage.getItem('demo_user');
+    if (demoUser && import.meta.env.DEV) {
+      const parsedUser = JSON.parse(demoUser);
+      headers['x-firebase-uid'] = parsedUser.uid;
+      headers['x-firebase-email'] = parsedUser.email;
+      headers['x-firebase-display-name'] = parsedUser.displayName;
+      headers['x-firebase-photo-url'] = parsedUser.photoURL;
+    } else if (user) {
       headers['x-firebase-uid'] = user.uid;
       headers['x-firebase-email'] = user.email || '';
       headers['x-firebase-display-name'] = user.displayName || '';

@@ -4,6 +4,19 @@ const provider = new GoogleAuthProvider();
 const auth = getAuth();
 
 export async function login() {
+  // In development mode, create a demo user if Firebase is not configured
+  if (import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY) {
+    const demoUser = {
+      uid: 'demo-user-12345',
+      email: 'demo@biobuddy.dev',
+      displayName: 'Demo User',
+      photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0ea5e9&color=fff'
+    };
+    localStorage.setItem('demo_user', JSON.stringify(demoUser));
+    window.location.reload();
+    return { user: demoUser, token: 'demo-token' };
+  }
+
   try {
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -24,6 +37,13 @@ export async function login() {
 }
 
 export function logout() {
+  // Clear demo user if it exists
+  if (localStorage.getItem('demo_user')) {
+    localStorage.removeItem('demo_user');
+    window.location.reload();
+    return Promise.resolve();
+  }
+  
   return signOut(auth);
 }
 
