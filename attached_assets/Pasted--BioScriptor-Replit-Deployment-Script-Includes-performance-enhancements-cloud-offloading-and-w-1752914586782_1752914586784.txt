@@ -1,0 +1,94 @@
+# BioScriptor Replit Deployment Script
+# Includes performance enhancements, cloud offloading, and workflow documentation
+
+# 1. SET UP ENVIRONMENT
+mkdir bioscriptor && cd bioscriptor
+echo "Creating optimized replit.nix..." > setup.log
+
+cat > replit.nix << 'EOL'
+{ pkgs }: {
+  deps = [
+    pkgs.python310Full
+    pkgs.nodejs-18_x
+    pkgs.rdkit
+    pkgs.nglview
+    pkgs.vips  # For image processing
+    pkgs.brotli  # For compression
+    pkgs.wget
+    pkgs.unzip
+    
+    # GPU acceleration dependencies
+    pkgs.cudatoolkit
+    pkgs.cudnn
+    pkgs.linuxPackages.nvidia_x11
+  ];
+  
+  env = {
+    LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
+    ALLOW_UNFREE = "1";
+    NIX_ENABLE_CUDA = "1";
+  };
+  
+  # Enable GPU access in Replit
+  enableGPU = true;
+}
+EOL
+
+# 2. CREATE DOCKERFILE FOR HEAVY TASKS
+cat > Dockerfile << 'EOL'
+FROM nvcr.io/nvidia/cuda:12.2.0-base
+RUN apt-get update && apt-get install -y python3.10 pip
+RUN pip install rdkit[gpu] alphafold pandas biopython
+EXPOSE 8501
+CMD ["python", "-m", "http.server", "8501"]
+EOL
+
+# 3. SETUP CLOUD INTEGRATION SCRIPTS
+mkdir cloud-integration
+
+# Protein folding endpoint
+cat > cloud-integration/run_alphafold.py << 'EOL'
+import requests
+def fold_protein(sequence):
+    CLOUD_RUN_URL = "https://bioscriptor-af-service-xyz-uc.a.run.app"
+    response = requests.post(f"{CLOUD_RUN_URL}/fold", json={"sequence": sequence})
+    return response.json()['pdb_data']
+EOL
+
+# Molecular dynamics endpoint
+cat > cloud-integration/run_md.py << 'EOL'
+import requests
+def run_dynamics(smiles):
+    HPC_ENDPOINT = "https://hpc-cluster.example.com/api/md"
+    job_id = requests.post(HPC_ENDPOINT, json={"smiles": smiles}).json()['job_id']
+    
+    # Check status every 5 seconds
+    while True:
+        status = requests.get(f"{HPC_ENDPOINT}/status/{job_id}").json()
+        if status['completed']: 
+            return status['results']
+        time.sleep(5)
+EOL
+
+# 4. APPLICATION WORKFLOW DOCUMENTATION
+cat > HOW_IT_WORKS.md << 'EOL'
+# BioScriptor Workflow
+
+## User Journey
+1. User sends message: "Design a CRISPR guide for BRCA1"
+2. System routes to BioCodeGen agent
+3. Agent generates guide RNA sequences
+4. Off-target analysis via cloud service
+5. Results displayed in chat with visualization
+
+## Component Architecture
+```mermaid
+graph TB
+    A[Chat Interface] --> B[Router]
+    B --> C[BioCodeGen Agent]
+    B --> D[BioExplain Agent]
+    B --> E[Structure Predictor]
+    C --> F[Cloud Offload]
+    E --> F
+    F --> G[Results Processor]
+    G --> A

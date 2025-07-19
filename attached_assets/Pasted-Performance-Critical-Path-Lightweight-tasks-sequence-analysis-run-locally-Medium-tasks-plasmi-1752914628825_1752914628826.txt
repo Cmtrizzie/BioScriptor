@@ -1,0 +1,102 @@
+Performance Critical Path
+Lightweight tasks (sequence analysis) run locally
+
+Medium tasks (plasmid design) use WebAssembly RDKit
+
+Heavy tasks (protein folding) trigger cloud functions
+
+Results streamed back via websockets
+
+Optimization Features
+WebAssembly RDKit for client-side calculations
+
+CUDA acceleration for local GPU tasks
+
+Lazy-loaded components
+
+gRPC for cloud communication
+EOL
+
+5. CORE APPLICATION FILES
+mkdir -p src/{frontend,backend,ai}
+
+Backend server
+cat > src/backend/main.py << 'EOL'
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import cloud_integration.run_alphafold as af
+
+app = FastAPI()
+
+app.add_middleware(
+CORSMiddleware,
+allow_origins=[""],
+allow_methods=[""],
+allow_headers=["*"],
+)
+
+@app.post("/fold-protein")
+async def fold_protein(sequence: str):
+if len(sequence) > 300:
+# Offload to cloud for large proteins
+return {"status": "queued", "cloud_job": True}
+else:
+# Run locally if small
+return {"pdb": af.fold_protein(sequence)}
+EOL
+
+Frontend entry point
+cat > src/frontend/App.jsx << 'EOL'
+import React, { lazy, Suspense } from 'react';
+
+// Lazy load heavy components
+const MoleculeViewer = lazy(() => import('./components/MoleculeViewer'));
+const SequenceAnalyzer = lazy(() => import('./components/SequenceAnalyzer'));
+
+function App() {
+return (
+<div className="app-container">
+<Suspense fallback={<div>Loading molecular tools...</div>}>
+<MoleculeViewer />
+<SequenceAnalyzer />
+</Suspense>
+</div>
+);
+}
+EOL
+
+6. PERFORMANCE OPTIMIZATION SCRIPTS
+cat > optimize.sh << 'EOL'
+#!/bin/bash
+
+Compress static assets
+find public/ -type f -exec brotli -9 {} ;
+
+Convert RDKit to WebAssembly
+wget https://github.com/rdkit/rdkit-wasm/releases/latest/download/rdkit.wasm
+mv rdkit.wasm public/
+
+Generate service worker for caching
+cat > public/sw.js << 'EOF'
+const CACHE_NAME = 'bioscriptor-v1';
+const CACHE_FILES = [
+'/',
+'/index.html',
+'/rdkit.wasm',
+'/main.css'
+];
+
+self.addEventListener('install', event => {
+event.waitUntil(
+caches.open(CACHE_NAME)
+.then(cache => cache.addAll(CACHE_FILES))
+});
+EOF
+EOL
+
+chmod +x optimize.sh
+
+7. DEPLOYMENT INSTRUCTIONS
+cat > DEPLOY.md << 'EOL'
+
+Deployment Steps

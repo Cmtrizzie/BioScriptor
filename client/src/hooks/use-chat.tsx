@@ -91,7 +91,12 @@ export function useChat() {
       };
       
       const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-      const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)]; // Keep last 10 sessions
+      // Remove any existing session with same messages to avoid duplicates
+      const filteredSessions = savedSessions.filter((session: ChatSession) => 
+        session.messages.length !== currentSession.messages.length || 
+        session.title !== currentSession.title
+      );
+      const updatedSessions = [currentSession, ...filteredSessions.slice(0, 9)]; // Keep last 10 sessions
       localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
       setSessions(updatedSessions);
       
@@ -113,6 +118,10 @@ export function useChat() {
     setMessages([]);
   }, []);
 
+  const switchToSession = useCallback((session: ChatSession) => {
+    setMessages(session.messages);
+  }, []);
+
   // Load sessions from localStorage on mount
   useState(() => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
@@ -124,6 +133,7 @@ export function useChat() {
     sessions,
     sendMessage,
     newChat,
+    switchToSession,
     isLoading,
   };
 }

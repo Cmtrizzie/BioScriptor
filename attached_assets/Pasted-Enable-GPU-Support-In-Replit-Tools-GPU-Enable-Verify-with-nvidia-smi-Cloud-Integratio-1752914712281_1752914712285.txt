@@ -1,0 +1,120 @@
+Enable GPU Support
+
+In Replit: Tools → GPU → Enable
+
+Verify with: nvidia-smi
+
+Cloud Integration Setup
+
+Create accounts:
+
+Modal.com (serverless GPU)
+
+Google Cloud Run
+
+Set secrets:
+
+bash
+echo $CLOUD_API_KEY > secrets/cloud.key
+Run Application
+
+bash
+uvicorn src.backend.main:app --host=0.0.0.0 --port=3000 &
+npm run dev
+Scaling Guide
+Free Tier: Handle 5 concurrent users
+
+Pro Tier ($7): Up to 20 users
+
+Heavy Workloads: Offload to cloud
+EOL
+
+8. CREATE STARTUP SCRIPT
+cat > start.sh << 'EOL'
+#!/bin/bash
+
+Start backend
+uvicorn src.backend.main:app --host=0.0.0.0 --port=3000 &
+
+Start frontend
+cd src/frontend
+npm run dev &
+
+Start GPU monitor
+nvidia-smi -l 60 &
+
+wait
+EOL
+
+chmod +x start.sh
+
+echo "✅ Setup complete! Next steps:"
+echo "1. Run: chmod +x optimize.sh start.sh"
+echo "2. Run: ./optimize.sh"
+echo "3. Create Replit secrets for:"
+echo " - PAYPAL_CLIENT_ID"
+echo " - HUGGINGFACE_TOKEN"
+echo " - CLOUD_API_KEY"
+echo "4. Execute: ./start.sh"
+
+text
+
+### Key Enhancements Included:
+
+1. **GPU Acceleration**:
+   - CUDA toolkit in `replit.nix`
+   - NVIDIA container base
+   - GPU monitoring script
+
+2. **Cloud Offloading**:
+   - Protein folding endpoint
+   - Molecular dynamics runner
+   - Job status polling
+
+3. **Performance Optimizations**:
+   - Brotli compression script
+   - RDKit WebAssembly loading
+   - Service worker caching
+   - Lazy-loaded components
+
+4. **Workflow Documentation**:
+   - Complete HOW_IT_WORKS.md
+   - Mermaid.js architecture diagram
+   - Deployment guide
+   - Scaling strategies
+
+5. **Production-Ready Features**:
+   - Dockerfile for heavy tasks
+   - gRPC-ready endpoints
+   - Tier-based scaling configs
+
+### How the Application Works:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ChatUI
+    participant Router
+    participant AIAgent
+    participant CloudService
+    participant Results
+    
+    User->>ChatUI: "Fold this protein sequence"
+    ChatUI->>Router: Route to BioFold agent
+    Router->>AIAgent: Check sequence length
+    alt Short sequence (<300aa)
+        AIAgent->>AIAgent: Local folding (GPU)
+    else Long sequence
+        AIAgent->>CloudService: Offload to cloud
+        CloudService->>CloudService: Process in cloud
+        CloudService->>Results: Return PDB
+    end
+    Results->>ChatUI: Display 3D structure
+    ChatUI->>User: Interactive molecule viewer
+Performance Tiers:
+
+Local: Sequences <300aa, small molecules
+
+Cloud Offload: Proteins >300aa, MD simulations
+
+HPC Cluster: Genome-scale analysis (via external clusters)

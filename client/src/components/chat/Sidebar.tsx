@@ -8,7 +8,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { newChat, sessions } = useChat();
+  const { newChat, sessions, sendMessage, switchToSession } = useChat();
 
   const quickActions = [
     {
@@ -21,6 +21,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "CRISPR Design",
       subtitle: "Guide RNA sequences",
       color: "bg-bio-teal/10 text-bio-teal",
+      prompt: "Design CRISPR guide RNAs for the BRCA1 gene. I need high-specificity guides with minimal off-target effects."
     },
     {
       icon: (
@@ -32,6 +33,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "PCR Simulation",
       subtitle: "Virtual gel electrophoresis",
       color: "bg-blue-100 text-blue-600",
+      prompt: "Simulate a PCR reaction with these primers: Forward: 5'-ATGCGATCGATCG-3', Reverse: 5'-CGATCGATCGCAT-3'. Show expected product size and gel visualization."
     },
     {
       icon: (
@@ -42,8 +44,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Sequence Analysis",
       subtitle: "DNA/RNA/Protein",
       color: "bg-purple-100 text-purple-600",
+      prompt: "Analyze this DNA sequence for ORFs, restriction sites, and GC content: ATGCGATCGATCGCTAGCTAGCTAGC"
     },
+    {
+      icon: (
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+        </svg>
+      ),
+      title: "Molecular Visualization",
+      subtitle: "3D protein structures",
+      color: "bg-green-100 text-green-600",
+      prompt: "Load and visualize the 3D structure of hemoglobin (PDB: 1HHO). Show me the heme groups and highlight the alpha and beta chains."
+    }
   ];
+
+  const handleQuickAction = async (action: typeof quickActions[0]) => {
+    onClose(); // Close sidebar on mobile
+    await sendMessage(action.prompt);
+  };
 
   return (
     <>
@@ -90,10 +109,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {quickActions.map((action, index) => (
                 <button 
                   key={index}
-                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => handleQuickAction(action)}
+                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", action.color)}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105", action.color)}>
                       {action.icon}
                     </div>
                     <div>
@@ -114,10 +134,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <p className="text-sm text-gray-500 dark:text-gray-400">No recent sessions</p>
               ) : (
                 sessions.map((session, index) => (
-                  <div key={index} className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
-                    <p className="font-medium text-sm truncate">{session.title || 'New Chat'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{session.timestamp}</p>
-                  </div>
+                  <button
+                    key={session.id || index}
+                    onClick={() => {
+                      switchToSession(session);
+                      onClose();
+                    }}
+                    className="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors group border-l-2 border-transparent hover:border-bio-blue"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate group-hover:text-bio-blue">{session.title || 'New Chat'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{session.timestamp}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          {session.messages.length} messages
+                        </p>
+                      </div>
+                      <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg className="w-4 h-4 text-bio-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
                 ))
               )}
             </div>
