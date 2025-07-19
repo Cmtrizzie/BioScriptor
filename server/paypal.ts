@@ -19,16 +19,20 @@ import { Request, Response } from "express";
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 
-if (!PAYPAL_CLIENT_ID) {
+// In development mode, provide placeholder values if credentials are missing
+const clientId = PAYPAL_CLIENT_ID || (process.env.NODE_ENV === "development" ? "placeholder_client_id" : null);
+const clientSecret = PAYPAL_CLIENT_SECRET || (process.env.NODE_ENV === "development" ? "placeholder_client_secret" : null);
+
+if (!clientId) {
   throw new Error("Missing PAYPAL_CLIENT_ID");
 }
-if (!PAYPAL_CLIENT_SECRET) {
+if (!clientSecret) {
   throw new Error("Missing PAYPAL_CLIENT_SECRET");
 }
 const client = new Client({
   clientCredentialsAuthCredentials: {
-    oAuthClientId: PAYPAL_CLIENT_ID,
-    oAuthClientSecret: PAYPAL_CLIENT_SECRET,
+    oAuthClientId: clientId,
+    oAuthClientSecret: clientSecret,
   },
   timeout: 0,
   environment:
@@ -52,7 +56,7 @@ const oAuthAuthorizationController = new OAuthAuthorizationController(client);
 
 export async function getClientToken() {
   const auth = Buffer.from(
-    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`,
+    `${clientId}:${clientSecret}`,
   ).toString("base64");
 
   const { result } = await oAuthAuthorizationController.requestToken(
