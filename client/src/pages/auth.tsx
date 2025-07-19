@@ -31,7 +31,7 @@ export default function Auth() {
               <div className="absolute -top-1 -right-1 text-bio-teal font-mono text-xs font-bold">{}</div>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-bio-blue dark:text-white">Welcome to BioScriptor</CardTitle>
+          <CardTitle className="text-2xl font-bold text-bio-blue dark:text-white">Welcome to biobuddy</CardTitle>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Your AI-powered bioinformatics assistant
           </p>

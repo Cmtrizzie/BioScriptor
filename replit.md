@@ -1,8 +1,8 @@
-# BioScriptor - AI-Powered Bioinformatics Assistant
+# biobuddy - AI-Powered Bioinformatics Assistant
 
 ## Overview
 
-BioScriptor is a full-stack web application that serves as an AI-powered bioinformatics assistant. The application provides a ChatGPT-style interface for natural language bioinformatics queries, file analysis capabilities, and molecular visualization tools. It's designed to help researchers and scientists with various molecular biology tasks including CRISPR design, PCR simulation, sequence analysis, and more.
+biobuddy is a full-stack web application that serves as an AI-powered bioinformatics assistant. The application provides a ChatGPT-style interface for natural language bioinformatics queries, file analysis capabilities, and molecular visualization tools. It's designed to help researchers and scientists with various molecular biology tasks including CRISPR design, PCR simulation, sequence analysis, and more.
 
 ## User Preferences
 
@@ -96,3 +96,32 @@ The application is configured for production deployment with the following consi
 - **Caching**: TanStack Query provides client-side caching for API responses
 
 The architecture supports both development in cloud environments (Replit) and traditional deployment scenarios, with careful separation of concerns and type safety throughout the stack.
+
+## Current Status
+
+### Recent Updates (January 2025)
+- ✅ Updated branding from "BioScriptor" to "biobuddy" throughout the application
+- ✅ Implemented top navigation layout with proper header positioning
+- ✅ Fixed API routing for PayPal integration with proper `/api/paypal/` prefixes
+- ✅ Added Firebase authentication headers to all API requests for user identification
+- ✅ Created comprehensive bioinformatics tools (CRISPR, PCR, sequence analysis, molecular visualization)
+- ✅ Integrated PostgreSQL database with proper data models for users, conversations, and subscriptions
+
+### Setup Requirements
+
+#### Firebase Authentication Setup
+**IMPORTANT**: To resolve Firebase authentication errors:
+1. Go to Firebase Console → Authentication → Settings → Authorized domains
+2. Add your current Replit dev URL to the authorized domains list
+3. Refer to `FIREBASE_SETUP.md` for detailed instructions
+
+#### Required Environment Variables
+- `DATABASE_URL` - PostgreSQL connection string (✅ configured)
+- `VITE_FIREBASE_API_KEY` - Firebase API key (✅ configured)
+- `VITE_FIREBASE_PROJECT_ID` - Firebase project ID (✅ configured)
+- `VITE_FIREBASE_APP_ID` - Firebase app ID (✅ configured)
+- `PAYPAL_CLIENT_ID` - PayPal client ID (✅ configured)
+- `PAYPAL_CLIENT_SECRET` - PayPal client secret (✅ configured)
+
+#### Deployment Readiness
+The application is ready for deployment once Firebase domain authorization is completed. All core features are implemented and functional.

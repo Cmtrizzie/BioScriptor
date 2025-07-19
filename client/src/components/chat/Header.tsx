@@ -50,7 +50,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <div className="absolute -top-1 -right-1 text-bio-teal font-mono text-xs font-bold">{}</div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-bio-blue dark:text-white">BioScriptor</h1>
+              <h1 className="text-xl font-bold text-bio-blue dark:text-white">biobuddy</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">AI-Powered Bioinformatics</p>
             </div>
           </div>
