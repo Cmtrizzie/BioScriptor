@@ -1,0 +1,99 @@
+Shows:
+
+User messages
+
+Bot responses
+
+Any formatted output (e.g., code blocks, tables)
+
+Renders:
+
+Markdown
+
+Inline media (if supported)
+
+Syntax highlighting (optional for developer tools)
+
+2. 🔄 Chatbot Message Workflow
+➤ Step-by-step Flow:
+User Sends Message
+
+Text input from user is captured
+
+Message optionally pre-processed (e.g., trimmed, checked for special commands)
+
+Intent & Context Detection
+
+Parse the input for:
+
+Intent (question, instruction, correction, etc.)
+
+Entities (names, dates, values, etc.)
+
+Tone/voice (formal, casual, etc.)
+
+Maintain chat history to allow contextual responses
+
+Input Formatting Handling
+
+Detect and parse:
+
+Code blocks
+
+Lists
+
+Markdown
+
+Multilingual phrases
+
+Extract key parts for response generation
+
+Bot Logic / Engine Processes the Input
+
+Routes to:
+
+Internal rules
+
+NLP pipeline
+
+Tools (e.g., calculator, API, database)
+
+Handles multi-turn conversations using thread memory (if available)
+
+Response Generation
+
+Response is composed with structure:
+
+Natural language explanation
+
+Optional structured elements (code, table, etc.)
+
+Output is formatted for the UI renderer
+
+Response Rendered in Chat Window
+
+Markdown rendered for readability
+
+Code blocks shown with highlighting (optional)
+
+Tool results (e.g., charts, search) shown inline (if available)
+
+User Follows Up
+
+The system uses prior messages for context
+
+User can:
+
+Clarify or rephrase
+
+Refer to previous message ("Make that shorter", "Translate this")
+
+3. ✅ Supported Input Types (User Can Type)
+Type	Example	Notes
+Plain text	What's the weather like today?	Handled as general intent
+Code	python\ndef foo():\n return "bar"\n	Parsed and responded to with logic or feedback
+Markdown	**Bold**, *italic*, - list	Parsed and rendered in UI
+Multi-line	(Shift+Enter) or long paragraphs	Preserved as-is in UI
+Commands/Intents	/help, /restart, Summarize this:	Optional support for commands
+Foreign language	¿Cómo estás?	Language detection recommended
+Follow-ups	Actually, make that simpler.	Requires conversational context

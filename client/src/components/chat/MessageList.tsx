@@ -1,7 +1,6 @@
 import { Message } from "@/hooks/use-chat";
 import CodeBlock from "@/components/ui/code-block";
 import MolecularViewer from "@/components/visualization/MolecularViewer";
-import FileUpload from "@/components/ui/file-upload";
 
 interface MessageListProps {
   messages: Message[];
@@ -53,11 +52,17 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                 <path d="M12 2L13.5 4.5L15 2L16.5 4.5L18 2L19.5 4.5L21 2V4L19.5 6.5L18 4L16.5 6.5L15 4L13.5 6.5L12 4L10.5 6.5L9 4L7.5 6.5L6 4L4.5 6.5L3 4V2L4.5 4.5L6 2L7.5 4.5L9 2L10.5 4.5L12 2Z"/>
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to BioScriptor</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to biobuddy</h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
               Your AI-powered bioinformatics assistant. Ask me anything about DNA sequences, protein analysis, or molecular biology!
             </p>
-            <FileUpload onFileUpload={(file) => console.log('File uploaded:', file)} />
+            <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+              <p>✨ Try uploading a file or asking about:</p>
+              <p>• CRISPR guide RNA design</p>
+              <p>• PCR simulation and primer design</p>
+              <p>• Protein structure visualization</p>
+              <p>• Sequence analysis and annotations</p>
+            </div>
           </div>
         )}
 

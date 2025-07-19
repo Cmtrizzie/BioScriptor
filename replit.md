@@ -106,6 +106,10 @@ The architecture supports both development in cloud environments (Replit) and tr
 - ✅ Added Firebase authentication headers to all API requests for user identification
 - ✅ Created comprehensive bioinformatics tools (CRISPR, PCR, sequence analysis, molecular visualization)
 - ✅ Integrated PostgreSQL database with proper data models for users, conversations, and subscriptions
+- ✅ **LATEST**: Implemented advanced ChatGPT-style input box with multi-line support, markdown formatting, drag & drop file upload, clipboard paste support, formatting toolbar, and enhanced UX features
+- ✅ **LATEST**: Removed drag and drop from chat display area, consolidated all file upload functionality into the input box
+- ✅ **LATEST**: Enhanced quick actions in sidebar to be fully functional with predefined bioinformatics prompts
+- ✅ **LATEST**: Improved session management with clickable recent sessions and proper ordering
 
 ### Setup Requirements
 
