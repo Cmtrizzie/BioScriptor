@@ -332,6 +332,25 @@ Rules:
   }
 
   private initializeSolutionBank(): void {
+    // Conversational responses
+    this.solutionBank.set('greeting', {
+      fix: 'Hello! I\'m BioScriptor, your fault-tolerant AI bioinformatics assistant.',
+      code: '',
+      confidence: 0.98
+    });
+
+    this.solutionBank.set('how_are_you', {
+      fix: 'I\'m functioning well with my fault-tolerant architecture! All backup systems are operational. How can I help you with bioinformatics today?',
+      code: '',
+      confidence: 0.95
+    });
+
+    this.solutionBank.set('status_check', {
+      fix: 'System Status: All fallback systems operational. External AI providers currently unavailable, but I can still help with bioinformatics analysis using my built-in knowledge base.',
+      code: '',
+      confidence: 0.92
+    });
+
     // Pre-indexed solutions for common bioinformatics problems
     this.solutionBank.set('sequence_analysis', {
       fix: 'Use BioPython for sequence analysis',
@@ -356,10 +375,37 @@ Rules:
       code: `def find_pam_sites(sequence, pam="NGG"):\n    sites = []\n    for i in range(len(sequence) - 2):\n        if sequence[i:i+3].endswith("GG"):\n            guide = sequence[max(0, i-20):i]\n            sites.append({"guide": guide, "position": i})\n    return sites`,
       confidence: 0.85
     });
+
+    this.solutionBank.set('help', {
+      fix: 'I can help you with bioinformatics tasks including:\n\n• CRISPR guide design\n• PCR primer design\n• Sequence analysis\n• File format conversion\n• Protein structure analysis\n• Molecular cloning workflows\n\nWhat specific task would you like help with?',
+      code: '',
+      confidence: 0.90
+    });
   }
 
   private getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
+    
+    // Direct pattern matching for common queries
+    if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi ') || lowerPrompt.includes('hey')) {
+      const greeting = this.solutionBank.get('greeting');
+      return greeting!.fix;
+    }
+
+    if (lowerPrompt.includes('how are you') || lowerPrompt.includes('how you doing') || lowerPrompt.includes('what\'s up') || lowerPrompt.includes('wazup')) {
+      const status = this.solutionBank.get('how_are_you');
+      return status!.fix;
+    }
+
+    if (lowerPrompt.includes('help') || lowerPrompt.includes('what can you do')) {
+      const help = this.solutionBank.get('help');
+      return help!.fix;
+    }
+
+    if (lowerPrompt.includes('status') || lowerPrompt.includes('working') || lowerPrompt.includes('online')) {
+      const status = this.solutionBank.get('status_check');
+      return status!.fix;
+    }
     
     let bestMatch = null;
     let bestScore = 0;
@@ -373,10 +419,14 @@ Rules:
     }
     
     if (bestMatch) {
-      return `⚠️ Using backup systems - Here's a solution from my knowledge base:\n\n${bestMatch.fix}\n\n\`\`\`python\n${bestMatch.code}\n\`\`\`\n\nConfidence: ${(bestMatch.confidence * 100).toFixed(0)}%`;
+      if (bestMatch.code) {
+        return `Here's a solution from my knowledge base:\n\n${bestMatch.fix}\n\n\`\`\`python\n${bestMatch.code}\n\`\`\`\n\nNote: External AI providers are currently unavailable, but I can still help with bioinformatics tasks using my built-in knowledge.`;
+      } else {
+        return bestMatch.fix;
+      }
     }
     
-    return `⚠️ Using backup systems - I'm experiencing connectivity issues with external AI providers. Here are some general bioinformatics resources:\n\n- BioPython documentation: https://biopython.org/\n- NCBI tools: https://www.ncbi.nlm.nih.gov/tools/\n- EBI services: https://www.ebi.ac.uk/services\n\nPlease try your query again in a moment, or check the specific tool documentation for your task.`;
+    return `I'm currently running on backup systems since external AI providers aren't available. I can still help you with:\n\n• CRISPR guide design\n• PCR simulation\n• Sequence analysis\n• File format conversion\n• Protein structure analysis\n\nWhat bioinformatics task would you like help with?`;
   }
 
   private calculateSimilarity(text1: string, text2: string): number {
