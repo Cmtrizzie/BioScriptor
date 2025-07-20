@@ -3,6 +3,8 @@ import {
   chatSessions, 
   bioFiles, 
   subscriptions,
+  planLimits,
+  adminLogs,
   type User, 
   type InsertUser,
   type ChatSession,
@@ -10,7 +12,13 @@ import {
   type BioFile,
   type InsertBioFile,
   type Subscription,
-  type InsertSubscription
+  type InsertSubscription,
+  type PlanLimit,
+  type InsertPlanLimit,
+  type AdminLog,
+  type InsertAdminLog,
+  type SubscriptionTier,
+  type PlanFeatures
 } from "@shared/schema";
 
 export interface IStorage {
@@ -20,11 +28,15 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  resetUserDailyLimit(userId: number): Promise<User | undefined>;
 
   // Chat session operations
   getChatSessions(userId: number): Promise<ChatSession[]>;
+  getChatSession(id: number): Promise<ChatSession | undefined>;
   createChatSession(session: InsertChatSession): Promise<ChatSession>;
   updateChatSession(id: number, updates: Partial<ChatSession>): Promise<ChatSession | undefined>;
+  deleteChatSession(id: number): Promise<boolean>;
 
   // File operations
   getBioFiles(userId: number): Promise<BioFile[]>;
@@ -35,6 +47,17 @@ export interface IStorage {
   getActiveSubscription(userId: number): Promise<Subscription | undefined>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription(id: number, updates: Partial<Subscription>): Promise<Subscription | undefined>;
+  getAllSubscriptions(): Promise<Subscription[]>;
+
+  // Plan limits operations
+  getPlanLimit(tier: SubscriptionTier): Promise<PlanLimit | undefined>;
+  createPlanLimit(planLimit: InsertPlanLimit): Promise<PlanLimit>;
+  updatePlanLimit(tier: SubscriptionTier, updates: Partial<PlanLimit>): Promise<PlanLimit | undefined>;
+  getAllPlanLimits(): Promise<PlanLimit[]>;
+
+  // Admin operations
+  createAdminLog(log: InsertAdminLog): Promise<AdminLog>;
+  getAdminLogs(limit?: number): Promise<AdminLog[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -42,10 +65,72 @@ export class MemStorage implements IStorage {
   private chatSessions: Map<number, ChatSession> = new Map();
   private bioFiles: Map<number, BioFile> = new Map();
   private subscriptions: Map<number, Subscription> = new Map();
+  private planLimits: Map<SubscriptionTier, PlanLimit> = new Map();
+  private adminLogs: Map<number, AdminLog> = new Map();
   private currentUserId = 1;
   private currentChatSessionId = 1;
   private currentBioFileId = 1;
   private currentSubscriptionId = 1;
+  private currentPlanLimitId = 1;
+  private currentAdminLogId = 1;
+
+  constructor() {
+    this.initializeDefaultPlanLimits();
+  }
+
+  private initializeDefaultPlanLimits() {
+    // Initialize default plan limits
+    this.planLimits.set('free', {
+      id: this.currentPlanLimitId++,
+      tier: 'free',
+      features: {
+        maxQueries: 50,
+        maxFileSize: 5,
+        aiProviders: ['ollama'],
+        advancedAnalysis: false,
+        prioritySupport: false,
+        exportFormats: ['txt'],
+        collaborativeFeatures: false,
+        apiAccess: false
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.planLimits.set('premium', {
+      id: this.currentPlanLimitId++,
+      tier: 'premium',
+      features: {
+        maxQueries: 500,
+        maxFileSize: 50,
+        aiProviders: ['groq', 'together', 'ollama'],
+        advancedAnalysis: true,
+        prioritySupport: false,
+        exportFormats: ['txt', 'pdf', 'docx'],
+        collaborativeFeatures: true,
+        apiAccess: false
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.planLimits.set('enterprise', {
+      id: this.currentPlanLimitId++,
+      tier: 'enterprise',
+      features: {
+        maxQueries: -1, // unlimited
+        maxFileSize: 200,
+        aiProviders: ['groq', 'together', 'openrouter', 'cohere', 'ollama'],
+        advancedAnalysis: true,
+        prioritySupport: true,
+        exportFormats: ['txt', 'pdf', 'docx', 'json', 'xml'],
+        collaborativeFeatures: true,
+        apiAccess: true
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
 
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
@@ -167,6 +252,88 @@ export class MemStorage implements IStorage {
     const updatedSubscription = { ...subscription, ...updates };
     this.subscriptions.set(id, updatedSubscription);
     return updatedSubscription;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async resetUserDailyLimit(userId: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { 
+      ...user, 
+      queryCount: 0, 
+      updatedAt: new Date() 
+    };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async getChatSession(id: number): Promise<ChatSession | undefined> {
+    return this.chatSessions.get(id);
+  }
+
+  async deleteChatSession(id: number): Promise<boolean> {
+    return this.chatSessions.delete(id);
+  }
+
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return Array.from(this.subscriptions.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getPlanLimit(tier: SubscriptionTier): Promise<PlanLimit | undefined> {
+    return this.planLimits.get(tier);
+  }
+
+  async createPlanLimit(insertPlanLimit: InsertPlanLimit): Promise<PlanLimit> {
+    const id = this.currentPlanLimitId++;
+    const now = new Date();
+    const planLimit: PlanLimit = { 
+      ...insertPlanLimit, 
+      id, 
+      createdAt: now,
+      updatedAt: now
+    };
+    this.planLimits.set(insertPlanLimit.tier, planLimit);
+    return planLimit;
+  }
+
+  async updatePlanLimit(tier: SubscriptionTier, updates: Partial<PlanLimit>): Promise<PlanLimit | undefined> {
+    const planLimit = this.planLimits.get(tier);
+    if (!planLimit) return undefined;
+    
+    const updatedPlanLimit = { 
+      ...planLimit, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.planLimits.set(tier, updatedPlanLimit);
+    return updatedPlanLimit;
+  }
+
+  async getAllPlanLimits(): Promise<PlanLimit[]> {
+    return Array.from(this.planLimits.values());
+  }
+
+  async createAdminLog(insertLog: InsertAdminLog): Promise<AdminLog> {
+    const id = this.currentAdminLogId++;
+    const adminLog: AdminLog = { 
+      ...insertLog, 
+      id, 
+      timestamp: new Date()
+    };
+    this.adminLogs.set(id, adminLog);
+    return adminLog;
+  }
+
+  async getAdminLogs(limit = 100): Promise<AdminLog[]> {
+    return Array.from(this.adminLogs.values())
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 }
 

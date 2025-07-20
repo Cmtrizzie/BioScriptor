@@ -1,0 +1,78 @@
+I want to build a full admin dashboard for my app **BioScriptor** (an AI chat assistant using open-source APIs like GROQ, Together, OpenRouter, Cohere). The app uses Firebase Auth and Firestore.
+
+---
+
+🎯 Goal: Allow only authorized admins to manage users, subscription plans, usage stats, payment issues, and model routing.
+
+---
+
+🔐 Admin Login:
+- Only allow access to users with `user.role === "admin"` from Firestore
+- Redirect unauthorized users away
+- Admin login page (or bypass if already logged in as admin)
+
+---
+
+📊 Dashboard Sections (Tabs or Sidebar Menu):
+
+1. 🧑‍💻 **User Management**
+   - View all users (email, plan, usage stats)
+   - Search, filter by plan (Free, Pro, Team)
+   - Reset usage limits
+   - Ban, suspend, or upgrade users
+   - Add credits manually
+   - View chat history count
+
+2. 💰 **Plan Management**
+   - Create/Edit pricing plans
+   - Set features for each tier (message limits, models, export access)
+   - Adjust pricing or offer promo codes
+
+3. 🔑 **API Keys & Model Routing**
+   - Add/remove model APIs (GROQ, Together, etc.)
+   - Set model priority based on plan level
+   - Toggle which APIs are active
+   - View error logs or failed API calls
+
+4. 📈 **Analytics**
+   - Total users
+   - Daily active users
+   - Message volume
+   - Revenue from subscriptions
+   - Most used models
+
+5. 🧾 **Payments & Subscriptions**
+   - View current active subscriptions
+   - Handle failed payments
+   - Trigger manual upgrade/downgrade
+   - Add lifetime access
+
+6. 🛠️ **Settings**
+   - Toggle features globally (e.g., dark mode, watermark, beta features)
+   - Announcements or changelog messages to users
+
+---
+
+✅ Tech Stack:
+- Firebase Firestore (for user data & plans)
+- Firebase Auth (for auth + admin check)
+- PayPal or Stripe webhook integration
+- React or Next.js (UI)
+- Tailwind CSS (styling)
+
+---
+
+✨ Optional Add-Ons:
+- Live chat system for support
+- Notifications tab (user reports, issues)
+- Backup/export user data
+- Admin activity log
+
+---
+
+Please generate the full working structure in Replit, including:
+- Protected `/admin` route
+- Sidebar navigation
+- Components for each section
+- Firebase queries and updates
+- Responsive UI with Tailwind CSS

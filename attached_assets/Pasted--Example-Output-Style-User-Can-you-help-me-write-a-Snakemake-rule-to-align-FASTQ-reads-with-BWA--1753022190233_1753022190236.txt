@@ -1,0 +1,88 @@
+ Example Output Style
+User:
+
+Can you help me write a Snakemake rule to align FASTQ reads with BWA?
+
+BioScriptor (AI):
+
+Absolutely! 😎 Let’s write a simple Snakemake rule for aligning paired-end FASTQ reads with BWA-MEM.
+Here’s a clean version with comments:
+
+python
+Copy
+Edit
+rule align_reads:
+    input:
+        r1="data/{sample}_R1.fastq.gz",
+        r2="data/{sample}_R2.fastq.gz",
+        ref="ref/genome.fa"
+    output:
+        bam="aligned/{sample}.bam"
+    shell:
+        """
+        bwa mem {input.ref} {input.r1} {input.r2} | \
+        samtools view -Sb - > {output.bam}
+        """
+Let me know if you want to sort the BAM or add read group info!               🔧 1. Check if chat history is being saved correctly
+You should have something like this when saving:
+
+json
+Copy
+Edit
+[
+  { "role": "user", "content": "What is DNA?" },
+  { "role": "assistant", "content": "DNA is the blueprint of life..." }
+]
+Make sure each message is stored with a role (user or assistant) and content.
+
+🔄 2. Make sure your UI can re-render previous messages
+When you click a chat from history:
+
+Your UI code (e.g., React, Vue, Python) should:
+Load the messages from storage (database, file, or localStorage)
+
+Pass them into the chat window component
+
+Re-render the component
+
+Example (pseudo-code for React):
+
+tsx
+Copy
+Edit
+const handleChatSelect = (chatId) => {
+  const chat = loadChatFromStorage(chatId); // maybe from localStorage or DB
+  setChatMessages(chat.messages);
+};
+Or in Python (e.g., Gradio):
+
+python
+Copy
+Edit
+def load_chat(chat_id):
+    # Load from file/db
+    history = read_chat(chat_id)
+    return gr.update(value=history)
+📛 3. Common mistakes to check
+Mistake	Fix
+Storing chat as string instead of list of messages	Parse it to a JSON list of dicts
+Not triggering re-render on select	Add a state change (setState or update())
+Missing role field (user/assistant)	Always tag messages with roles
+Appending new message to wrong chat	Ensure you're working with the selected chat only
+
+🧪 4. How to test quickly
+To isolate the issue:
+
+Log the chat history structure when saving/loading
+
+Try hardcoding one to test rendering:
+
+json
+Copy
+Edit
+[
+  { "role": "user", "content": "Hi!" },
+  { "role": "assistant", "content": "Hello! How can I help?" }
+]
+If this works, the issue is in how you're saving/loading chats.
+

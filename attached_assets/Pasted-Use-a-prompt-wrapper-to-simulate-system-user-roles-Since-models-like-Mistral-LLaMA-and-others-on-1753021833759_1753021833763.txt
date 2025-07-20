@@ -1,0 +1,91 @@
+Use a "prompt wrapper" to simulate system/user roles
+Since models like Mistral, LLaMA, and others on GROQ/OpenRouter don't support roles like "system" directly, we fake it by formatting the prompt like this:
+
+plaintext
+Copy
+Edit
+[System Instruction]
+You are BioScriptor, a smart and helpful AI assistant who explains biology and bioinformatics in a clear, simple, and engaging way. You answer like you're having a conversation, not a lecture.
+
+[Conversation So Far]
+User: What is RNA-seq?
+Assistant: RNA-seq is a method used to study gene expression by sequencing RNA molecules. It helps researchers see which genes are active in a sample.
+
+User: How do I align reads to a genome?
+
+Assistant:
+You continue appending the previous user/assistant turns to keep the conversation memory.
+
+🛠️ 2. Create a unified prompt builder (Python example)
+Here’s a function to build that conversational prompt from history:
+
+python
+Copy
+Edit
+def build_prompt(history, system_instruction):
+    prompt = f"{system_instruction}\n\n[Conversation So Far]\n"
+    for message in history:
+        role = "User" if message["role"] == "user" else "Assistant"
+        prompt += f"{role}: {message['content']}\n"
+    prompt += "Assistant:"
+    return prompt
+⚙️ 3. Choose the right API automatically (based on input)
+You can write logic like:
+
+python
+Copy
+Edit
+def choose_model(user_input):
+    if "protein" in user_input:
+        return "cohere"
+    elif "fast inference" in user_input:
+        return "groq"
+    elif len(user_input) > 300:
+        return "together"
+    else:
+        return "openrouter"
+Then route the request to the correct API key and endpoint.
+
+📡 4. Send it to the model
+Example for Together API:
+
+python
+Copy
+Edit
+import requests
+
+def send_to_together(prompt):
+    headers = {
+        "Authorization": f"Bearer {TOGETHER_API_KEY}"
+    }
+    json_data = {
+        "model": "mistralai/Mistral-7B-Instruct-v0.2",
+        "prompt": prompt,
+        "temperature": 0.7,
+        "max_tokens": 512
+    }
+
+    response = requests.post("https://api.together.xyz/inference", headers=headers, json=json_data)
+    return response.json()["output"]
+(Similar for OpenRouter, Cohere, Groq)
+
+🧩 5. Make it conversational by storing history
+Store all messages like this:
+
+python
+Copy
+Edit
+conversation = [
+    {"role": "user", "content": "What is RNA-seq?"},
+    {"role": "assistant", "content": "RNA-seq is used to study gene expression..."},
+    {"role": "user", "content": "How do I align reads to a genome?"}
+]
+Then build the full prompt using the function in Step 2.
+
+🧠 6. Add Personality/Behavior as BioScriptor
+In your system_instruction, include:
+
+plaintext
+Copy
+Edit
+You are BioScriptor, a bioinformatics AI tutor. You explain with clarity, examples, and maintain a conversational tone. Be warm, but factual.

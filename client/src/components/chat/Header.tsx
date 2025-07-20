@@ -1,5 +1,15 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { CreditCard, Settings, Shield, ChevronDown } from "lucide-react";
+import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 
 interface HeaderProps {
@@ -8,6 +18,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -72,8 +83,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <div className="flex items-center space-x-4">
             {/* User Tier Badge */}
             <div className="hidden sm:flex items-center space-x-2">
-              <span className="px-2 py-1 text-xs font-medium bg-bio-teal/10 text-bio-teal rounded-full">Pro Tier</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">∞ queries today</span>
+              <Badge variant={
+                user?.tier === 'enterprise' ? 'default' :
+                user?.tier === 'premium' ? 'secondary' : 'outline'
+              }>
+                {user?.tier === 'enterprise' ? '⚡ Enterprise' :
+                 user?.tier === 'premium' ? '🚀 Premium' : '⭐ Free'}
+              </Badge>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {user?.queryCount || 0} queries today
+              </span>
             </div>
             
             {/* Dark Mode Toggle */}
@@ -95,17 +114,48 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </Button>
 
             {/* Profile Menu */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={logout}
-              >
-                <div className="w-8 h-8 bg-bio-blue text-white rounded-full flex items-center justify-center text-sm font-medium">
-                  {getUserInitials(user?.email)}
-                </div>
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                    {getUserInitials(user?.email)}
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setLocation('/subscription')}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Subscription</span>
+                  <Badge variant="outline" className="ml-auto text-xs">
+                    {user?.tier}
+                  </Badge>
+                </DropdownMenuItem>
+                
+                {user?.tier === 'enterprise' && (
+                  <DropdownMenuItem onClick={() => setLocation('/admin')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin Dashboard</span>
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={() => setLocation('/chat')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Chat Interface</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={logout} className="text-red-600">
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

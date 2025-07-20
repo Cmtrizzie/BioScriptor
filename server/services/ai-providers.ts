@@ -57,20 +57,21 @@ export class FaultTolerantAI {
   async processQuery(
     prompt: string, 
     context?: any,
-    toneDetection?: 'casual' | 'formal' | 'frustrated' | 'urgent'
+    toneDetection?: 'casual' | 'formal' | 'frustrated' | 'urgent',
+    conversationHistory?: Array<{role: string, content: string}>
   ): Promise<AIResponse> {
     const startTime = Date.now();
     
     // Security check first
     this.validateInput(prompt);
     
-    // Enhance prompt with tone and context
-    const enhancedPrompt = this.enhancePrompt(prompt, context, toneDetection);
+    // Build conversational prompt with history
+    const conversationalPrompt = this.buildConversationalPrompt(prompt, conversationHistory, context, toneDetection);
     
     // Try each provider in order
     for (const provider of PROVIDERS) {
       try {
-        const response = await this.tryProvider(provider, enhancedPrompt);
+        const response = await this.tryProvider(provider, conversationalPrompt, conversationHistory);
         if (response) {
           return {
             content: response,
@@ -95,20 +96,20 @@ export class FaultTolerantAI {
     };
   }
 
-  private async tryProvider(provider: AIProvider, prompt: string): Promise<string | null> {
+  private async tryProvider(provider: AIProvider, prompt: string, history?: Array<{role: string, content: string}>): Promise<string | null> {
     for (let attempt = 0; attempt < provider.maxRetries; attempt++) {
       try {
         switch (provider.name) {
           case 'groq':
-            return await this.callGroq(prompt, provider.maxTokens);
+            return await this.callGroq(prompt, provider.maxTokens, history);
           case 'together':
-            return await this.callTogether(prompt, provider.maxTokens);
+            return await this.callTogether(prompt, provider.maxTokens, history);
           case 'openrouter':
-            return await this.callOpenRouter(prompt, provider.maxTokens);
+            return await this.callOpenRouter(prompt, provider.maxTokens, history);
           case 'cohere':
-            return await this.callCohere(prompt, provider.maxTokens);
+            return await this.callCohere(prompt, provider.maxTokens, history);
           case 'ollama':
-            return await this.callOllama(prompt, provider.maxTokens);
+            return await this.callOllama(prompt, provider.maxTokens, history);
           default:
             throw new Error(`Unknown provider: ${provider.name}`);
         }
@@ -120,9 +121,14 @@ export class FaultTolerantAI {
     return null;
   }
 
-  private async callGroq(prompt: string, maxTokens?: number): Promise<string> {
+  private async callGroq(prompt: string, maxTokens?: number, history?: Array<{role: string, content: string}>): Promise<string> {
     if (!this.config.groq?.apiKey) throw new Error('Groq API key not configured');
     
+    // Build messages array - use history if provider supports it, otherwise use enhanced prompt
+    const messages = history && history.length > 0 
+      ? [...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user' as const, content: prompt }]
+      : [{ role: 'user' as const, content: prompt }];
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -131,7 +137,7 @@ export class FaultTolerantAI {
       },
       body: JSON.stringify({
         model: 'llama-3.1-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         max_tokens: maxTokens || 4000,
         temperature: 0.7,
       }),
@@ -143,9 +149,14 @@ export class FaultTolerantAI {
     return data.choices[0]?.message?.content || '';
   }
 
-  private async callTogether(prompt: string, maxTokens?: number): Promise<string> {
+  private async callTogether(prompt: string, maxTokens?: number, history?: Array<{role: string, content: string}>): Promise<string> {
     if (!this.config.together?.apiKey) throw new Error('Together API key not configured');
     
+    // Build messages array - use history if available
+    const messages = history && history.length > 0 
+      ? [...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user' as const, content: prompt }]
+      : [{ role: 'user' as const, content: prompt }];
+
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -154,7 +165,7 @@ export class FaultTolerantAI {
       },
       body: JSON.stringify({
         model: 'meta-llama/Llama-3-70b-chat-hf',
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         max_tokens: maxTokens || 4000,
         temperature: 0.7,
       }),
@@ -166,9 +177,14 @@ export class FaultTolerantAI {
     return data.choices[0]?.message?.content || '';
   }
 
-  private async callOpenRouter(prompt: string, maxTokens?: number): Promise<string> {
+  private async callOpenRouter(prompt: string, maxTokens?: number, history?: Array<{role: string, content: string}>): Promise<string> {
     if (!this.config.openrouter?.apiKey) throw new Error('OpenRouter API key not configured');
     
+    // Build messages array - use history if available  
+    const messages = history && history.length > 0 
+      ? [...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })), { role: 'user' as const, content: prompt }]
+      : [{ role: 'user' as const, content: prompt }];
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -179,7 +195,7 @@ export class FaultTolerantAI {
       },
       body: JSON.stringify({
         model: 'anthropic/claude-3.5-sonnet',
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         max_tokens: maxTokens || 4000,
         temperature: 0.7,
       }),
@@ -191,9 +207,14 @@ export class FaultTolerantAI {
     return data.choices[0]?.message?.content || '';
   }
 
-  private async callCohere(prompt: string, maxTokens?: number): Promise<string> {
+  private async callCohere(prompt: string, maxTokens?: number, history?: Array<{role: string, content: string}>): Promise<string> {
     if (!this.config.cohere?.apiKey) throw new Error('Cohere API key not configured');
     
+    // Cohere uses different format - build conversation manually if history exists
+    const finalPrompt = history && history.length > 0 
+      ? this.buildConversationalPrompt(prompt, history)
+      : prompt;
+
     const response = await fetch('https://api.cohere.ai/v1/generate', {
       method: 'POST',
       headers: {
@@ -202,7 +223,7 @@ export class FaultTolerantAI {
       },
       body: JSON.stringify({
         model: 'command-r-plus',
-        prompt: prompt,
+        prompt: finalPrompt,
         max_tokens: maxTokens || 4000,
         temperature: 0.7,
       }),
@@ -214,10 +235,15 @@ export class FaultTolerantAI {
     return data.generations[0]?.text || '';
   }
 
-  private async callOllama(prompt: string, maxTokens?: number): Promise<string> {
+  private async callOllama(prompt: string, maxTokens?: number, history?: Array<{role: string, content: string}>): Promise<string> {
     const endpoint = this.config.ollama?.endpoint || 'http://localhost:11434';
     const model = this.config.ollama?.model || 'codestral';
     
+    // Ollama uses different format - build conversation manually if history exists
+    const finalPrompt = history && history.length > 0 
+      ? this.buildConversationalPrompt(prompt, history)
+      : prompt;
+
     const response = await fetch(`${endpoint}/api/generate`, {
       method: 'POST',
       headers: {
@@ -225,7 +251,7 @@ export class FaultTolerantAI {
       },
       body: JSON.stringify({
         model: model,
-        prompt: prompt,
+        prompt: finalPrompt,
         stream: false,
         options: {
           num_predict: maxTokens || 2000,
@@ -240,6 +266,36 @@ export class FaultTolerantAI {
     return data.response || '';
   }
 
+  private buildConversationalPrompt(
+    currentPrompt: string, 
+    history?: Array<{role: string, content: string}>,
+    context?: any,
+    tone?: 'casual' | 'formal' | 'frustrated' | 'urgent'
+  ): string {
+    const systemInstruction = `[System Instruction]
+You are BioScriptor, a smart and helpful AI assistant who explains bioinformatics and molecular biology in a clear, simple, and engaging way. You answer like you're having a conversation, not giving a lecture. 
+
+${tone === 'casual' ? 'Use a friendly, casual tone with contractions and emojis where appropriate.' : ''}
+${tone === 'formal' ? 'Use a professional, academic tone with precise terminology.' : ''}
+${tone === 'frustrated' ? 'Be patient and extra helpful, breaking down complex concepts clearly.' : ''}
+${tone === 'urgent' ? 'Prioritize quick, actionable answers while maintaining accuracy.' : ''}
+
+${context ? `\n[File Analysis Context]\n${JSON.stringify(context, null, 2)}\n` : ''}`;
+
+    let conversationHistory = '';
+    if (history && history.length > 0) {
+      conversationHistory = '\n[Conversation So Far]\n';
+      for (const message of history.slice(-10)) { // Keep last 10 messages for context
+        const role = message.role === 'user' ? 'User' : 'Assistant';
+        conversationHistory += `${role}: ${message.content}\n`;
+      }
+    }
+
+    return `${systemInstruction}${conversationHistory}
+
+User: ${currentPrompt}`;
+  }
+
   private validateInput(input: string): void {
     const BLACKLIST = [
       'rm -rf', 'DROP DATABASE', 'eval(', 'exec(',
@@ -249,56 +305,13 @@ export class FaultTolerantAI {
 
     const threat = BLACKLIST.find(cmd => input.toLowerCase().includes(cmd.toLowerCase()));
     if (threat) {
-      throw new Error(`Security violation: Blocked dangerous command: ${threat}`);
+      throw new Error('Security violation: Blocked dangerous command: ' + threat);
     }
 
     // Check for excessively long inputs
     if (input.length > 50000) {
       throw new Error('Input too long. Please limit to 50,000 characters.');
     }
-  }
-
-  private enhancePrompt(
-    prompt: string, 
-    context?: any, 
-    tone?: 'casual' | 'formal' | 'frustrated' | 'urgent'
-  ): string {
-    let systemPrompt = `You are BioScriptor - a fault-tolerant bioinformatics coding assistant. `;
-    
-    // Adapt tone based on detection
-    switch (tone) {
-      case 'casual':
-        systemPrompt += `Use emojis and contractions in your responses. Keep it friendly and approachable. `;
-        break;
-      case 'formal':
-        systemPrompt += `Use academic tone and precise technical language. Be thorough and detailed. `;
-        break;
-      case 'frustrated':
-        systemPrompt += `Be empathetic and provide clear, step-by-step solutions. Acknowledge the difficulty. `;
-        break;
-      case 'urgent':
-        systemPrompt += `Provide immediate, actionable steps. Be concise and focused on solutions. `;
-        break;
-      default:
-        systemPrompt += `Be helpful and informative. `;
-    }
-
-    systemPrompt += `
-
-Rules:
-1. NEVER suggest dangerous commands or operations
-2. Truncate long outputs to essential information
-3. Use only MIT-licensed or open-source solutions
-4. Focus on bioinformatics and molecular biology
-5. Provide working code examples when relevant
-
-`;
-
-    if (context?.fileAnalysis) {
-      systemPrompt += `Context: User uploaded a ${context.fileAnalysis.type} file with ${context.fileAnalysis.sequenceCount || 'unknown'} sequences. `;
-    }
-
-    return systemPrompt + prompt;
   }
 
   private detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
@@ -354,25 +367,25 @@ Rules:
     // Pre-indexed solutions for common bioinformatics problems
     this.solutionBank.set('sequence_analysis', {
       fix: 'Use BioPython for sequence analysis',
-      code: `from Bio.Seq import Seq\nfrom Bio.SeqUtils import GC\n\nseq = Seq("ATCGATCGATCG")\nprint(f"GC content: {GC(seq):.1f}%")`,
+      code: 'from Bio.Seq import Seq\\nfrom Bio.SeqUtils import GC\\n\\nseq = Seq("ATCGATCGATCG")\\nprint(f"GC content: {GC(seq):.1f}%")',
       confidence: 0.95
     });
 
     this.solutionBank.set('file_parsing', {
       fix: 'Parse FASTA files with BioPython',
-      code: `from Bio import SeqIO\n\nfor record in SeqIO.parse("sequences.fasta", "fasta"):\n    print(f"ID: {record.id}, Length: {len(record.seq)}")`,
+      code: 'from Bio import SeqIO\\n\\nfor record in SeqIO.parse("sequences.fasta", "fasta"):\\n    print(f"ID: {record.id}, Length: {len(record.seq)}")',
       confidence: 0.90
     });
 
     this.solutionBank.set('blast_search', {
       fix: 'Use NCBI BLAST+ for sequence searches',
-      code: `from Bio.Blast import NCBIWWW\nfrom Bio.Blast import NCBIXML\n\nresult_handle = NCBIWWW.qblast("blastn", "nt", sequence)\nblast_record = NCBIXML.read(result_handle)`,
+      code: 'from Bio.Blast import NCBIWWW\\nfrom Bio.Blast import NCBIXML\\n\\nresult_handle = NCBIWWW.qblast("blastn", "nt", sequence)\\nblast_record = NCBIXML.read(result_handle)',
       confidence: 0.88
     });
 
     this.solutionBank.set('crispr_design', {
       fix: 'Design CRISPR guides with proper PAM sequences',
-      code: `def find_pam_sites(sequence, pam="NGG"):\n    sites = []\n    for i in range(len(sequence) - 2):\n        if sequence[i:i+3].endswith("GG"):\n            guide = sequence[max(0, i-20):i]\n            sites.append({"guide": guide, "position": i})\n    return sites`,
+      code: 'def find_pam_sites(sequence, pam="NGG"):\\n    sites = []\\n    for i in range(len(sequence) - 2):\\n        if sequence[i:i+3].endswith("GG"):\\n            guide = sequence[max(0, i-20):i]\\n            sites.append({"guide": guide, "position": i})\\n    return sites',
       confidence: 0.85
     });
 
@@ -420,13 +433,13 @@ Rules:
     
     if (bestMatch) {
       if (bestMatch.code) {
-        return `Here's a solution from my knowledge base:\n\n${bestMatch.fix}\n\n\`\`\`python\n${bestMatch.code}\n\`\`\`\n\nNote: External AI providers are currently unavailable, but I can still help with bioinformatics tasks using my built-in knowledge.`;
+        return "Here's a solution from my knowledge base:\\n\\n" + bestMatch.fix + "\\n\\n```python\\n" + bestMatch.code + "\\n```\\n\\nNote: External AI providers are currently unavailable, but I can still help with bioinformatics tasks using my built-in knowledge.";
       } else {
         return bestMatch.fix;
       }
     }
     
-    return `I'm currently running on backup systems since external AI providers aren't available. I can still help you with:\n\n• CRISPR guide design\n• PCR simulation\n• Sequence analysis\n• File format conversion\n• Protein structure analysis\n\nWhat bioinformatics task would you like help with?`;
+    return "I'm currently running on backup systems since external AI providers aren't available. I can still help you with:\\n\\n• CRISPR guide design\\n• PCR simulation\\n• Sequence analysis\\n• File format conversion\\n• Protein structure analysis\\n\\nWhat bioinformatics task would you like help with?";
   }
 
   private calculateSimilarity(text1: string, text2: string): number {

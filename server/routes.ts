@@ -71,6 +71,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
 
+  // Admin authentication middleware
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    try {
+      if (!req.user || req.user.tier !== 'enterprise') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+      
+      // Check if user email indicates admin privileges (simple check)
+      const adminEmails = ['admin@bioscriptor.com', 'support@bioscriptor.com'];
+      if (!adminEmails.includes(req.user.email)) {
+        return res.status(403).json({ error: 'Insufficient privileges' });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Admin middleware error:', error);
+      return res.status(500).json({ error: 'Admin validation failed' });
+    }
+  };
+
   // Chat routes
   app.post("/api/chat/message", requireAuth, upload.single('file'), async (req: any, res) => {
     try {
@@ -154,6 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await capturePaypalOrder(req, res);
   });
 
+  // Subscription routes
   app.post("/api/subscription", requireAuth, async (req: any, res) => {
     try {
       const { paypalSubscriptionId, tier } = req.body;
@@ -176,6 +197,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Subscription error:', error);
       res.status(500).json({ error: 'Failed to create subscription' });
+    }
+  });
+
+  app.get("/api/subscription/current", requireAuth, async (req: any, res) => {
+    try {
+      const subscription = await storage.getActiveSubscription(req.user.id);
+      res.json(subscription);
+    } catch (error) {
+      console.error('Subscription fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription' });
+    }
+  });
+
+  app.get("/api/plan-limits/:tier", requireAuth, async (req: any, res) => {
+    try {
+      const { tier } = req.params;
+      const planLimit = await storage.getPlanLimit(tier as any);
+      res.json(planLimit);
+    } catch (error) {
+      console.error('Plan limits fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch plan limits' });
+    }
+  });
+
+  // Admin routes
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Remove sensitive information
+      const publicUsers = users.map(user => ({
+        ...user,
+        firebaseUid: undefined
+      }));
+      
+      res.json(publicUsers);
+    } catch (error) {
+      console.error('Admin users fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.get("/api/admin/subscriptions", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const subscriptions = await storage.getAllSubscriptions();
+      res.json(subscriptions);
+    } catch (error) {
+      console.error('Admin subscriptions fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    }
+  });
+
+  app.get("/api/admin/logs", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const logs = await storage.getAdminLogs(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error('Admin logs fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch admin logs' });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/reset-limit", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const updatedUser = await storage.resetUserDailyLimit(parseInt(userId));
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Log admin action
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'reset_user_limit',
+        targetResource: `user:${userId}`,
+        details: 'Reset daily query limit'
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Admin reset limit error:', error);
+      res.status(500).json({ error: 'Failed to reset user limit' });
+    }
+  });
+
+  app.patch("/api/admin/plan-limits/:tier", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { tier } = req.params;
+      const updates = req.body;
+      
+      const updatedPlanLimit = await storage.updatePlanLimit(tier as any, updates);
+      
+      if (!updatedPlanLimit) {
+        return res.status(404).json({ error: 'Plan limit not found' });
+      }
+      
+      // Log admin action
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'update_plan_limits',
+        targetResource: `plan:${tier}`,
+        details: `Updated plan limits: ${JSON.stringify(updates)}`
+      });
+      
+      res.json(updatedPlanLimit);
+    } catch (error) {
+      console.error('Admin plan limits update error:', error);
+      res.status(500).json({ error: 'Failed to update plan limits' });
+    }
+  });
+
+  app.get("/api/admin/analytics/dashboard", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const subscriptions = await storage.getAllSubscriptions();
+      const logs = await storage.getAdminLogs(1000);
+      
+      const analytics = {
+        totalUsers: users.length,
+        activeUsers: users.filter(u => u.queryCount > 0).length,
+        usersByTier: {
+          free: users.filter(u => u.tier === 'free').length,
+          premium: users.filter(u => u.tier === 'premium').length,
+          enterprise: users.filter(u => u.tier === 'enterprise').length,
+        },
+        totalSubscriptions: subscriptions.length,
+        activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
+        recentActivity: logs.slice(0, 20),
+        queriesLast24h: logs.filter(log => 
+          log.action === 'ai_query' && 
+          new Date(log.timestamp).getTime() > Date.now() - 24 * 60 * 60 * 1000
+        ).length
+      };
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error('Admin analytics error:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // Chat session management
+  app.get("/api/chat/sessions/:sessionId", requireAuth, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getChatSession(parseInt(sessionId));
+      
+      if (!session || session.userId !== req.user.id) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      res.json(session);
+    } catch (error) {
+      console.error('Session fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch session' });
+    }
+  });
+
+  app.delete("/api/chat/sessions/:sessionId", requireAuth, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getChatSession(parseInt(sessionId));
+      
+      if (!session || session.userId !== req.user.id) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      const deleted = await storage.deleteChatSession(parseInt(sessionId));
+      res.json({ success: deleted });
+    } catch (error) {
+      console.error('Session delete error:', error);
+      res.status(500).json({ error: 'Failed to delete session' });
     }
   });
 

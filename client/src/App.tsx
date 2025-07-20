@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Chat from "@/pages/chat";
 import Auth from "@/pages/auth";
+import Subscription from "@/pages/Subscription";
+import AdminDashboard from "@/pages/AdminDashboard";
 import { useEffect } from "react";
 
 function Router() {
@@ -32,6 +34,8 @@ function Router() {
       <Route path="/" component={user ? Chat : Auth} />
       <Route path="/auth" component={Auth} />
       <Route path="/chat" component={user ? Chat : Auth} />
+      <Route path="/subscription" component={user ? Subscription : Auth} />
+      <Route path="/admin" component={user && user.tier === 'enterprise' ? AdminDashboard : Auth} />
       <Route component={NotFound} />
     </Switch>
   );

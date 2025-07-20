@@ -1,0 +1,71 @@
+I want you to implement a subscription system for my AI chat app **BioScriptor**, which uses open-source models (e.g., GROQ, Together, OpenRouter, Cohere). The app is built with Firebase Auth and Firestore for user authentication and storage.
+
+---
+
+🎯 Goal: Monetize the app through free and paid plans while limiting feature access based on the user’s plan.
+
+---
+
+🧾 Pricing Tiers:
+
+1. 🟢 Free – $0/month
+   - Limit: 10 messages/day
+   - 1 model access (OpenRouter)
+   - Max 800 characters per prompt, 500 token output
+   - No history saving, no export
+   - Watermarked replies (e.g., “Powered by BioScriptor”)
+   - 1 concurrent chat only
+
+2. 🟡 Pro – $9.99/month
+   - Unlimited messages
+   - Access to all models
+   - Full memory & context
+   - Export chats to PDF/Word
+   - Save & rename chat history
+   - Faster response speed
+
+3. 🔵 Team – $24.99/month (up to 5 users)
+   - All Pro features
+   - Shared team chat history
+   - Admin access, analytics
+   - Collaborative chatboards
+   - API usage logs
+
+4. 🟣 Pro Lifetime – $99 one-time
+   - Same as Pro but forever
+   - VIP badge + early access
+
+---
+
+📢 Add-ons:
+- Extra API Calls: $5 / 10,000
+- Model Priority Queue: $3/month
+- Custom AI Personality: $5/month
+
+---
+
+💳 Stack:
+- Stripe or Paystack for payments
+- Firebase Auth + Firestore for user plans
+- Middleware to check plan level before each feature/API access
+
+---
+
+✅ Enforce these in code:
+- Middleware checks for `user.plan` before each chat request
+- `user.remainingMessages` for daily limits on Free
+- Lock/blur UI buttons for Pro-only tools
+- Auto-disable premium features if subscription ends
+- Show upgrade CTAs like:
+   - “You’ve hit your daily limit. Upgrade to continue”
+   - “This is a Pro feature. Upgrade to unlock it”
+
+---
+
+🎁 Bonus (optional):
+- Add 7-day Pro trial for new users (no card required)
+- Add annual plan option for Pro and Team tiers
+
+---
+
+Implement this with clear folder structure, backend logic (Node.js/Express or Python/FastAPI), and comments explaining plan enforcement logic. Integrate the payment system (Stripe or Paystack) to upgrade the `user.plan` in Firestore. Make it clean and secure.
