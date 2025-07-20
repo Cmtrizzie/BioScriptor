@@ -1,0 +1,392 @@
+// Fault-tolerant AI provider system with 5-layer fallback
+export interface AIProvider {
+  name: string;
+  maxRetries: number;
+  maxTokens?: number;
+  priority: number;
+}
+
+export interface AIResponse {
+  content: string;
+  provider: string;
+  fallbackUsed: boolean;
+  processingTime: number;
+}
+
+export interface ProviderConfig {
+  groq?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  together?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  openrouter?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  cohere?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  ollama?: {
+    endpoint: string;
+    model: string;
+  };
+}
+
+const PROVIDERS: AIProvider[] = [
+  { name: 'groq', maxRetries: 3, maxTokens: 4000, priority: 1 },
+  { name: 'together', maxRetries: 2, maxTokens: 4000, priority: 2 },
+  { name: 'openrouter', maxRetries: 2, maxTokens: 4000, priority: 3 },
+  { name: 'cohere', maxRetries: 1, maxTokens: 4000, priority: 4 },
+  { name: 'ollama', maxRetries: 1, maxTokens: 2000, priority: 5 }
+];
+
+export class FaultTolerantAI {
+  private config: ProviderConfig;
+  private solutionBank: Map<string, any>;
+
+  constructor(config: ProviderConfig) {
+    this.config = config;
+    this.solutionBank = new Map();
+    this.initializeSolutionBank();
+  }
+
+  async processQuery(
+    prompt: string, 
+    context?: any,
+    toneDetection?: 'casual' | 'formal' | 'frustrated' | 'urgent'
+  ): Promise<AIResponse> {
+    const startTime = Date.now();
+    
+    // Security check first
+    this.validateInput(prompt);
+    
+    // Enhance prompt with tone and context
+    const enhancedPrompt = this.enhancePrompt(prompt, context, toneDetection);
+    
+    // Try each provider in order
+    for (const provider of PROVIDERS) {
+      try {
+        const response = await this.tryProvider(provider, enhancedPrompt);
+        if (response) {
+          return {
+            content: response,
+            provider: provider.name,
+            fallbackUsed: provider.priority > 1,
+            processingTime: Date.now() - startTime
+          };
+        }
+      } catch (error) {
+        console.error(`Provider ${provider.name} failed:`, error);
+        continue;
+      }
+    }
+
+    // Final fallback: Solution bank
+    const fallbackResponse = this.getSolutionBankResponse(prompt);
+    return {
+      content: fallbackResponse,
+      provider: 'solution-bank',
+      fallbackUsed: true,
+      processingTime: Date.now() - startTime
+    };
+  }
+
+  private async tryProvider(provider: AIProvider, prompt: string): Promise<string | null> {
+    for (let attempt = 0; attempt < provider.maxRetries; attempt++) {
+      try {
+        switch (provider.name) {
+          case 'groq':
+            return await this.callGroq(prompt, provider.maxTokens);
+          case 'together':
+            return await this.callTogether(prompt, provider.maxTokens);
+          case 'openrouter':
+            return await this.callOpenRouter(prompt, provider.maxTokens);
+          case 'cohere':
+            return await this.callCohere(prompt, provider.maxTokens);
+          case 'ollama':
+            return await this.callOllama(prompt, provider.maxTokens);
+          default:
+            throw new Error(`Unknown provider: ${provider.name}`);
+        }
+      } catch (error) {
+        if (attempt === provider.maxRetries - 1) throw error;
+        await this.delay(Math.pow(2, attempt) * 1000); // Exponential backoff
+      }
+    }
+    return null;
+  }
+
+  private async callGroq(prompt: string, maxTokens?: number): Promise<string> {
+    if (!this.config.groq?.apiKey) throw new Error('Groq API key not configured');
+    
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.groq.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens || 4000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Groq API error: ${response.statusText}`);
+    
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  }
+
+  private async callTogether(prompt: string, maxTokens?: number): Promise<string> {
+    if (!this.config.together?.apiKey) throw new Error('Together API key not configured');
+    
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.together.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Llama-3-70b-chat-hf',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens || 4000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Together API error: ${response.statusText}`);
+    
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  }
+
+  private async callOpenRouter(prompt: string, maxTokens?: number): Promise<string> {
+    if (!this.config.openrouter?.apiKey) throw new Error('OpenRouter API key not configured');
+    
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.openrouter.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://biobuddy.dev',
+        'X-Title': 'BioScriptor',
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-3.5-sonnet',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens || 4000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`OpenRouter API error: ${response.statusText}`);
+    
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  }
+
+  private async callCohere(prompt: string, maxTokens?: number): Promise<string> {
+    if (!this.config.cohere?.apiKey) throw new Error('Cohere API key not configured');
+    
+    const response = await fetch('https://api.cohere.ai/v1/generate', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.cohere.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'command-r-plus',
+        prompt: prompt,
+        max_tokens: maxTokens || 4000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Cohere API error: ${response.statusText}`);
+    
+    const data = await response.json();
+    return data.generations[0]?.text || '';
+  }
+
+  private async callOllama(prompt: string, maxTokens?: number): Promise<string> {
+    const endpoint = this.config.ollama?.endpoint || 'http://localhost:11434';
+    const model = this.config.ollama?.model || 'codestral';
+    
+    const response = await fetch(`${endpoint}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        stream: false,
+        options: {
+          num_predict: maxTokens || 2000,
+          temperature: 0.7,
+        },
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Ollama API error: ${response.statusText}`);
+    
+    const data = await response.json();
+    return data.response || '';
+  }
+
+  private validateInput(input: string): void {
+    const BLACKLIST = [
+      'rm -rf', 'DROP DATABASE', 'eval(', 'exec(',
+      'child_process', 'System.exit', '__import__',
+      'subprocess', 'os.system', 'shell_exec'
+    ];
+
+    const threat = BLACKLIST.find(cmd => input.toLowerCase().includes(cmd.toLowerCase()));
+    if (threat) {
+      throw new Error(`Security violation: Blocked dangerous command: ${threat}`);
+    }
+
+    // Check for excessively long inputs
+    if (input.length > 50000) {
+      throw new Error('Input too long. Please limit to 50,000 characters.');
+    }
+  }
+
+  private enhancePrompt(
+    prompt: string, 
+    context?: any, 
+    tone?: 'casual' | 'formal' | 'frustrated' | 'urgent'
+  ): string {
+    let systemPrompt = `You are BioScriptor - a fault-tolerant bioinformatics coding assistant. `;
+    
+    // Adapt tone based on detection
+    switch (tone) {
+      case 'casual':
+        systemPrompt += `Use emojis and contractions in your responses. Keep it friendly and approachable. `;
+        break;
+      case 'formal':
+        systemPrompt += `Use academic tone and precise technical language. Be thorough and detailed. `;
+        break;
+      case 'frustrated':
+        systemPrompt += `Be empathetic and provide clear, step-by-step solutions. Acknowledge the difficulty. `;
+        break;
+      case 'urgent':
+        systemPrompt += `Provide immediate, actionable steps. Be concise and focused on solutions. `;
+        break;
+      default:
+        systemPrompt += `Be helpful and informative. `;
+    }
+
+    systemPrompt += `
+
+Rules:
+1. NEVER suggest dangerous commands or operations
+2. Truncate long outputs to essential information
+3. Use only MIT-licensed or open-source solutions
+4. Focus on bioinformatics and molecular biology
+5. Provide working code examples when relevant
+
+`;
+
+    if (context?.fileAnalysis) {
+      systemPrompt += `Context: User uploaded a ${context.fileAnalysis.type} file with ${context.fileAnalysis.sequenceCount || 'unknown'} sequences. `;
+    }
+
+    return systemPrompt + prompt;
+  }
+
+  private detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
+    const lowerMessage = message.toLowerCase();
+    
+    // Frustrated indicators
+    if (lowerMessage.includes('error') || lowerMessage.includes('broken') || 
+        lowerMessage.includes('not working') || lowerMessage.includes('help!')) {
+      return 'frustrated';
+    }
+    
+    // Urgent indicators
+    if (lowerMessage.includes('urgent') || lowerMessage.includes('asap') || 
+        lowerMessage.includes('immediately') || lowerMessage.includes('quick')) {
+      return 'urgent';
+    }
+    
+    // Casual indicators
+    if (lowerMessage.includes('hey') || lowerMessage.includes('gonna') || 
+        lowerMessage.includes('wanna') || /[😊🙂👍]/.test(message)) {
+      return 'casual';
+    }
+    
+    // Formal indicators (default to formal for technical requests)
+    if (lowerMessage.includes('please provide') || lowerMessage.includes('could you') ||
+        lowerMessage.includes('analysis') || lowerMessage.includes('implementation')) {
+      return 'formal';
+    }
+    
+    return 'formal'; // Default
+  }
+
+  private initializeSolutionBank(): void {
+    // Pre-indexed solutions for common bioinformatics problems
+    this.solutionBank.set('sequence_analysis', {
+      fix: 'Use BioPython for sequence analysis',
+      code: `from Bio.Seq import Seq\nfrom Bio.SeqUtils import GC\n\nseq = Seq("ATCGATCGATCG")\nprint(f"GC content: {GC(seq):.1f}%")`,
+      confidence: 0.95
+    });
+
+    this.solutionBank.set('file_parsing', {
+      fix: 'Parse FASTA files with BioPython',
+      code: `from Bio import SeqIO\n\nfor record in SeqIO.parse("sequences.fasta", "fasta"):\n    print(f"ID: {record.id}, Length: {len(record.seq)}")`,
+      confidence: 0.90
+    });
+
+    this.solutionBank.set('blast_search', {
+      fix: 'Use NCBI BLAST+ for sequence searches',
+      code: `from Bio.Blast import NCBIWWW\nfrom Bio.Blast import NCBIXML\n\nresult_handle = NCBIWWW.qblast("blastn", "nt", sequence)\nblast_record = NCBIXML.read(result_handle)`,
+      confidence: 0.88
+    });
+
+    this.solutionBank.set('crispr_design', {
+      fix: 'Design CRISPR guides with proper PAM sequences',
+      code: `def find_pam_sites(sequence, pam="NGG"):\n    sites = []\n    for i in range(len(sequence) - 2):\n        if sequence[i:i+3].endswith("GG"):\n            guide = sequence[max(0, i-20):i]\n            sites.append({"guide": guide, "position": i})\n    return sites`,
+      confidence: 0.85
+    });
+  }
+
+  private getSolutionBankResponse(prompt: string): string {
+    const lowerPrompt = prompt.toLowerCase();
+    
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const [key, solution] of this.solutionBank) {
+      const score = this.calculateSimilarity(lowerPrompt, key);
+      if (score > bestScore && score > 0.3) {
+        bestScore = score;
+        bestMatch = solution;
+      }
+    }
+    
+    if (bestMatch) {
+      return `⚠️ Using backup systems - Here's a solution from my knowledge base:\n\n${bestMatch.fix}\n\n\`\`\`python\n${bestMatch.code}\n\`\`\`\n\nConfidence: ${(bestMatch.confidence * 100).toFixed(0)}%`;
+    }
+    
+    return `⚠️ Using backup systems - I'm experiencing connectivity issues with external AI providers. Here are some general bioinformatics resources:\n\n- BioPython documentation: https://biopython.org/\n- NCBI tools: https://www.ncbi.nlm.nih.gov/tools/\n- EBI services: https://www.ebi.ac.uk/services\n\nPlease try your query again in a moment, or check the specific tool documentation for your task.`;
+  }
+
+  private calculateSimilarity(text1: string, text2: string): number {
+    const words1 = text1.split(' ');
+    const words2 = text2.split(' ');
+    const intersection = words1.filter(word => words2.includes(word));
+    return intersection.length / Math.max(words1.length, words2.length);
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}

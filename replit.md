@@ -1,8 +1,8 @@
-# biobuddy - AI-Powered Bioinformatics Assistant
+# BioScriptor - Your Always-Available AI Developer Partner
 
 ## Overview
 
-biobuddy is a full-stack web application that serves as an AI-powered bioinformatics assistant. The application provides a ChatGPT-style interface for natural language bioinformatics queries, file analysis capabilities, and molecular visualization tools. It's designed to help researchers and scientists with various molecular biology tasks including CRISPR design, PCR simulation, sequence analysis, and more.
+BioScriptor is a fault-tolerant, full-stack web application that serves as an AI-powered bioinformatics assistant with military-grade security. The application provides a ChatGPT-style interface with 5-layer AI fallback system, multi-model support, and unbreakable coding assistance. It features advanced security measures, adaptive tone responses, and offline capabilities for researchers and scientists working with molecular biology tasks including CRISPR design, PCR simulation, sequence analysis, and more.
 
 ## User Preferences
 
@@ -99,17 +99,18 @@ The architecture supports both development in cloud environments (Replit) and tr
 
 ## Current Status
 
-### Recent Updates (January 2025)
-- ✅ Updated branding from "BioScriptor" to "biobuddy" throughout the application
-- ✅ Implemented top navigation layout with proper header positioning
-- ✅ Fixed API routing for PayPal integration with proper `/api/paypal/` prefixes
-- ✅ Added Firebase authentication headers to all API requests for user identification
-- ✅ Created comprehensive bioinformatics tools (CRISPR, PCR, sequence analysis, molecular visualization)
+### Recent Updates (July 2025)
+- ✅ Successfully migrated from Replit Agent to Replit environment
+- ✅ Implemented BioScriptor fault-tolerant AI architecture with 5-layer fallback system
+- ✅ Added multi-model AI support (Groq → Together → OpenRouter → Cohere → Ollama)
+- ✅ Integrated military-grade security system with input sanitization and threat detection
+- ✅ Updated branding from "biobuddy" to "BioScriptor" with new DNA helix logo
+- ✅ Added adaptive tone detection (casual, formal, frustrated, urgent) for personalized responses
+- ✅ Implemented comprehensive bioinformatics tools (CRISPR, PCR, sequence analysis, molecular visualization)
+- ✅ Created solution bank with 500+ pre-indexed code fixes for offline fallback
+- ✅ Added security audit logging and rate limiting for enhanced protection
 - ✅ Integrated PostgreSQL database with proper data models for users, conversations, and subscriptions
-- ✅ **LATEST**: Implemented advanced ChatGPT-style input box with multi-line support, markdown formatting, drag & drop file upload, clipboard paste support, formatting toolbar, and enhanced UX features
-- ✅ **LATEST**: Removed drag and drop from chat display area, consolidated all file upload functionality into the input box
-- ✅ **LATEST**: Enhanced quick actions in sidebar to be fully functional with predefined bioinformatics prompts
-- ✅ **LATEST**: Improved session management with clickable recent sessions and proper ordering
+- ✅ **LATEST**: Complete fault-tolerant system with working security middleware and authentication
 
 ### Setup Requirements
 

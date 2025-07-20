@@ -43,15 +43,28 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </button>
             
             <div className="relative">
-              <svg className="w-8 h-8 text-bio-blue dark:text-bio-teal dna-helix" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L13.5 4.5L15 2L16.5 4.5L18 2L19.5 4.5L21 2V4L19.5 6.5L18 4L16.5 6.5L15 4L13.5 6.5L12 4L10.5 6.5L9 4L7.5 6.5L6 4L4.5 6.5L3 4V2L4.5 4.5L6 2L7.5 4.5L9 2L10.5 4.5L12 2Z"/>
-                <path d="M12 22L10.5 19.5L9 22L7.5 19.5L6 22L4.5 19.5L3 22V20L4.5 17.5L6 20L7.5 17.5L9 20L10.5 17.5L12 20L13.5 17.5L15 20L16.5 17.5L18 20L19.5 17.5L21 20V22L19.5 19.5L18 22L16.5 19.5L15 22L13.5 19.5L12 22Z"/>
+              <svg className="w-8 h-8" viewBox="0 0 512 512">
+                <circle cx="256" cy="256" r="240" fill="#1F2937" stroke="#374151" strokeWidth="4"/>
+                <path d="M 140 180 Q 120 180 120 200 L 120 240 Q 120 260 100 260 Q 120 260 120 280 L 120 320 Q 120 340 140 340" 
+                      fill="none" stroke="white" strokeWidth="12" strokeLinecap="round"/>
+                <path d="M 372 180 Q 392 180 392 200 L 392 240 Q 392 260 412 260 Q 392 260 392 280 L 392 320 Q 392 340 372 340" 
+                      fill="none" stroke="white" strokeWidth="12" strokeLinecap="round"/>
+                <g transform="translate(256, 260)">
+                  <path d="M -60 -120 C -40 -100, -40 -80, -60 -60 C -80 -40, -80 -20, -60 0 C -40 20, -40 40, -60 60 C -80 80, -80 100, -60 120" 
+                        fill="none" stroke="#10B981" strokeWidth="8" strokeLinecap="round"/>
+                  <path d="M 60 -120 C 40 -100, 40 -80, 60 -60 C 80 -40, 80 -20, 60 0 C 40 20, 40 40, 60 60 C 80 80, 80 100, 60 120" 
+                        fill="none" stroke="#10B981" strokeWidth="8" strokeLinecap="round"/>
+                  <line x1="-60" y1="-90" x2="60" y2="-90" stroke="#3B82F6" strokeWidth="4"/>
+                  <line x1="-60" y1="-30" x2="60" y2="-30" stroke="#3B82F6" strokeWidth="4"/>
+                  <line x1="-60" y1="30" x2="60" y2="30" stroke="#3B82F6" strokeWidth="4"/>
+                  <line x1="-60" y1="90" x2="60" y2="90" stroke="#3B82F6" strokeWidth="4"/>
+                </g>
               </svg>
-              <div className="absolute -top-1 -right-1 text-bio-teal font-mono text-xs font-bold">{}</div>
+              <div className="absolute -top-1 -right-1 text-green-500 font-mono text-xs font-bold">🛡️</div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-bio-blue dark:text-white">biobuddy</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">AI-Powered Bioinformatics</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">BioScriptor</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Fault-Tolerant AI Partner</p>
             </div>
           </div>
 

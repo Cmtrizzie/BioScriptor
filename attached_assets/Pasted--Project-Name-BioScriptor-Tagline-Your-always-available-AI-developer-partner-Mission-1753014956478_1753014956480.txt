@@ -1,0 +1,223 @@
+
+
+🧠 Project Name: BioScriptor  
+Tagline: "Your always-available AI developer partner"  
+Mission: Unbreakable coding assistance with zero cost  
+
+---
+
+🛡️ Core Principles  
+1. 100% open-source models  
+2. Five-layer fallback system  
+3. Military-grade security  
+4. Offline-capable architecture  
+5. Adaptive tone responses  
+
+---
+
+🔧 Fault-Tolerant Architecture  
+```mermaid
+graph TD
+    A[User Query] --> B{Primary Providers}
+    B -->|Success| C[Return Response]
+    B -->|Failure| D[Cache Check]
+    D -->|Hit| E[Return Cached]
+    D -->|Miss| F{Secondary Providers}
+    F -->|Success| G[Cache & Return]
+    F -->|Failure| H[Local Ollama]
+    H -->|Running| I[Return Local]
+    H -->|Failed| J[Solution Bank]
+    J --> K[Return Best Match]
+```
+
+---
+
+🧩 Core Features  
+| Feature | Implementation |  
+|---------|----------------|  
+| 💬 Smart Chat | Syntax-highlighted input with auto-scroll |  
+| 🧠 Multi-Model | Groq → Together → OpenRouter → Cohere → Local |  
+| 🔒 Security | Input sanitization + dangerous command blocking |  
+| 🧪 Context Aware | File/error awareness in VS Code |  
+| 🗣️ Tone Adaptive | Formal/casual/frustrated/urgent modes |  
+| ⚡ Local Fallback | Ollama with Codestral model |  
+| 💾 Solution Bank | 500+ pre-indexed code fixes |  
+
+---
+
+🔌 Model Strategy  
+| Provider | Trigger |  
+|----------|---------|  
+| Groq | First choice (<100 tokens) |  
+| Together | Code-specific tasks |  
+| OpenRouter | Fallback with context |  
+| Cohere | Documentation/long context |  
+| Ollama | Offline/emergency mode |  
+
+---
+
+🛠️ Tech Stack  
+**Frontend**: Next.js 15 + Tailwind  
+**Backend**: Node.js 20 + Hono  
+**AI Routing**: Token-based optimizer  
+**Security**: WebCrypto + Sanitization  
+**Hosting**: Cloudflare Workers  
+**Local AI**: Ollama in Docker  
+
+---
+
+🔐 Environment Setup  
+```bash
+# .env.example
+GROQ_API_KEY="your_key"
+TOGETHER_API_KEY="your_key"
+ENCRYPTION_KEY="32_char_hex"
+SANDBOX_MODE="true"
+MAX_TOKENS="4000"
+```
+
+---
+
+💡 System Prompt  
+```markdown
+You are BioScriptor - fault-tolerant coding partner. Adapt to:
+
+Tone Detection:
+[casual] → Use emojis/contractions
+[formal] → Academic tone
+[frustrated] → Empathetic solutions
+[urgent] → Actionable steps
+
+Rules:
+1. NEVER suggest dangerous commands
+2. Truncate long outputs
+3. MIT-licensed solutions only
+4. Acknowledge fallback status
+
+Fallback Protocol:
+"⚠️ Using backup systems - [solution]"
+```
+
+---
+
+🚀 Workflow  
+```mermaid
+sequenceDiagram
+    User->>Frontend: Ask question
+    Frontend->>Security: Sanitize input
+    Security->>Router: Route request
+    Router->>AI: Try providers (1-4)
+    AI->>Router: Response/Failure
+    alt All providers fail
+        Router->>Local: Try Ollama
+        Local->>Router: Local response
+    else
+        Router->>Frontend: Normal response
+    end
+    Frontend->>User: Display with status
+```
+
+---
+
+⚙️ Key Components  
+
+**1. Fault-Tolerant Query Handler**  
+```typescript
+async function resilientQuery(prompt: string) {
+  const providers = [
+    { name: 'groq', retries: 3 },
+    { name: 'together', retries: 2 },
+    { name: 'openrouter', retries: 2 },
+    { name: 'cohere', retries: 1 }
+  ];
+  
+  for (const provider of providers) {
+    try {
+      return await fetchWithRetry(provider.name, prompt, provider.retries);
+    } catch (error) {
+      logError(error);
+    }
+  }
+  return localFallback(prompt);
+}
+```
+
+**2. Local Fallback System**  
+```dockerfile
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    command: ["serve"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+```
+
+**3. Solution Bank**  
+```javascript
+// solution-bank.js
+export default {
+  "react_hook_rerender": {
+    fix: "Add dependencies to useEffect array",
+    code: "useEffect(() => {}, [dep1, dep2])",
+    confidence: 0.92
+  },
+  "python_import_error": {
+    fix: "Check PYTHONPATH and virtual env",
+    commands: ["python -m site", "echo $PYTHONPATH"]
+  }
+};
+```
+
+**4. Security Shield**  
+```javascript
+const BLACKLIST = [
+  "rm -rf", "DROP DATABASE", "eval(",
+  "child_process", "System.exit"
+];
+
+export function sanitizeInput(input) {
+  const threat = BLACKLIST.find(cmd => input.includes(cmd));
+  if (threat) throw Error(`Blocked: ${threat}`);
+  return input.trim();
+}
+```
+
+---
+
+🚀 Deployment Script  
+```bash
+# One-click Replit setup
+npm init -y && \
+npm install hono ollama-node @hono/node-server && \
+curl -O https://raw.githubusercontent.com/bioscriptor/core/main/server.js && \
+echo "Installed BioScriptor! Run: npm start"
+```
+
+---
+
+🔜 Roadmap  
+```mermaid
+gantt
+    title Q3-Q4 2025
+    dateFormat  YYYY-MM-DD
+    section Core
+    Security Audit       : done, sec1, 2025-08-01, 7d
+    VS Code Extension    : active, ext1, 2025-08-08, 10d
+    Local Optimization   : ext2, after ext1, 2025-08-18, 5d
+    section Reliability
+    Multi-Region Support : reg1, 2025-08-25, 8d
+    Predictive Failover  : fail1, after reg1, 2025-09-02, 7d
+```
+
+---
+
+✨ Launch Features  
+- 5-layer fault tolerance  
+- Military-grade security  
+- Offline-capable with Ollama  
+- Preloaded solution database  
+- Adaptive tone responses  
+- Cloudflare edge deployment  
+

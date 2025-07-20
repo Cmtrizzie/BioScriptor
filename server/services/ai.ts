@@ -1,31 +1,133 @@
+
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
+import { FaultTolerantAI, ProviderConfig } from './ai-providers';
+import { securityManager } from './security';
 
 interface BioinformaticsQuery {
   type: 'crispr' | 'pcr' | 'codon_optimization' | 'sequence_analysis' | 'general';
   parameters: Record<string, any>;
 }
 
+// Initialize the fault-tolerant AI system
+const aiConfig: ProviderConfig = {
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    endpoint: 'https://api.groq.com/openai/v1/chat/completions'
+  },
+  together: {
+    apiKey: process.env.TOGETHER_API_KEY || '',
+    endpoint: 'https://api.together.xyz/v1/chat/completions'
+  },
+  openrouter: {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions'
+  },
+  cohere: {
+    apiKey: process.env.COHERE_API_KEY || '',
+    endpoint: 'https://api.cohere.ai/v1/generate'
+  },
+  ollama: {
+    endpoint: process.env.OLLAMA_ENDPOINT || 'http://localhost:11434',
+    model: 'codestral'
+  }
+};
+
+const faultTolerantAI = new FaultTolerantAI(aiConfig);
+
 export async function processQuery(message: string, fileAnalysis?: BioFileAnalysis): Promise<string> {
-  // Simple natural language processing to determine query type
-  const query = parseQuery(message);
-  
   try {
-    switch (query.type) {
-      case 'crispr':
-        return await processCRISPRQuery(message, query.parameters, fileAnalysis);
-      case 'pcr':
-        return await processPCRQuery(message, query.parameters, fileAnalysis);
-      case 'codon_optimization':
-        return await processCodonOptimizationQuery(message, query.parameters, fileAnalysis);
-      case 'sequence_analysis':
-        return await processSequenceAnalysisQuery(message, fileAnalysis);
-      default:
-        return await processGeneralQuery(message, fileAnalysis);
+    // Security validation
+    const sanitizedMessage = securityManager.sanitizeInput(message);
+    
+    // Detect tone and context
+    const tone = detectTone(sanitizedMessage);
+    const query = parseQuery(sanitizedMessage);
+    
+    // For bioinformatics-specific queries, use specialized handlers
+    if (query.type !== 'general') {
+      return await processBioinformaticsQuery(query, sanitizedMessage, fileAnalysis);
     }
+    
+    // For general queries, use the fault-tolerant AI system
+    const context = fileAnalysis ? { fileAnalysis } : undefined;
+    const aiResponse = await faultTolerantAI.processQuery(sanitizedMessage, context, tone);
+    
+    // Add fallback indicator if needed
+    let response = aiResponse.content;
+    if (aiResponse.fallbackUsed && aiResponse.provider !== 'solution-bank') {
+      response = `⚠️ Using backup AI systems (${aiResponse.provider}) - ${response}`;
+    }
+    
+    // Security audit
+    securityManager.createAuditLog({
+      action: 'ai_query',
+      resource: 'chat_message',
+      metadata: {
+        provider: aiResponse.provider,
+        fallbackUsed: aiResponse.fallbackUsed,
+        processingTime: aiResponse.processingTime,
+        tone: tone
+      }
+    });
+    
+    return securityManager.sanitizeCodeOutput(response);
+    
   } catch (error) {
     console.error('AI processing error:', error);
+    
+    if (error.message.includes('Security violation')) {
+      return `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`;
+    }
+    
     return "I apologize, but I encountered an error processing your request. Please try rephrasing your question or check if your file format is supported.";
   }
+}
+
+async function processBioinformaticsQuery(
+  query: BioinformaticsQuery, 
+  message: string, 
+  fileAnalysis?: BioFileAnalysis
+): Promise<string> {
+  switch (query.type) {
+    case 'crispr':
+      return await processCRISPRQuery(message, query.parameters, fileAnalysis);
+    case 'pcr':
+      return await processPCRQuery(message, query.parameters, fileAnalysis);
+    case 'codon_optimization':
+      return await processCodonOptimizationQuery(message, query.parameters, fileAnalysis);
+    case 'sequence_analysis':
+      return await processSequenceAnalysisQuery(message, fileAnalysis);
+    default:
+      return await processGeneralQuery(message, fileAnalysis);
+  }
+}
+
+function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
+  const lowerMessage = message.toLowerCase();
+  
+  // Frustrated indicators
+  if (lowerMessage.includes('error') || lowerMessage.includes('broken') || 
+      lowerMessage.includes('not working') || lowerMessage.includes('help!') ||
+      lowerMessage.includes('stuck') || lowerMessage.includes('frustrated')) {
+    return 'frustrated';
+  }
+  
+  // Urgent indicators
+  if (lowerMessage.includes('urgent') || lowerMessage.includes('asap') || 
+      lowerMessage.includes('immediately') || lowerMessage.includes('quick') ||
+      lowerMessage.includes('deadline') || lowerMessage.includes('emergency')) {
+    return 'urgent';
+  }
+  
+  // Casual indicators
+  if (lowerMessage.includes('hey') || lowerMessage.includes('gonna') || 
+      lowerMessage.includes('wanna') || lowerMessage.includes('cool') ||
+      lowerMessage.includes('awesome') || /[😊🙂👍]/.test(message)) {
+    return 'casual';
+  }
+  
+  // Formal indicators (default to formal for technical requests)
+  return 'formal';
 }
 
 function parseQuery(message: string): BioinformaticsQuery {
@@ -213,8 +315,8 @@ async function processGeneralQuery(message: string, fileAnalysis?: BioFileAnalys
     return "I can assist with molecular cloning workflows:\n\n- Restriction enzyme analysis\n- Vector selection\n- Insert design and optimization\n- Gibson Assembly planning\n- Golden Gate cloning strategies\n\nWhat specific cloning project are you working on? Please share your target sequence or vector information.";
   }
   
-  // Default response for general queries
-  return `I'm BioScriptor, your AI-powered bioinformatics assistant! I can help you with:
+  // Default response for general queries - now powered by BioScriptor
+  return `I'm BioScriptor, your fault-tolerant AI bioinformatics assistant! I can help you with:
 
 **Sequence Analysis:**
 - DNA/RNA/protein sequence analysis

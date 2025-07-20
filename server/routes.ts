@@ -5,6 +5,7 @@ import { insertUserSchema, insertChatSessionSchema, insertBioFileSchema } from "
 import { processQuery } from "./services/ai";
 import { analyzeBioFile } from "./services/bioinformatics";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { securityManager } from "./services/security";
 import multer from "multer";
 
 const upload = multer({ 
@@ -13,36 +14,56 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication middleware
+  // Security and authentication middleware
   const requireAuth = async (req: any, res: any, next: any) => {
-    const firebaseUid = req.headers['x-firebase-uid'];
-    if (!firebaseUid) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    let user = await storage.getUserByFirebaseUid(firebaseUid as string);
-    if (!user) {
-      // Create user if doesn't exist (first-time login)
-      const email = req.headers['x-firebase-email'] as string;
-      const displayName = req.headers['x-firebase-display-name'] as string;
-      const photoURL = req.headers['x-firebase-photo-url'] as string;
-      
-      if (!email) {
-        return res.status(400).json({ error: 'Email required' });
+    try {
+      // Rate limiting
+      const clientIp = req.ip || req.connection.remoteAddress;
+      if (securityManager.isRateLimited(clientIp, 100, 60000)) {
+        return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+      }
+
+      const firebaseUid = req.headers['x-firebase-uid'];
+      if (!firebaseUid) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Security audit
+      securityManager.createAuditLog({
+        userId: firebaseUid as string,
+        action: 'api_access',
+        resource: req.path,
+        metadata: { method: req.method, userAgent: req.headers['user-agent'] }
+      });
+
+      let user = await storage.getUserByFirebaseUid(firebaseUid as string);
+
+      if (!user) {
+        // Create user if doesn't exist (first-time login)
+        const email = req.headers['x-firebase-email'] as string;
+        const displayName = req.headers['x-firebase-display-name'] as string;
+        const photoURL = req.headers['x-firebase-photo-url'] as string;
+        
+        if (!email) {
+          return res.status(400).json({ error: 'Email required' });
+        }
+        
+        user = await storage.createUser({
+          email,
+          displayName,
+          photoURL,
+          firebaseUid: firebaseUid as string,
+          tier: 'free',
+          queryCount: 0,
+        });
       }
       
-      user = await storage.createUser({
-        email,
-        displayName,
-        photoURL,
-        firebaseUid: firebaseUid as string,
-        tier: 'free',
-        queryCount: 0,
-      });
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Security middleware error:', error);
+      return res.status(500).json({ error: 'Security validation failed' });
     }
-    
-    req.user = user;
-    next();
   };
 
   // User routes

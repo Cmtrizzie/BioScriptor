@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dnaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bracesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#1F2937" stroke="#374151" stroke-width="4"/>
+  
+  <!-- Left brace -->
+  <path d="M 140 180 
+           Q 120 180 120 200
+           L 120 240
+           Q 120 260 100 260
+           Q 120 260 120 280
+           L 120 320
+           Q 120 340 140 340" 
+        fill="none" stroke="url(#bracesGradient)" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Right brace -->
+  <path d="M 372 180 
+           Q 392 180 392 200
+           L 392 240
+           Q 392 260 412 260
+           Q 392 260 392 280
+           L 392 320
+           Q 392 340 372 340" 
+        fill="none" stroke="url(#bracesGradient)" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- DNA Double Helix -->
+  <g transform="translate(256, 260)">
+    <!-- Left strand -->
+    <path d="M -60 -120 
+             C -40 -100, -40 -80, -60 -60
+             C -80 -40, -80 -20, -60 0
+             C -40 20, -40 40, -60 60
+             C -80 80, -80 100, -60 120" 
+          fill="none" stroke="url(#dnaGradient)" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Right strand -->
+    <path d="M 60 -120 
+             C 40 -100, 40 -80, 60 -60
+             C 80 -40, 80 -20, 60 0
+             C 40 20, 40 40, 60 60
+             C 80 80, 80 100, 60 120" 
+          fill="none" stroke="url(#dnaGradient)" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Base pairs -->
+    <line x1="-60" y1="-90" x2="60" y2="-90" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="-60" x2="60" y2="-60" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="-30" x2="60" y2="-30" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="0" x2="60" y2="0" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="30" x2="60" y2="30" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="60" x2="60" y2="60" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-60" y1="90" x2="60" y2="90" stroke="#3B82F6" stroke-width="4"/>
+  </g>
+</svg>
