@@ -345,9 +345,16 @@ User: ${currentPrompt}`;
   }
 
   private initializeSolutionBank(): void {
+    // Basic knowledge responses
+    this.solutionBank.set('what_is_dna', {
+      fix: 'DNA (Deoxyribonucleic Acid) is the molecule that carries genetic instructions for the development and functioning of all known living organisms. Think of it as a blueprint that contains the instructions for building and maintaining an organism.\n\nKey points about DNA:\n\n1. Structure: It has a double helix shape, like a twisted ladder\n2. Building blocks: Made of nucleotides (A, T, C, G)\n3. Function: Stores and transmits genetic information\n4. Location: Found in the nucleus of cells\n\nWould you like to learn more about any specific aspect of DNA?',
+      code: '',
+      confidence: 0.99
+    });
+
     // Conversational responses
     this.solutionBank.set('greeting', {
-      fix: 'Hello! I\'m BioScriptor, your fault-tolerant AI bioinformatics assistant.',
+      fix: 'Hello! I\'m BioScriptor, your bioinformatics assistant. I can help you understand molecular biology concepts and analyze biological data. What would you like to learn about?',
       code: '',
       confidence: 0.98
     });
@@ -398,6 +405,12 @@ User: ${currentPrompt}`;
 
   private getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
+    
+    // Check for basic knowledge questions first
+    if (lowerPrompt.startsWith('what is dna') || lowerPrompt === 'dna?') {
+      const dnaInfo = this.solutionBank.get('what_is_dna');
+      return dnaInfo!.fix;
+    }
     
     // Direct pattern matching for common queries
     if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi ') || lowerPrompt.includes('hey')) {

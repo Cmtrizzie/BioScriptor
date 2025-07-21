@@ -1,0 +1,40 @@
+/* BioScriptor Brand Colors */
+:root {
+  --bioscriptor-primary: #00FFD1;     /* Bright teal for DNA helix */
+  --bioscriptor-secondary: #0891B2;   /* Blue for connecting strands */
+  --bioscriptor-dark: #011627;        /* Dark background */
+  --bioscriptor-text: #FFFFFF;        /* White text */
+  --bioscriptor-accent: #FF3366;      /* Accent color for highlights */
+}
+
+/* Logo Animation */
+.bioscriptor-logo-animate .dna-helix {
+  animation: rotate 3s infinite linear;
+  transform-origin: center;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Typography */
+.bioscriptor-heading {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+}
+
+/* Brand Gradients */
+.bioscriptor-gradient {
+  background: linear-gradient(135deg, var(--bioscriptor-primary), var(--bioscriptor-secondary));
+}
+
+/* Dark Mode Optimizations */
+.dark .bioscriptor-logo {
+  --bioscriptor-text: #FFFFFF;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 209, 0.3));
+}
