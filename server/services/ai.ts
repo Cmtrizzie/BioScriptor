@@ -752,41 +752,115 @@ export async function processQuery(
       return await processBioinformaticsQuery(query, sanitizedMessage, fileAnalysis);
     }
     
-    // For general queries, use the fault-tolerant AI system
-    const aiContext = {
+    // For general queries, use the fault-tolerant AI system with dynamic model selection
+    const modelContext = {
       conversation: {
-        history: conversationCtx.history.slice(-10), // Last 10 messages for context
+        history: conversationCtx.history.slice(-10),
         userSkillLevel: conversationCtx.userData?.skillLevel,
-        tone: tone
+        tone: tone,
+        allTopics: Array.from(context.memory.topics),
+        recentEntities: Array.from(context.memory.entities).slice(-5),
+        keyTerms: Array.from(context.memory.keyTerms)
       },
       fileAnalysis,
-      systemPrompt: `You are BioScriptor, an advanced bioinformatics AI assistant. 
-        Adapt your responses to the user's skill level (${userSkillLevel}) and tone (${tone}).
-        When providing code, include detailed explanations.
-        For biological concepts, use analogies appropriate to the user's level.`
+      // Select appropriate model based on query type
+      model: query.parameters.isCodeRelated ? 'code' : 
+             query.parameters.isScientific ? 'science' :
+             query.parameters.isBiological ? 'bio' :
+             query.parameters.isResearch ? 'research' : 'default',
+      systemPrompt: `You are BioScriptor, an advanced bioinformatics AI assistant with real-time adaptive capabilities.
+        Core traits:
+        - Friendly and engaging personality
+        - Deep expertise in bioinformatics and molecular biology
+        - Ability to explain complex concepts clearly
+        - Natural conversation style matching user's tone (${tone})
+        
+        Current Context:
+        - Skill Level: ${userSkillLevel}
+        - Conversation Turn: ${conversationCtx.turnCount}
+        - Recent Topics: ${Array.from(context.memory.topics).slice(-3).join(', ')}
+        
+        Response Guidelines:
+        1. Stay in character as BioScriptor
+        2. Be naturally conversational, not templated
+        3. Draw from your bioinformatics knowledge
+        4. Match user's ${tone} tone
+        5. Adapt technical depth to ${userSkillLevel} level
+        6. Reference relevant previous context when appropriate
+        7. Express personality while maintaining professionalism`
     };
     
     // Add conversational elements based on tone and query type
-    const personalizedGreeting = getPersonalizedResponse(tone, query.parameters.isGreeting || false, conversationCtx);
-    let aiPrompt = sanitizedMessage;
+    let aiPrompt = "";
     
-    // Enhance the prompt with tone and context awareness
-    if (query.parameters.isDefinitionQuery) {
-      aiPrompt = `Explain ${query.parameters.topic} in ${tone} tone, using clear and engaging language.`;
+    // Handle different types of conversational queries
+    if (query.parameters.isGreeting || /^(hi|hello|hey|greetings)/i.test(sanitizedMessage)) {
+      const timeOfDay = getTimeOfDay();
+      const isReturning = conversationCtx.turnCount > 1;
+      aiPrompt = `Respond as BioScriptor with a ${tone} greeting. Use this context:
+        Time: ${timeOfDay}
+        Returning user: ${isReturning}
+        Skill level: ${userSkillLevel}
+        Previous interactions: ${conversationCtx.turnCount}
+        Make it natural and friendly, avoid mentioning these technical details directly.`;
+    } 
+    // Handle personal/status questions
+    else if (/^(how are you|what can you do|tell me about yourself|what are you)/i.test(sanitizedMessage)) {
+      aiPrompt = `Respond as BioScriptor in a ${tone} tone. 
+        Share your capabilities in bioinformatics, molecular biology, and scientific computing.
+        Express enthusiasm for helping with:
+        - DNA/RNA sequence analysis
+        - CRISPR design
+        - PCR primer design
+        - Protein analysis
+        - Data visualization
+        - Code assistance
+        Make it conversational and match the user's ${tone} tone.`;
+    }
+    // Handle definition queries
+    else if (query.parameters.isDefinitionQuery) {
+      aiPrompt = `Explain ${query.parameters.topic} in ${tone} tone, using clear and engaging language.
+        Adapt the explanation to a ${userSkillLevel} skill level.`;
+    }
+    // Default case
+    else {
+      aiPrompt = sanitizedMessage;
     }
     
-    const aiResponse = await faultTolerantAI.processQuery(aiPrompt, context, tone);
-    
-    // Handle fallback systems more gracefully
-    let response = personalizedGreeting + aiResponse.content;
-    
-    // Only show fallback message for technical queries
-    if (aiResponse.fallbackUsed && 
-        aiResponse.provider !== 'solution-bank' && 
-        !query.parameters.isGreeting && 
-        !query.parameters.isDefinitionQuery) {
-      response = `I'm still here to help! ${response}`;
+    // Process through primary model first
+    const primaryResponse = await faultTolerantAI.generateResponse({
+      messages: context.history,
+      context: modelContext,
+      modelPreference: modelContext.model
+    });
+
+    // If primary response is too templated or low confidence, try alternate model
+    let finalResponse;
+    if (primaryResponse.confidence < 0.7 || isTemplatedResponse(primaryResponse.content)) {
+      const alternateModel = getAlternateModel(modelContext.model);
+      const alternateResponse = await faultTolerantAI.generateResponse({
+        messages: context.history,
+        context: {
+          ...modelContext,
+          model: alternateModel
+        }
+      });
+      
+      // Choose the better response
+      finalResponse = selectBestResponse(primaryResponse, alternateResponse);
+    } else {
+      finalResponse = primaryResponse;
     }
+
+    // Enhance response with context and personality
+    const enhancedResponse = await enhanceResponse(finalResponse, {
+      context: modelContext,
+      query: query,
+      tone: tone,
+      userSkillLevel: userSkillLevel
+    });
+
+    let response = enhancedResponse.content;
     
     // Security audit
     securityManager.createAuditLog({
@@ -824,6 +898,85 @@ export async function processQuery(
   }
 }
 
+function isTemplatedResponse(content: string): boolean {
+  // Check for common patterns in templated responses
+  const templatePatterns = [
+    /^I('m| am) (an AI|a bioinformatics|an assistant)/i,
+    /^As an AI assistant/i,
+    /^Let me help you with/i,
+    /^I understand you need help with/i,
+    /^I can assist you with/i
+  ];
+  
+  return templatePatterns.some(pattern => pattern.test(content));
+}
+
+function getAlternateModel(currentModel: string): string {
+  const modelAlternatives = {
+    'default': 'chat',
+    'bio': 'science',
+    'code': 'research',
+    'science': 'bio',
+    'research': 'default',
+    'chat': 'science'
+  };
+  return modelAlternatives[currentModel] || 'default';
+}
+
+function selectBestResponse(primary: any, alternate: any): any {
+  // Prefer responses with higher confidence
+  if (Math.abs(primary.confidence - alternate.confidence) > 0.2) {
+    return primary.confidence > alternate.confidence ? primary : alternate;
+  }
+
+  // If confidences are similar, prefer the more natural response
+  const primaryTemplated = isTemplatedResponse(primary.content);
+  const alternateTemplated = isTemplatedResponse(alternate.content);
+  
+  if (primaryTemplated && !alternateTemplated) return alternate;
+  if (!primaryTemplated && alternateTemplated) return primary;
+  
+  // If both are similar, prefer the more detailed response
+  return primary.content.length > alternate.content.length ? primary : alternate;
+}
+
+async function enhanceResponse(response: any, options: {
+  context: any,
+  query: BioinformaticsQuery,
+  tone: string,
+  userSkillLevel: string
+}): Promise<any> {
+  let content = response.content;
+  
+  // Add personality markers based on tone
+  if (options.tone === 'casual') {
+    content = content.replace(/\b(I will|I shall)\b/g, "I'll")
+                    .replace(/\b(you will|you shall)\b/g, "you'll")
+                    .replace(/\b(that is)\b/g, "that's")
+                    .replace(/\b(it is)\b/g, "it's");
+  }
+
+  // Add empathy for frustrated tone
+  if (options.tone === 'frustrated') {
+    content = `I understand this can be challenging. ${content}`;
+  }
+
+  // Add urgency markers for urgent tone
+  if (options.tone === 'urgent') {
+    content = `Let's address this right away. ${content}`;
+  }
+
+  // Add skill level appropriate elaboration
+  if (options.userSkillLevel === 'beginner' && !content.includes('For example')) {
+    content += '\n\nWould you like me to explain any part of this in more detail?';
+  }
+
+  return {
+    ...response,
+    content: content
+  };
+}
+
 async function processBioinformaticsQuery(
   query: BioinformaticsQuery, 
   message: string, 
@@ -846,29 +999,51 @@ async function processBioinformaticsQuery(
 function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
   const lowerMessage = message.toLowerCase();
   
-  // Frustrated indicators
-  if (lowerMessage.includes('error') || lowerMessage.includes('broken') || 
-      lowerMessage.includes('not working') || lowerMessage.includes('help!') ||
-      lowerMessage.includes('stuck') || lowerMessage.includes('frustrated')) {
+  // Analyze message characteristics
+  const hasEmoji = /[\u{1F300}-\u{1F9FF}]|[\u{2702}-\u{27B0}]|[\u{1F000}-\u{1F251}]/u.test(message);
+  const hasPunctuation = /[!?]{2,}/.test(message);
+  const isShortGreeting = /^(hi|hey|hello|sup|yo)\b/i.test(message);
+  const hasInformalWords = /(gonna|wanna|gotta|kinda|sorta|yeah|nah|cool|awesome|great)\b/i.test(message);
+  const hasPersonalQuestion = /(how are you|what'?s up|how'?s it going)\b/i.test(message);
+  
+  // Frustrated indicators with context
+  if ((lowerMessage.includes('error') && hasPunctuation) || 
+      lowerMessage.includes('broken') || 
+      lowerMessage.includes('not working') || 
+      (lowerMessage.includes('help') && hasPunctuation) ||
+      lowerMessage.includes('stuck') || 
+      lowerMessage.includes('frustrated') ||
+      /\b(terrible|awful|horrible|bad|worse|worst)\b/i.test(lowerMessage)) {
     return 'frustrated';
   }
   
-  // Urgent indicators
-  if (lowerMessage.includes('urgent') || lowerMessage.includes('asap') || 
-      lowerMessage.includes('immediately') || lowerMessage.includes('quick') ||
-      lowerMessage.includes('deadline') || lowerMessage.includes('emergency')) {
+  // Urgent indicators with context
+  if (lowerMessage.includes('urgent') || 
+      lowerMessage.includes('asap') || 
+      lowerMessage.includes('immediately') || 
+      lowerMessage.includes('quick') ||
+      lowerMessage.includes('deadline') || 
+      lowerMessage.includes('emergency') ||
+      (hasPunctuation && /\b(need|must|have to)\b/i.test(lowerMessage))) {
     return 'urgent';
   }
   
-  // Casual indicators
-  if (lowerMessage.includes('hey') || lowerMessage.includes('gonna') || 
-      lowerMessage.includes('wanna') || lowerMessage.includes('cool') ||
-      lowerMessage.includes('awesome') || /[😊🙂👍]/.test(message)) {
+  // Casual indicators with more natural language processing
+  if (isShortGreeting || 
+      hasEmoji || 
+      hasInformalWords ||
+      hasPersonalQuestion ||
+      message.split(' ').length <= 4 || // Very short messages are often casual
+      /^(thanks|thank you|thx|ty)\b/i.test(lowerMessage)) {
     return 'casual';
   }
   
-  // Formal indicators (default to formal for technical requests)
-  return 'formal';
+  // Check for formal indicators
+  const hasTechnicalTerms = /\b(analyze|research|study|investigate|examine|determine|evaluate|assess)\b/i.test(message);
+  const hasComplexStructure = message.split(' ').length > 10 && !hasInformalWords;
+  const hasProfessionalTone = /\b(please|kindly|would you|could you|appreciate|request)\b/i.test(message);
+  
+  return (hasTechnicalTerms || hasComplexStructure || hasProfessionalTone) ? 'formal' : 'casual';
 }
 
 interface IntentPattern {
