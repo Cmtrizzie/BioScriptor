@@ -1,3 +1,7 @@
+Enhanced the tone detection and user skill level detection functions to better adapt to user's conversational style.
+```
+
+``` javascript
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
 import { FaultTolerantAI, ProviderConfig } from './ai-providers';
 import { securityManager } from './security';
@@ -801,55 +805,3 @@ export async function processQuery(
     }
     // Handle definition queries
     else if (query.parameters.isDefinitionQuery) {
-      aiPrompt = `Explain ${query.parameters.topic} in ${tone} tone, using clear and engaging language.
-        Adapt the explanation to a ${userSkillLevel} skill level.`;
-    }
-    // Default case
-    else {
-      aiPrompt = sanitizedMessage;
-    }
-
-    // Use the fault-tolerant AI system with conversation history
-    const aiResponse = await faultTolerantAI.processQuery(
-      aiPrompt,
-      modelContext,
-      tone,
-      conversationCtx.history.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
-    );
-
-    let response = aiResponse;
-
-    // Store assistant response in history
-    const sanitizedResponse = securityManager.sanitizeCodeOutput(response);
-    conversationManager.addMessageToHistory(sanitizedResponse, 'assistant', {
-      provider: aiResponse.provider,
-      fallbackUsed: aiResponse.fallbackUsed,
-      processingTime: aiResponse.processingTime,
-      tone: tone,
-      confidence: 0.85
-    });
-
-    return sanitizedResponse;
-
-  } catch (error) {
-    console.error('AI processing error:', error);
-
-    if (error.message.includes('Security violation')) {
-      return `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`;
-    }
-
-    // Return a more helpful error message that doesn't mention solution bank
-    return `Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. I'm having trouble connecting to my AI models right now. 
-
-While I work on reconnecting, I can still help you with:
-• Understanding bioinformatics concepts
-• Explaining molecular biology techniques  
-• Providing coding assistance for biological analysis
-• File format information and best practices
-
-What would you like to know about bioinformatics today?`;
-  }
-}

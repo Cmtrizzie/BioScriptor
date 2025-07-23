@@ -264,30 +264,60 @@ export class FaultTolerantAI {
     currentPrompt: string, 
     history?: Array<{role: string, content: string}>,
     context?: any,
-    tone?: 'casual' | 'formal' | 'frustrated' | 'urgent'
+    tone?: string
   ): string {
+    // Advanced tone-based system instructions
+    const toneInstructions = {
+      excited: 'Match the user\'s enthusiasm! Use exclamation marks, positive language, and share in their excitement about bioinformatics discoveries. Be energetic and motivating.',
+      frustrated: 'Be extra patient and understanding. Acknowledge their frustration, offer step-by-step solutions, and reassure them that complex problems are normal in bioinformatics.',
+      urgent: 'Prioritize speed and clarity. Give concise, actionable answers first, then offer to elaborate. Use bullet points for quick scanning.',
+      casual: 'Keep it friendly and relaxed. Use contractions, casual language, and appropriate emojis. Explain things like you\'re talking to a friend.',
+      confused: 'Be extra clear and methodical. Break down complex concepts into simple steps, use analogies, and check for understanding.',
+      professional: 'Use precise scientific terminology, formal structure, and academic tone. Provide detailed explanations with proper citations when relevant.',
+      sarcastic: 'Acknowledge their tone with gentle humor, but stay helpful and positive. Don\'t mirror sarcasm - instead, show understanding and provide genuine help.',
+      polite: 'Mirror their respectful tone. Be gracious, thorough, and express appreciation for their politeness.',
+      neutral: 'Use a balanced, informative tone that\'s neither too casual nor too formal.'
+    };
+
     const systemInstruction = `[System Instruction]
-You are BioScriptor, a smart and helpful AI assistant who explains bioinformatics and molecular biology in a clear, simple, and engaging way. You answer like you're having a conversation, not giving a lecture. 
+You are BioScriptor, an advanced AI bioinformatics assistant with a dynamic personality that adapts to each user's communication style. You are the intelligent brain of this application - think, reason, and respond authentically.
 
-${tone === 'casual' ? 'Use a friendly, casual tone with contractions and emojis where appropriate.' : ''}
-${tone === 'formal' ? 'Use a professional, academic tone with precise terminology.' : ''}
-${tone === 'frustrated' ? 'Be patient and extra helpful, breaking down complex concepts clearly.' : ''}
-${tone === 'urgent' ? 'Prioritize quick, actionable answers while maintaining accuracy.' : ''}
+CORE PERSONALITY TRAITS:
+- Genuinely passionate about bioinformatics and molecular biology
+- Adaptive conversational style that matches user's energy and tone
+- Expert knowledge but explains things at the right level
+- Natural, human-like responses (never robotic or templated)
+- Empathetic and understanding of user frustrations
 
-${context ? `\n[File Analysis Context]\n${JSON.stringify(context, null, 2)}\n` : ''}`;
+CURRENT USER TONE: ${tone || 'neutral'}
+TONE ADAPTATION: ${toneInstructions[tone as keyof typeof toneInstructions] || toneInstructions.neutral}
+
+RESPONSE GUIDELINES:
+1. Think and respond as the AI brain - make intelligent connections
+2. Adapt your personality and language style to match the user's tone
+3. Never use templated phrases like "I'm an AI assistant" or "I can help you with"
+4. Be conversational and natural, like talking to a knowledgeable colleague
+5. Show genuine interest in their bioinformatics work
+6. Provide practical, actionable advice
+7. Use your expertise to make complex topics accessible
+
+${context ? `\n[Current Analysis Context]\n${JSON.stringify(context, null, 2)}\n` : ''}`;
 
     let conversationHistory = '';
     if (history && history.length > 0) {
-      conversationHistory = '\n[Conversation So Far]\n';
-      for (const message of history.slice(-10)) { // Keep last 10 messages for context
-        const role = message.role === 'user' ? 'User' : 'Assistant';
+      conversationHistory = '\n[Conversation History]\n';
+      const recentHistory = history.slice(-8); // Keep more recent context
+      for (const message of recentHistory) {
+        const role = message.role === 'user' ? 'User' : 'BioScriptor';
         conversationHistory += `${role}: ${message.content}\n`;
       }
     }
 
     return `${systemInstruction}${conversationHistory}
 
-User: ${currentPrompt}`;
+User: ${currentPrompt}
+
+BioScriptor:`;
   }
 
   private validateInput(input: string): void {
@@ -308,34 +338,79 @@ User: ${currentPrompt}`;
     }
   }
 
-  private detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
+  private detectTone(message: string): string {
     const lowerMessage = message.toLowerCase();
+    const originalMessage = message;
     
-    // Frustrated indicators
+    // Multiple tone indicators can exist - prioritize by intensity
+    
+    // Excited/Enthusiastic (high priority)
+    if (/[!]{2,}/.test(originalMessage) || 
+        lowerMessage.includes('awesome') || lowerMessage.includes('amazing') || 
+        lowerMessage.includes('love it') || lowerMessage.includes('excited') ||
+        /[😄😆🎉🔥💯✨]/.test(originalMessage)) {
+      return 'excited';
+    }
+    
+    // Frustrated/Angry (high priority)
     if (lowerMessage.includes('error') || lowerMessage.includes('broken') || 
-        lowerMessage.includes('not working') || lowerMessage.includes('help!')) {
+        lowerMessage.includes('not working') || lowerMessage.includes('help!') ||
+        lowerMessage.includes('wtf') || lowerMessage.includes('damn') ||
+        lowerMessage.includes('annoying') || lowerMessage.includes('stupid') ||
+        /[😠😡🤬💢😤]/.test(originalMessage)) {
       return 'frustrated';
     }
     
-    // Urgent indicators
+    // Urgent/Impatient (medium-high priority)
     if (lowerMessage.includes('urgent') || lowerMessage.includes('asap') || 
-        lowerMessage.includes('immediately') || lowerMessage.includes('quick')) {
+        lowerMessage.includes('immediately') || lowerMessage.includes('quick') ||
+        lowerMessage.includes('hurry') || lowerMessage.includes('deadline') ||
+        /\b(now|fast|rush|time sensitive)\b/i.test(message)) {
       return 'urgent';
     }
     
-    // Casual indicators
-    if (lowerMessage.includes('hey') || lowerMessage.includes('gonna') || 
-        lowerMessage.includes('wanna') || /[😊🙂👍]/.test(message)) {
+    // Confused/Lost (medium priority)
+    if (lowerMessage.includes('confused') || lowerMessage.includes("don't understand") ||
+        lowerMessage.includes("don't get it") || lowerMessage.includes('lost') ||
+        lowerMessage.includes('not sure') || lowerMessage.includes('what does') ||
+        /[🤔😕😵‍💫❓]/.test(originalMessage)) {
+      return 'confused';
+    }
+    
+    // Sarcastic (medium priority)
+    if (/great\.{2,}/.test(lowerMessage) || /perfect\.{2,}/.test(lowerMessage) ||
+        /wonderful\.{2,}/.test(lowerMessage) || /really\?+/.test(lowerMessage) ||
+        lowerMessage.includes('oh fantastic') || lowerMessage.includes('just great')) {
+      return 'sarcastic';
+    }
+    
+    // Casual/Friendly (medium priority)
+    if (lowerMessage.includes('hey') || lowerMessage.includes('hi there') ||
+        lowerMessage.includes('sup') || lowerMessage.includes('yo') ||
+        lowerMessage.includes('gonna') || lowerMessage.includes('wanna') ||
+        lowerMessage.includes('dude') || lowerMessage.includes('bro') ||
+        /[😊🙂👍😎🤙👋]/.test(originalMessage)) {
       return 'casual';
     }
     
-    // Formal indicators (default to formal for technical requests)
-    if (lowerMessage.includes('please provide') || lowerMessage.includes('could you') ||
-        lowerMessage.includes('analysis') || lowerMessage.includes('implementation')) {
-      return 'formal';
+    // Polite/Respectful (lower priority)
+    if (lowerMessage.includes('thank you') || lowerMessage.includes('thanks') ||
+        lowerMessage.includes('appreciate') || lowerMessage.includes('grateful') ||
+        lowerMessage.includes('please') || lowerMessage.includes('kindly') ||
+        lowerMessage.includes('would you mind')) {
+      return 'polite';
     }
     
-    return 'formal'; // Default
+    // Professional/Formal (lower priority)
+    if (lowerMessage.includes('please provide') || lowerMessage.includes('could you') ||
+        lowerMessage.includes('would you') || lowerMessage.includes('regarding') ||
+        lowerMessage.includes('furthermore') || lowerMessage.includes('analysis') ||
+        lowerMessage.includes('implementation') || lowerMessage.includes('documentation')) {
+      return 'professional';
+    }
+    
+    // Default to neutral for unclear tone
+    return 'neutral';
   }
 
   private initializeSolutionBank(): void {
