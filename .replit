@@ -7,8 +7,7 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["sh", "-c", "npm run dev"]
 
 [[ports]]
 localPort = 5000
@@ -18,7 +17,7 @@ externalPort = 80
 PORT = "5000"
 
 [workflows]
-runButton = "Project"
+runButton = "Start BioScriptor"
 
 [[workflows.workflow]]
 name = "Project"
@@ -37,3 +36,16 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start BioScriptor"
+author = 45409384
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
