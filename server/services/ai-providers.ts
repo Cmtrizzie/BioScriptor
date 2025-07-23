@@ -86,14 +86,8 @@ export class FaultTolerantAI {
       }
     }
 
-    // Final fallback: Solution bank
-    const fallbackResponse = this.getSolutionBankResponse(prompt);
-    return {
-      content: fallbackResponse,
-      provider: 'solution-bank',
-      fallbackUsed: true,
-      processingTime: Date.now() - startTime
-    };
+    // If all providers fail, return a helpful error message
+    throw new Error('All AI providers are currently unavailable. Please try again in a moment.');
   }
 
   private async tryProvider(provider: AIProvider, prompt: string, history?: Array<{role: string, content: string}>): Promise<string | null> {

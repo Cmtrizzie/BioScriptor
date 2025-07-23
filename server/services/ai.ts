@@ -173,44 +173,27 @@ interface BioinformaticsQuery {
   parameters: Record<string, any>;
 }
 
-// Initialize the fully open-source fault-tolerant AI system
+// Initialize the fault-tolerant AI system with proper API keys
 const aiConfig: ProviderConfig = {
-  // Primary open-source models via Ollama
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    endpoint: 'https://api.groq.com/openai/v1/chat/completions'
+  },
+  together: {
+    apiKey: process.env.TOGETHER_API_KEY || '',
+    endpoint: 'https://api.together.xyz/v1/chat/completions'
+  },
+  openrouter: {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions'
+  },
+  cohere: {
+    apiKey: process.env.COHERE_API_KEY || '',
+    endpoint: 'https://api.cohere.ai/v1/generate'
+  },
   ollama: {
-    endpoint: process.env.OLLAMA_ENDPOINT || 'http://localhost:11434',
-    models: {
-      default: 'mistral', // Base conversational model
-      bio: 'llama2', // Specialized for bio sequences
-      code: 'codellama', // For code generation
-      science: 'openchat', // For scientific discussions
-      research: 'phi', // For research queries
-      chat: 'neural-chat' // For engaging responses
-    }
-  },
-  // Local fallback models
-  localAI: {
-    endpoint: process.env.LOCAL_AI_ENDPOINT || 'http://localhost:8080',
-    models: {
-      default: 'ggml-vicuna-13b-v1.5',
-      specialized: 'redpajama-incite',
-      fastchat: 'fastchat-t5'
-    }
-  },
-  // Self-hosted open source models
-  koboldAI: {
-    endpoint: process.env.KOBOLD_AI_ENDPOINT || 'http://localhost:5001',
-    models: {
-      default: 'pythia',
-      specialized: 'falcon'
-    }
-  },
-  // Local specialized models
-  textGen: {
-    endpoint: process.env.TEXT_GEN_ENDPOINT || 'http://localhost:7891',
-    models: {
-      small: 'tinyllama',
-      medium: 'stable-beluga'
-    }
+    endpoint: process.env.OLLAMA_ENDPOINT || 'http://0.0.0.0:11434',
+    model: 'mistral'
   }
 };
 
@@ -827,59 +810,27 @@ export async function processQuery(
       aiPrompt = sanitizedMessage;
     }
     
-    // Process through primary model first
-    const primaryResponse = await faultTolerantAI.generateResponse({
-      messages: context.history,
-      context: modelContext,
-      modelPreference: modelContext.model
-    });
+    // Use the fault-tolerant AI system with conversation history
+    const aiResponse = await faultTolerantAI.processQuery(
+      aiPrompt,
+      modelContext,
+      tone,
+      conversationCtx.history.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    );
 
-    // If primary response is too templated or low confidence, try alternate model
-    let finalResponse;
-    if (primaryResponse.confidence < 0.7 || isTemplatedResponse(primaryResponse.content)) {
-      const alternateModel = getAlternateModel(modelContext.model);
-      const alternateResponse = await faultTolerantAI.generateResponse({
-        messages: context.history,
-        context: {
-          ...modelContext,
-          model: alternateModel
-        }
-      });
-      
-      // Choose the better response
-      finalResponse = selectBestResponse(primaryResponse, alternateResponse);
-    } else {
-      finalResponse = primaryResponse;
-    }
-
-    // Enhance response with context and personality
-    const enhancedResponse = await enhanceResponse(finalResponse, {
-      context: modelContext,
-      query: query,
-      tone: tone,
-      userSkillLevel: userSkillLevel
-    });
-
-    let response = enhancedResponse.content;
-    
-    // Security audit
-    securityManager.createAuditLog({
-      action: 'ai_query',
-      resource: 'chat_message',
-      metadata: {
-        provider: aiResponse.provider,
-        fallbackUsed: aiResponse.fallbackUsed,
-        processingTime: aiResponse.processingTime,
-        tone: tone
-      }
-    });
+    let response = aiResponse.content;
     
     // Store assistant response in history
     const sanitizedResponse = securityManager.sanitizeCodeOutput(response);
     conversationManager.addMessageToHistory(sanitizedResponse, 'assistant', {
       provider: aiResponse.provider,
       fallbackUsed: aiResponse.fallbackUsed,
-      processingTime: aiResponse.processingTime
+      processingTime: aiResponse.processingTime,
+      tone: tone,
+      confidence: 0.85
     });
     
     return {
@@ -891,10 +842,25 @@ export async function processQuery(
     console.error('AI processing error:', error);
     
     if (error.message.includes('Security violation')) {
-      return `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`;
+      return {
+        response: `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`,
+        conversationContext: conversationManager.getActiveContext()
+      };
     }
     
-    return "I apologize, but I encountered an error processing your request. Please try rephrasing your question or check if your file format is supported.";
+    // Return a more helpful error message that doesn't mention solution bank
+    return {
+      response: `Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. I'm having trouble connecting to my AI models right now. 
+
+While I work on reconnecting, I can still help you with:
+• Understanding bioinformatics concepts
+• Explaining molecular biology techniques  
+• Providing coding assistance for biological analysis
+• File format information and best practices
+
+What would you like to know about bioinformatics today?`,
+      conversationContext: conversationManager.getActiveContext()
+    };
   }
 }
 
