@@ -17,8 +17,11 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
   };
 
   const renderMessageContent = (content: string, type: 'user' | 'ai') => {
+    // Ensure content is a string
+    const safeContent = typeof content === 'string' ? content : String(content || '');
+    
     // Simple parsing for code blocks and special content
-    const parts = content.split(/(```[\s\S]*?```)/);
+    const parts = safeContent.split(/(```[\s\S]*?```)/);
     
     return parts.map((part, index) => {
       if (part.startsWith('```') && part.endsWith('```')) {
@@ -38,7 +41,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
         );
       }
       
-      return <p key={index} className="whitespace-pre-wrap">{part}</p>;
+      return <p key={index} className="whitespace-pre-wrap">{part || ''}</p>;
     });
   };
 

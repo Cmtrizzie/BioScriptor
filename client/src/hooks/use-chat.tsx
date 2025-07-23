@@ -76,7 +76,7 @@ export function useChat() {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: requestData.response,
+        content: typeof requestData.response === 'string' ? requestData.response : 'Sorry, I encountered an error processing your request.',
         timestamp: new Date(),
       };
 
