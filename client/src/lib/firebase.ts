@@ -1,47 +1,19 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Use development placeholders if environment variables are not available
-const isDevelopment = import.meta.env.DEV;
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || (isDevelopment ? "biobuddy-dev" : "");
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || (isDevelopment ? "AIzaSyDevelopmentPlaceholderKey123456789" : "");
-const appId = import.meta.env.VITE_FIREBASE_APP_ID || (isDevelopment ? "1:123456789:web:placeholder123456789" : "");
-
+// Firebase configuration with development fallbacks
 const firebaseConfig = {
-  apiKey,
-  authDomain: `${projectId}.firebaseapp.com`,
-  projectId,
-  storageBucket: `${projectId}.firebasestorage.app`,
-  appId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBioScriptorDevKey123456789",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "bioscriptor-dev.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "bioscriptor-dev",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "bioscriptor-dev.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:dev123456789"
 };
 
-let app: any = null;
-let auth: any = null;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-try {
-  if (apiKey && projectId && appId) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-  } else {
-    console.warn("Firebase not initialized: Missing environment variables");
-    // Create mock auth for development
-    auth = {
-      currentUser: null,
-      onAuthStateChanged: () => () => {},
-      signInWithPopup: () => Promise.reject(new Error("Firebase not configured")),
-      signOut: () => Promise.resolve(),
-    };
-  }
-} catch (error) {
-  console.warn("Firebase initialization failed:", error);
-  // Create mock auth for development
-  auth = {
-    currentUser: null,
-    onAuthStateChanged: () => () => {},
-    signInWithPopup: () => Promise.reject(new Error("Firebase not configured")),
-    signOut: () => Promise.resolve(),
-  };
-}
-
-export { auth };
+// Initialize Firebase Authentication and get a reference to the service
+export const auth = getAuth(app);
 export default app;
