@@ -126,14 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process the query with AI
-      const response = await processQuery(message, fileAnalysis || undefined);
+      const aiResponse = await processQuery(message, fileAnalysis || undefined);
       
       // Update user query count
       await storage.updateUser(req.user.id, {
         queryCount: req.user.queryCount + 1
       });
 
-      res.json({ response });
+      res.json({ response: aiResponse });
     } catch (error) {
       console.error('Chat error:', error);
       res.status(500).json({ error: 'Failed to process message' });

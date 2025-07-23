@@ -40,12 +40,12 @@ export function useChat() {
     try {
       // Prepare form data if file is included
       let requestData: any = { message: content };
-      
+
       if (file) {
         const formData = new FormData();
         formData.append('message', content);
         formData.append('file', file);
-        
+
         // Add Firebase auth headers for file uploads
         const headers: Record<string, string> = {};
         if (user) {
@@ -54,7 +54,7 @@ export function useChat() {
           headers['x-firebase-display-name'] = user.displayName || '';
           headers['x-firebase-photo-url'] = user.photoURL || '';
         }
-        
+
         // For file uploads, we need to send FormData
         const response = await fetch('/api/chat/message', {
           method: 'POST',
@@ -62,26 +62,51 @@ export function useChat() {
           body: formData,
           credentials: 'include',
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to send message');
         }
-        
+
         requestData = await response.json();
       } else {
-        const response = await apiRequest('POST', '/api/chat/message', { message: content });
-        requestData = await response.json();
+        const response = await fetch('/api/chat/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-firebase-uid': user.uid,
+          'x-firebase-email': user.email || '',
+          'x-firebase-display-name': user.displayName || '',
+          'x-firebase-photo-url': user.photoURL || '',
+        },
+        body: JSON.stringify({ message: content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to send message');
+      }
+
+      const requestData = await response.json();
+
+      // Ensure we always have a string response
+      let responseContent = '';
+      if (typeof requestData.response === 'string') {
+        responseContent = requestData.response;
+      } else if (requestData.response && typeof requestData.response.response === 'string') {
+        responseContent = requestData.response.response;
+      } else {
+        responseContent = 'Sorry, I encountered an error processing your request.';
       }
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: typeof requestData.response === 'string' ? requestData.response : 'Sorry, I encountered an error processing your request.',
+        content: responseContent,
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      
+
       // Save session to localStorage
       const currentSession: ChatSession = {
         id: Date.now().toString(),
@@ -89,7 +114,7 @@ export function useChat() {
         timestamp: new Date().toLocaleDateString(),
         messages: [...messages, userMessage, aiMessage],
       };
-      
+
       const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
       // Remove any existing session with same messages to avoid duplicates
       const filteredSessions = savedSessions.filter((session: ChatSession) => 
@@ -99,7 +124,7 @@ export function useChat() {
       const updatedSessions = [currentSession, ...filteredSessions.slice(0, 9)]; // Keep last 10 sessions
       localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
       setSessions(updatedSessions);
-      
+
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
