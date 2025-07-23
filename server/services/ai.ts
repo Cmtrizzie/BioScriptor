@@ -1,4 +1,4 @@
-Enhanced the tone detection and user skill level detection functions to better adapt to user's conversational style.
+// Enhanced the tone detection and user skill level detection functions to better adapt to user's conversational style.
 ```
 
 ``` javascript
