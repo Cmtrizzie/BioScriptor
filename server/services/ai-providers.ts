@@ -398,35 +398,69 @@ User: ${currentPrompt}`;
   }
 
   private getSolutionBankResponse(prompt: string): string {
-    const lowerPrompt = prompt.toLowerCase();
+    const lowerPrompt = prompt.toLowerCase().trim();
     
     // Check for basic knowledge questions first
     if (lowerPrompt.startsWith('what is dna') || lowerPrompt === 'dna?') {
       const dnaInfo = this.solutionBank.get('what_is_dna');
-      return dnaInfo!.fix;
+      return dnaInfo?.fix || 'DNA is the hereditary material in most living organisms.';
     }
     
     // Direct pattern matching for common queries
-    if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi ') || lowerPrompt.includes('hey')) {
-      const greeting = this.solutionBank.get('greeting');
-      return greeting!.fix;
+    if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi') || lowerPrompt.includes('hey')) {
+      return `Hello! 👋 I'm BioScriptor, your AI bioinformatics assistant. I'm currently running on backup systems, but I can still help you with:
+
+• **Sequence Analysis** - DNA/RNA/protein sequences
+• **CRISPR Design** - Guide RNA design and optimization  
+• **PCR Tools** - Primer design and simulation
+• **File Analysis** - FASTA, GenBank, PDB processing
+• **Protocols** - Molecular biology workflows
+
+What bioinformatics challenge can I help you with today?`;
     }
 
-    if (lowerPrompt.includes('how are you') || lowerPrompt.includes('how you doing') || lowerPrompt.includes('what\'s up') || lowerPrompt.includes('wazup')) {
-      const status = this.solutionBank.get('how_are_you');
-      return status!.fix;
+    if (lowerPrompt.includes('how are you') || lowerPrompt.includes('how you doing') || lowerPrompt.includes('what\'s up')) {
+      return `I'm functioning well with my fault-tolerant systems! 🧬 While my external AI providers are temporarily unavailable, my core bioinformatics capabilities are fully operational. How can I assist you with your molecular biology work today?`;
     }
 
     if (lowerPrompt.includes('help') || lowerPrompt.includes('what can you do')) {
-      const help = this.solutionBank.get('help');
-      return help!.fix;
+      return `I'm BioScriptor, your comprehensive bioinformatics AI assistant! Here's what I can help you with:
+
+**🧬 Sequence Analysis:**
+- DNA/RNA/protein sequence analysis
+- GC content and composition analysis
+- Restriction enzyme site mapping
+- Sequence alignment guidance
+
+**✂️ CRISPR Tools:**
+- Guide RNA design for gene editing
+- PAM site identification
+- Off-target prediction
+
+**🔬 PCR & Primers:**
+- Primer design and optimization
+- Melting temperature calculations
+- PCR simulation and troubleshooting
+
+**📁 File Processing:**
+- FASTA sequence files (.fasta, .fa)
+- GenBank annotation files (.gb, .gbk)
+- Protein structure files (.pdb)
+- CSV data analysis
+
+**🧪 Protocols:**
+- Molecular cloning workflows
+- Expression system optimization
+- Protocol recommendations
+
+Try asking me something specific like "Analyze my FASTA file" or "Design CRISPR guides for TP53"!`;
     }
 
     if (lowerPrompt.includes('status') || lowerPrompt.includes('working') || lowerPrompt.includes('online')) {
-      const status = this.solutionBank.get('status_check');
-      return status!.fix;
+      return `System Status: ✅ All backup systems operational. External AI providers are temporarily unavailable, but I'm fully functional for bioinformatics analysis. Ready to help with your molecular biology projects!`;
     }
     
+    // Search solution bank for matches
     let bestMatch = null;
     let bestScore = 0;
     
@@ -439,14 +473,33 @@ User: ${currentPrompt}`;
     }
     
     if (bestMatch) {
+      let response = bestMatch.fix || 'I found a relevant solution.';
       if (bestMatch.code) {
-        return "Here's a solution from my knowledge base:\\n\\n" + bestMatch.fix + "\\n\\n```python\\n" + bestMatch.code + "\\n```\\n\\nNote: External AI providers are currently unavailable, but I can still help with bioinformatics tasks using my built-in knowledge.";
-      } else {
-        return bestMatch.fix;
+        response += `\n\n\`\`\`python\n${bestMatch.code}\n\`\`\``;
       }
+      return response;
     }
     
-    return "I'm currently running on backup systems since external AI providers aren't available. I can still help you with:\\n\\n• CRISPR guide design\\n• PCR simulation\\n• Sequence analysis\\n• File format conversion\\n• Protein structure analysis\\n\\nWhat bioinformatics task would you like help with?";
+    // Comprehensive default response
+    return `I'm BioScriptor, your fault-tolerant bioinformatics AI assistant! 🧬
+
+I'm currently running on backup systems since external AI providers are temporarily unavailable, but I'm fully operational for bioinformatics tasks:
+
+**Available Tools:**
+• Sequence analysis and composition
+• CRISPR guide RNA design
+• PCR primer design and simulation  
+• File format analysis (FASTA, GenBank, PDB)
+• Molecular biology protocols
+• Codon optimization strategies
+
+**How to Get Started:**
+1. Upload a biological file for analysis
+2. Ask about bioinformatics concepts
+3. Request specific tools or protocols
+4. Share your sequences for analysis
+
+What bioinformatics project are you working on? I'm here to help make it easier!`;
   }
 
   private calculateSimilarity(text1: string, text2: string): number {

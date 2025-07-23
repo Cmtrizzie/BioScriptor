@@ -1,4 +1,3 @@
-
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
 import { FaultTolerantAI, ProviderConfig } from './ai-providers';
 import { securityManager } from './security';
@@ -203,10 +202,10 @@ const faultTolerantAI = new FaultTolerantAI(aiConfig);
 function extractTopics(text: string): string[] {
   // Basic topic extraction - in production, use a proper NLP library
   const topics = new Set<string>();
-  
+
   // Match scientific terms and concepts
-  const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment|primer|cloning|expression|vector|restriction|digest|ligation|transformation|amplification|purification|assay|protocol|experiment|sample|data|results|method|technique|procedure|pipeline|workflow|bioinformatics|molecular|biology|biochemistry|genetics|genomics|proteomics|sequencing|synthesis|structure|function|pathway|mechanism|system|model|theory|hypothesis|conclusion|finding|evidence|research|study|paper|publication|database|tool|software|algorithm|parameter|condition|control|variable|factor|effect|impact|interaction|relationship|correlation|causation|significance|quality|quantity|measurement|calculation|prediction|validation|verification|optimization|improvement|enhancement|modification|regulation|inhibition|activation|binding|specificity|efficiency|accuracy|precision|reliability|reproducibility|standardization|normalization|calibration|baseline|threshold|cutoff|criteria|requirement|specification|standard|guideline|recommendation|suggestion|approach|strategy|plan|design|implementation|execution|analysis|evaluation|assessment|review|interpretation|explanation|understanding|knowledge|expertise|skill|experience|training|education|learning|development|advancement|progress|innovation|discovery|breakthrough|achievement|success|failure|problem|challenge|issue|concern|limitation|constraint|restriction|obstacle|barrier|difficulty|complexity|uncertainty|variability|heterogeneity|diversity|similarity|difference|comparison|contrast|alternative|option|choice|decision|selection|priority|preference|requirement|demand|need|goal|objective|purpose|aim|target|scope|scale|level|degree|extent|range|limit|boundary|context|environment|condition|situation|case|example|instance|scenario|model|framework|structure|organization|composition|configuration|arrangement|pattern|trend|tendency|behavior|characteristic|property|attribute|feature|aspect|element|component|part|unit|module|section|segment|phase|stage|step|task|action|operation|process|procedure|method|technique|approach|strategy|tactic|policy|practice|standard|protocol|guideline|rule|regulation|requirement|specification|criterion|measure|metric|indicator|parameter|variable|factor|determinant|influence|effect|impact|consequence|result|outcome|output|product|deliverable|solution|resolution|answer|response|reaction|feedback|input|suggestion|recommendation|proposal|plan|design|scheme|system|platform|application|tool|utility|resource|asset|capability|functionality|performance|efficiency|effectiveness|quality|reliability|stability|robustness|flexibility|adaptability|scalability|extensibility|maintainability|sustainability|security|safety|integrity|consistency|accuracy|precision|resolution|sensitivity|specificity|reproducibility|repeatability|validation|verification|certification|compliance|conformance|adherence|alignment|coordination|collaboration|cooperation|integration|interaction|interface|connection|relationship|association|correlation|dependency|hierarchy|classification|categorization|organization|structure|architecture|topology|layout|arrangement|configuration|composition|constitution|formation|development|evolution|progression|advancement|improvement|enhancement|optimization|refinement|modification|adaptation|customization|personalization|specialization|generalization|abstraction|conceptualization|formalization|standardization|normalization|harmonization|unification|consolidation|integration|synthesis|analysis|evaluation|assessment|review|examination|investigation|exploration|study|research|experiment|test|trial|pilot|prototype|demonstration|proof|evidence|validation|verification|confirmation|authentication|authorization|approval|acceptance|rejection|selection|filtering|processing|transformation|conversion|translation|transfer|transmission|communication|exchange|sharing|distribution|allocation|assignment|delegation|management|administration|coordination|supervision|monitoring|tracking|logging|recording|documentation|specification|description|definition|identification|recognition|determination|estimation|calculation|computation|derivation|inference|deduction|induction|reasoning|logic|methodology|philosophy|theory|hypothesis|assumption|premise|condition|constraint|requirement|criterion|standard|benchmark|reference|baseline|threshold|limit|boundary|scope|context|environment|framework|infrastructure|foundation|basis|ground|support|platform|system|network|grid|cluster|array|collection|set|group|category|class|type|kind|form|format|structure|scheme|pattern|model|template|example|instance|case|scenario|situation|event|occurrence|phenomenon|observation|measurement|detection|sensing|monitoring|control|regulation|adjustment|calibration|tuning|optimization|enhancement|improvement|development|evolution|progression|advancement|innovation|creation|generation|production|construction|building|assembly|integration|combination|composition|organization|arrangement|configuration|modification|alteration|change|variation|deviation|difference|distinction|comparison|contrast|analysis|evaluation|assessment|review|critique|criticism|feedback|response|reaction|effect|impact|influence|consequence|result|outcome|output|product|solution|resolution|answer|conclusion|finding|discovery|revelation|insight|understanding|knowledge|wisdom|expertise|skill|ability|capability|competence|proficiency|mastery|excellence|quality|performance|efficiency|effectiveness|productivity|throughput|capacity|volume|scale|size|dimension|magnitude|quantity|amount|number|count|frequency|rate|speed|velocity|acceleration|momentum|force|power|energy|strength|intensity|level|degree|extent|range|scope|coverage|depth|breadth|width|height|length|distance|space|time|duration|period|interval|cycle|phase|stage|step|sequence|order|priority|importance|significance|relevance|pertinence|applicability|utility|usefulness|value|worth|merit|benefit|advantage|disadvantage|cost|price|expense|investment|return|profit|gain|loss|risk|hazard|danger|threat|vulnerability|weakness|strength|opportunity|possibility|potential|prospect|chance|probability|likelihood|certainty|uncertainty|ambiguity|clarity|precision|accuracy|correctness|validity|reliability|consistency|stability|robustness|resilience|durability|sustainability|maintainability|serviceability|availability|accessibility|usability|functionality|capability|capacity|competency|ability|skill|knowledge|expertise|experience|qualification|certification|accreditation|authorization|authentication|verification|validation|confirmation|proof|evidence|justification|rationalization|explanation|clarification|elaboration|specification|definition|description|identification|recognition|classification|categorization|organization|structure|system|framework|methodology|approach|strategy|tactic|technique|procedure|process|operation|action|activity|task|job|work|function|role|responsibility|duty|obligation|requirement|necessity|need|demand|desire|want|wish|preference|choice|option|alternative|possibility|opportunity|chance|prospect|potential|capability|ability|power|authority|control|influence|leadership|management|administration|coordination|supervision|direction|guidance|support|assistance|help|aid|service|contribution|participation|involvement|engagement|commitment|dedication|devotion|loyalty|fidelity|integrity|honesty|truthfulness|accuracy|precision|correctness|validity|reliability|consistency|stability|durability|sustainability|maintainability|serviceability|availability|accessibility|usability|functionality|capability)/gi);
-  
+  const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment|primer|cloning|expression|vector|restriction|digest|ligation|transformation|amplification|purification|assay|protocol|experiment|sample|data|results|method|technique|procedure|pipeline|workflow|bioinformatics|molecular|biology|biochemistry|genetics|genomics|proteomics|sequencing|synthesis|structure|function|pathway|mechanism|system|model|theory|hypothesis|conclusion|finding|evidence|research|study|paper|publication|database|tool|software|algorithm|parameter|condition|control|variable|factor|effect|impact|interaction|relationship|correlation|causation|significance|quality|quantity|measurement|calculation|prediction|validation|verification|optimization|improvement|enhancement|modification|regulation|inhibition|activation|binding|specificity|efficiency|accuracy|precision|reliability|reproducibility|standardization|normalization|calibration|baseline|threshold|cutoff|criteria|requirement|specification|standard|guideline|recommendation|suggestion|approach|strategy|plan|design|implementation|execution|analysis|evaluation|assessment|review|interpretation|explanation|understanding|knowledge|expertise|skill|experience|training|education|learning|development|advancement|progress|innovation|discovery|breakthrough|achievement|success|failure|problem|challenge|issue|concern|limitation|constraint|restriction|obstacle|barrier|difficulty|complexity|uncertainty|variability|heterogeneity|diversity|similarity|difference|comparison|contrast|alternative|option|choice|decision|selection|priority|preference|requirement|demand|need|goal|objective|purpose|aim|target|scope|scale|level|degree|extent|range|limit|boundary|context|environment|condition|situation|case|example|instance|scenario|model|framework|structure|organization|composition|configuration|arrangement|pattern|trend|tendency|behavior|characteristic|property|attribute|feature|aspect|element|component|part|unit|module|section|segment|phase|stage|step|task|action|operation|process|procedure|method|technique|approach|strategy|tactic|policy|practice|standard|protocol|guideline|rule|regulation|requirement|specification|criterion|measure|metric|indicator|parameter|variable|factor|determinant|influence|effect|impact|consequence|result|outcome|output|product|deliverable|solution|resolution|answer|response|reaction|feedback|input|suggestion|recommendation|proposal|plan|design|scheme|system|platform|application|tool|utility|resource|asset|capability|functionality|performance|efficiency|effectiveness|quality|reliability|stability|robustness|flexibility|adaptability|scalability|extensibility|maintainability|sustainability|security|safety|integrity|consistency|accuracy|precision|resolution|sensitivity|specificity|reproducibility|repeatability|validation|verification|certification|compliance|conformance|adherence|alignment|coordination|collaboration|cooperation|integration|interaction|interface|connection|relationship|association|correlation|dependency|hierarchy|classification|categorization|organization|structure|architecture|topology|layout|arrangement|configuration|composition|constitution|formation|development|evolution|progression|advancement|improvement|enhancement|optimization|refinement|modification|adaptation|customization|personalization|specialization|generalization|abstraction|conceptualization|formalization|standardization|normalization|harmonization|unification|consolidation|integration|synthesis|analysis|evaluation|assessment|review|examination|investigation|exploration|study|research|experiment|test|trial|pilot|prototype|demonstration|proof|evidence|validation|verification|confirmation|authentication|authorization|approval|acceptance|rejection|selection|filtering|processing|transformation|conversion|translation|transfer|transmission|communication|exchange|sharing|distribution|allocation|assignment|delegation|management|administration|coordination|supervision|monitoring|tracking|logging|recording|documentation|specification|description|definition|identification|recognition|determination|estimation|calculation|computation|derivation|inference|deduction|induction|reasoning|logic|methodology|philosophy|theory|hypothesis|assumption|premise|condition|constraint|requirement|criterion|standard|benchmark|reference|baseline|threshold|limit|boundary|scope|context|environment|framework|infrastructure|foundation|basis|ground|support|platform|system|network|grid|cluster|array|collection|set|group|category|class|type|kind|form|format|structure|scheme|pattern|model|template|example|instance|case|scenario|situation|event|occurrence|phenomenon|observation|measurement|detection|sensing|monitoring|control|regulation|adjustment|calibration|tuning|optimization|enhancement|improvement|development|evolution|progression|advancement|innovation|creation|generation|production|construction|building|assembly|integration|combination|composition|organization|arrangement|configuration|modification|alteration|change|variation|deviation|difference|distinction|comparison|contrast|analysis|evaluation|assessment|review|critique|criticism|feedback|response|reaction|effect|impact|influence|consequence|result|outcome|output|product|solution|resolution|answer|conclusion|finding|discovery|revelation|insight|understanding|knowledge|wisdom|expertise|skill|ability|capability|competence|proficiency|mastery|excellence|quality|performance|efficiency|effectiveness|productivity|throughput|capacity|volume|scale|size|dimension|magnitude|quantity|amount|number|count|frequency|rate|speed|velocity|acceleration|momentum|force|power|energy|strength|intensity|level|degree|extent|range|scope|coverage|depth|breadth|width|height|length|distance|space|time|duration|period|interval|cycle|phase|stage|step|sequence|order|priority|importance|significance|relevance|pertinence|applicability|utility|usefulness|value|worth|merit|benefit|advantage|disadvantage|cost|price|expense|investment|return|profit|gain|loss|risk|hazard|danger|threat|vulnerability|weakness|strength|opportunity|possibility|potential|prospect|chance|probability|likelihood|certainty|uncertainty|ambiguity|clarity|precision|accuracy|correctness|validity|reliability|consistency|stability|robustness|resilience|durability|sustainability|maintainability|serviceability|availability|accessibility|usability|functionality|capability)/gi);
+
   if (scientificTerms) {
     scientificTerms.forEach(term => topics.add(term.toLowerCase()));
   }
@@ -301,7 +300,7 @@ class ConversationManager {
   createNewConversation(userProfile?: Partial<UserProfile>): string {
     const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = Date.now();
-    
+
     const newContext: ConversationContext = {
       id: conversationId,
       turnCount: 0,
@@ -357,11 +356,11 @@ class ConversationManager {
 
   private async generateEmbedding(text: string): Promise<MessageEmbedding | null> {
     if (!this.embeddingModel) return null;
-    
+
     try {
       const output = await this.embeddingModel(text);
       const vector = Array.from(output.data);
-      
+
       return {
         vector,
         model: 'all-MiniLM-L6-v2',
@@ -384,13 +383,13 @@ class ConversationManager {
     if (!queryEmbedding) return [];
 
     const results: SemanticSearchResult[] = [];
-    
+
     // Search through conversation history
     for (const message of context.history) {
       if (!message.embedding) {
         message.embedding = await this.generateEmbedding(message.content);
       }
-      
+
       if (message.embedding) {
         const similarity = cosineSimilarity(queryEmbedding.vector, message.embedding.vector);
         if (similarity >= threshold) {
@@ -428,7 +427,7 @@ class ConversationManager {
     const context = this.getActiveContext();
     const noteId = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = Date.now();
-    
+
     const newNote = {
       id: noteId,
       content: note.content,
@@ -436,7 +435,7 @@ class ConversationManager {
       updatedAt: timestamp,
       tags: note.tags || []
     };
-    
+
     context.userContent.notes.push(newNote);
     return noteId;
   }
@@ -444,14 +443,14 @@ class ConversationManager {
   addTodoList(title: string): string {
     const context = this.getActiveContext();
     const listId = `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const newList = {
       id: listId,
       title,
       items: [],
       createdAt: Date.now()
     };
-    
+
     context.userContent.todoLists.push(newList);
     return listId;
   }
@@ -459,13 +458,13 @@ class ConversationManager {
   addUploadedDocument(doc: { filename: string, type: string, metadata: any }): string {
     const context = this.getActiveContext();
     const docId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const newDoc = {
       id: docId,
       ...doc,
       uploadedAt: Date.now()
     };
-    
+
     context.userContent.uploadedDocuments.push(newDoc);
     return docId;
   }
@@ -477,7 +476,7 @@ class ConversationManager {
       ...result,
       completedAt: Date.now()
     });
-    
+
     // Update learning progress
     if (!context.userProgress.learningProgress.completedTopics.includes(result.topic)) {
       context.userProgress.learningProgress.completedTopics.push(result.topic);
@@ -540,16 +539,16 @@ class ConversationManager {
   async sendMessage(message: ChatMessage): Promise<ChatMessage> {
     const context = this.getActiveContext();
     context.turnCount++;
-    
+
     // Add message to history
     context.history.push(message);
-    
+
     try {
       // Check for memory-related queries
       const memoryPattern = /(?:remember|recall|mentioned|talked about|previous|earlier|before|last time)/i;
       if (memoryPattern.test(message.content)) {
         const similarMessages = await this.searchSimilarMessages(message.content, context);
-        
+
         if (similarMessages.length > 0) {
           // Found relevant past messages
           if (similarMessages[0].similarity > 0.85) {
@@ -613,7 +612,7 @@ class ConversationManager {
 
       // Add to history
       context.history.push(assistantMessage);
-      
+
       // Update last active time
       context.lastActiveTime = Date.now();
 
@@ -653,12 +652,12 @@ class ConversationManager {
       metadata
     };
     context.history.push(chatMessage);
-    
+
     // Update conversation title based on first user message if not set
     if (!context.title && role === 'user' && context.history.length <= 2) {
       context.title = message.slice(0, 50) + (message.length > 50 ? '...' : '');
     }
-    
+
     this.conversations.set(context.id, context);
   }
 
@@ -692,11 +691,11 @@ export async function processQuery(
     }
 
     const conversationCtx = conversationManager.getActiveContext();
-    
+
     // 1. Input Preprocessing
     const sanitizedMessage = securityManager.sanitizeInput(message);
     const processedInput = preprocessInput(sanitizedMessage);
-    
+
     // 2. Context & State Management
     conversationCtx.turnCount++;
     const tone = detectTone(sanitizedMessage);
@@ -705,7 +704,7 @@ export async function processQuery(
       conversationCtx.userData.skillLevel = userSkillLevel;
       conversationCtx.userData.preferredTone = tone;
     }
-    
+
     // Track message being processed
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     conversationManager.addMessageToHistory(sanitizedMessage, 'user', {
@@ -720,21 +719,21 @@ export async function processQuery(
         mermaid: true
       }
     });
-    
+
     // Store user message in history
     conversationManager.addMessageToHistory(sanitizedMessage, 'user', {
       tone,
       fileAnalysis
     });
-    
+
     // 3. Intent Recognition & Entity Extraction
     const query = parseQuery(sanitizedMessage, conversationContext);
-    
+
     // For bioinformatics-specific queries, use specialized handlers
     if (query.type !== 'general') {
       return await processBioinformaticsQuery(query, sanitizedMessage, fileAnalysis);
     }
-    
+
     // For general queries, use the fault-tolerant AI system with dynamic model selection
     const modelContext = {
       conversation: {
@@ -757,12 +756,12 @@ export async function processQuery(
         - Deep expertise in bioinformatics and molecular biology
         - Ability to explain complex concepts clearly
         - Natural conversation style matching user's tone (${tone})
-        
+
         Current Context:
         - Skill Level: ${userSkillLevel}
         - Conversation Turn: ${conversationCtx.turnCount}
         - Recent Topics: ${Array.from(context.memory.topics).slice(-3).join(', ')}
-        
+
         Response Guidelines:
         1. Stay in character as BioScriptor
         2. Be naturally conversational, not templated
@@ -772,10 +771,10 @@ export async function processQuery(
         6. Reference relevant previous context when appropriate
         7. Express personality while maintaining professionalism`
     };
-    
+
     // Add conversational elements based on tone and query type
     let aiPrompt = "";
-    
+
     // Handle different types of conversational queries
     if (query.parameters.isGreeting || /^(hi|hello|hey|greetings)/i.test(sanitizedMessage)) {
       const timeOfDay = getTimeOfDay();
@@ -809,7 +808,7 @@ export async function processQuery(
     else {
       aiPrompt = sanitizedMessage;
     }
-    
+
     // Use the fault-tolerant AI system with conversation history
     const aiResponse = await faultTolerantAI.processQuery(
       aiPrompt,
@@ -822,7 +821,7 @@ export async function processQuery(
     );
 
     let response = aiResponse.content;
-    
+
     // Store assistant response in history
     const sanitizedResponse = securityManager.sanitizeCodeOutput(response);
     conversationManager.addMessageToHistory(sanitizedResponse, 'assistant', {
@@ -832,22 +831,22 @@ export async function processQuery(
       tone: tone,
       confidence: 0.85
     });
-    
+
     return {
       response: sanitizedResponse,
       conversationContext: conversationManager.getActiveContext()
     };
-    
+
   } catch (error) {
     console.error('AI processing error:', error);
-    
+
     if (error.message.includes('Security violation')) {
       return {
         response: `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`,
         conversationContext: conversationManager.getActiveContext()
       };
     }
-    
+
     // Return a more helpful error message that doesn't mention solution bank
     return {
       response: `Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. I'm having trouble connecting to my AI models right now. 
@@ -873,7 +872,7 @@ function isTemplatedResponse(content: string): boolean {
     /^I understand you need help with/i,
     /^I can assist you with/i
   ];
-  
+
   return templatePatterns.some(pattern => pattern.test(content));
 }
 
@@ -898,10 +897,10 @@ function selectBestResponse(primary: any, alternate: any): any {
   // If confidences are similar, prefer the more natural response
   const primaryTemplated = isTemplatedResponse(primary.content);
   const alternateTemplated = isTemplatedResponse(alternate.content);
-  
+
   if (primaryTemplated && !alternateTemplated) return alternate;
   if (!primaryTemplated && alternateTemplated) return primary;
-  
+
   // If both are similar, prefer the more detailed response
   return primary.content.length > alternate.content.length ? primary : alternate;
 }
@@ -913,7 +912,7 @@ async function enhanceResponse(response: any, options: {
   userSkillLevel: string
 }): Promise<any> {
   let content = response.content;
-  
+
   // Add personality markers based on tone
   if (options.tone === 'casual') {
     content = content.replace(/\b(I will|I shall)\b/g, "I'll")
@@ -964,14 +963,14 @@ async function processBioinformaticsQuery(
 
 function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urgent' {
   const lowerMessage = message.toLowerCase();
-  
+
   // Analyze message characteristics
   const hasEmoji = /[\u{1F300}-\u{1F9FF}]|[\u{2702}-\u{27B0}]|[\u{1F000}-\u{1F251}]/u.test(message);
   const hasPunctuation = /[!?]{2,}/.test(message);
   const isShortGreeting = /^(hi|hey|hello|sup|yo)\b/i.test(message);
   const hasInformalWords = /(gonna|wanna|gotta|kinda|sorta|yeah|nah|cool|awesome|great)\b/i.test(message);
   const hasPersonalQuestion = /(how are you|what'?s up|how'?s it going)\b/i.test(message);
-  
+
   // Frustrated indicators with context
   if ((lowerMessage.includes('error') && hasPunctuation) || 
       lowerMessage.includes('broken') || 
@@ -982,7 +981,7 @@ function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urge
       /\b(terrible|awful|horrible|bad|worse|worst)\b/i.test(lowerMessage)) {
     return 'frustrated';
   }
-  
+
   // Urgent indicators with context
   if (lowerMessage.includes('urgent') || 
       lowerMessage.includes('asap') || 
@@ -993,7 +992,7 @@ function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urge
       (hasPunctuation && /\b(need|must|have to)\b/i.test(lowerMessage))) {
     return 'urgent';
   }
-  
+
   // Casual indicators with more natural language processing
   if (isShortGreeting || 
       hasEmoji || 
@@ -1003,12 +1002,12 @@ function detectTone(message: string): 'casual' | 'formal' | 'frustrated' | 'urge
       /^(thanks|thank you|thx|ty)\b/i.test(lowerMessage)) {
     return 'casual';
   }
-  
+
   // Check for formal indicators
   const hasTechnicalTerms = /\b(analyze|research|study|investigate|examine|determine|evaluate|assess)\b/i.test(message);
   const hasComplexStructure = message.split(' ').length > 10 && !hasInformalWords;
   const hasProfessionalTone = /\b(please|kindly|would you|could you|appreciate|request)\b/i.test(message);
-  
+
   return (hasTechnicalTerms || hasComplexStructure || hasProfessionalTone) ? 'formal' : 'casual';
 }
 
@@ -1074,7 +1073,7 @@ const intentPatterns: IntentPattern[] = [
 
 function parseQuery(message: string, context: ConversationContext): BioinformaticsQuery {
   const lowerMessage = message.toLowerCase();
-  
+
   // Initialize query with enhanced structure
   const baseQuery: BioinformaticsQuery = {
     type: 'general',
@@ -1091,7 +1090,7 @@ function parseQuery(message: string, context: ConversationContext): Bioinformati
     context: context,
     parameters: {}
   };
-  
+
   // Check for greetings first
   if (isGreeting(lowerMessage)) {
     baseQuery.type = 'general';
@@ -1174,13 +1173,13 @@ function parseQuery(message: string, context: ConversationContext): Bioinformati
 
 async function processCRISPRQuery(message: string, parameters: any, fileAnalysis?: BioFileAnalysis): Promise<string> {
   const targetGene = parameters.target || 'BRCA1';
-  
+
   // Simulate CRISPR guide design
   const exampleSequence = "GCAGCTGAGCTTAGCTGTGCAGG"; // Example target sequence
   const guides = generateCRISPRGuides(exampleSequence);
-  
+
   let response = `I'll design CRISPR guide RNAs for ${targetGene}. Here are the top guide RNA candidates:\n\n`;
-  
+
   guides.slice(0, 3).forEach((guide, index) => {
     response += `**Guide RNA #${index + 1}**\n`;
     response += `Sequence: 5'-${guide.sequence}-3' (NGG)\n`;
@@ -1188,19 +1187,19 @@ async function processCRISPRQuery(message: string, parameters: any, fileAnalysis
     response += `Off-targets: ${guide.offTargets} potential\n`;
     response += `Position: ${guide.position}\n\n`;
   });
-  
+
   response += `\`\`\`python\n# CRISPR Guide RNA Design Script\nimport crispr_tools as ct\n\n`;
   response += `# Target sequence\ntarget_seq = "${exampleSequence}"\n\n`;
   response += `# Design guide RNAs\nguides = ct.design_guides(\n    target_seq, \n    pam_type="NGG",\n    scoring_method="doench2016"\n)\n\n`;
   response += `# Analyze off-targets\nfor guide in guides[:3]:\n    off_targets = ct.find_off_targets(\n        guide.sequence,\n        genome="hg38",\n        mismatch_threshold=3\n    )\n    print(f"Guide: {guide.sequence}")\n    print(f"Score: {guide.score}")\n    print(f"Off-targets: {len(off_targets)}")\n\`\`\`\n\n`;
-  
+
   if (fileAnalysis) {
     response += `I've also analyzed your uploaded ${fileAnalysis.metadata?.format} file. `;
     if (fileAnalysis.type === 'sequence') {
       response += `It contains ${fileAnalysis.sequenceCount} sequence(s) with a total length of ${fileAnalysis.totalLength} bp.`;
     }
   }
-  
+
   return response;
 }
 
@@ -1208,56 +1207,56 @@ async function processPCRQuery(message: string, parameters: any, fileAnalysis?: 
   const forwardPrimer = "GTGCCAGCATCTGTTGTTTGC";
   const reversePrimer = "CACCAGGTGCTCATTGATAG";
   const template = "GTGCCAGCATCTGTTGTTTGCCCCTCCCCCAGGTGCTCATTGATAG";
-  
+
   const pcrResult = simulatePCR(forwardPrimer, reversePrimer, template);
-  
+
   let response = "I'll simulate PCR amplification for you.\n\n";
   response += `**PCR Simulation Results**\n`;
   response += `Forward Primer Tm: ${pcrResult.tm.forward}°C\n`;
   response += `Reverse Primer Tm: ${pcrResult.tm.reverse}°C\n`;
   response += `Amplification: ${pcrResult.success ? 'Successful' : 'Failed'}\n`;
-  
+
   if (pcrResult.success) {
     response += `Product Length: ${pcrResult.productLength} bp\n`;
   }
-  
+
   if (pcrResult.warnings.length > 0) {
     response += `\n**Warnings:**\n`;
     pcrResult.warnings.forEach(warning => {
       response += `- ${warning}\n`;
     });
   }
-  
+
   response += `\n\`\`\`python\n# PCR Simulation Script\nfrom Bio.SeqUtils import MeltingTemp as mt\nfrom Bio.Seq import Seq\n\n`;
   response += `forward_primer = "${forwardPrimer}"\nreverse_primer = "${reversePrimer}"\n\n`;
   response += `# Calculate melting temperatures\ntm_forward = mt.Tm_NN(Seq(forward_primer))\ntm_reverse = mt.Tm_NN(Seq(reverse_primer))\n\n`;
   response += `print(f"Forward Tm: {tm_forward:.1f}°C")\nprint(f"Reverse Tm: {tm_reverse:.1f}°C")\n\`\`\`\n`;
-  
+
   return response;
 }
 
 async function processCodonOptimizationQuery(message: string, parameters: any, fileAnalysis?: BioFileAnalysis): Promise<string> {
   const organism = parameters.organism;
   const exampleSequence = "ATGAAATTTGGCACCCGGAAG"; // Example coding sequence
-  
+
   const optimization = optimizeCodonUsage(exampleSequence, organism);
-  
+
   let response = `I'll optimize codon usage for ${organism === 'ecoli' ? 'E. coli' : organism} expression.\n\n`;
   response += `**Codon Optimization Results**\n`;
   response += `Original sequence: ${exampleSequence}\n`;
   response += `Optimized sequence: ${optimization.optimizedSequence}\n`;
   response += `Improvements made: ${optimization.improvements} codon changes\n\n`;
-  
+
   response += `\`\`\`python\n# Codon Optimization Script\nfrom codonoptimization import optimize_sequence\n\n`;
   response += `original_seq = "${exampleSequence}"\n`;
   response += `optimized_seq = optimize_sequence(\n    original_seq,\n    organism="${organism}",\n    avoid_patterns=["GAATTC", "AAGCTT"]  # EcoRI, HindIII sites\n)\n\n`;
   response += `print(f"Original:  {original_seq}")\nprint(f"Optimized: {optimized_seq}")\n\`\`\`\n`;
-  
+
   if (fileAnalysis && fileAnalysis.type === 'sequence') {
     response += `\nI can also optimize the sequences from your uploaded file. `;
     response += `Your file contains ${fileAnalysis.sequenceCount} sequence(s) that could be optimized for ${organism} expression.`;
   }
-  
+
   return response;
 }
 
@@ -1265,9 +1264,9 @@ async function processSequenceAnalysisQuery(message: string, fileAnalysis?: BioF
   if (!fileAnalysis) {
     return "I'd be happy to analyze your sequences! Please upload a FASTA, GenBank, or PDB file and I'll provide detailed analysis including:\n\n- Sequence composition and statistics\n- GC content analysis\n- Feature annotation (for GenBank files)\n- Structural information (for PDB files)\n- Potential restriction sites\n- Codon usage patterns\n\nWhat specific analysis would you like me to perform?";
   }
-  
+
   let response = `I've analyzed your ${fileAnalysis.metadata?.format} file:\n\n`;
-  
+
   if (fileAnalysis.type === 'sequence') {
     response += `**Sequence Statistics:**\n`;
     response += `- Number of sequences: ${fileAnalysis.sequenceCount}\n`;
@@ -1278,7 +1277,7 @@ async function processSequenceAnalysisQuery(message: string, fileAnalysis?: BioF
     if (fileAnalysis.metadata?.averageLength) {
       response += `- Average length: ${fileAnalysis.metadata.averageLength} bp\n`;
     }
-    
+
     if (fileAnalysis.features && fileAnalysis.features.length > 0) {
       response += `\n**Features Found:**\n`;
       fileAnalysis.features.slice(0, 5).forEach(feature => {
@@ -1298,28 +1297,28 @@ async function processSequenceAnalysisQuery(message: string, fileAnalysis?: BioF
       response += `- Headers: ${fileAnalysis.metadata.headers.slice(0, 5).join(', ')}\n`;
     }
   }
-  
+
   response += `\nWhat specific analysis would you like me to perform on this data?`;
-  
+
   return response;
 }
 
 async function processGeneralQuery(message: string, fileAnalysis?: BioFileAnalysis): Promise<string> {
   // Handle general bioinformatics questions
   const lowerMessage = message.toLowerCase();
-  
+
   if (lowerMessage.includes('protein') && lowerMessage.includes('structure')) {
     return "I can help you analyze protein structures! You can:\n\n- Upload PDB files for 3D visualization\n- Analyze protein sequences for secondary structure prediction\n- Compare protein structures\n- Identify binding sites and functional domains\n\nWould you like me to show you a 3D visualization of a specific protein, or do you have a PDB file to analyze?";
   }
-  
+
   if (lowerMessage.includes('blast') || lowerMessage.includes('homology')) {
     return "For sequence similarity searches, I can help you:\n\n- Format sequences for BLAST searches\n- Interpret BLAST results\n- Find homologous sequences\n- Analyze phylogenetic relationships\n\nPlease upload your query sequence in FASTA format, and I'll help you design an effective search strategy.";
   }
-  
+
   if (lowerMessage.includes('molecular') && lowerMessage.includes('cloning')) {
     return "I can assist with molecular cloning workflows:\n\n- Restriction enzyme analysis\n- Vector selection\n- Insert design and optimization\n- Gibson Assembly planning\n- Golden Gate cloning strategies\n\nWhat specific cloning project are you working on? Please share your target sequence or vector information.";
   }
-  
+
   // Default response for general queries - now powered by BioScriptor
   return `I'm BioScriptor, your fault-tolerant AI bioinformatics assistant! I can help you with:
 
@@ -1365,28 +1364,28 @@ function extractGenes(message: string): string[] {
     /\b([a-z]{3}[A-Z])\b/g,    // Bacterial genes (e.g., lacZ)
     /\b(p[0-9]{2,})\b/g        // Protein names (e.g., p53)
   ];
-  
+
   const genes = new Set<string>();
   genePatterns.forEach(pattern => {
     const matches = message.match(pattern) || [];
     matches.forEach(match => genes.add(match));
   });
-  
+
   return Array.from(genes);
 }
 
 function extractSequences(message: string): string[] {
   const sequences = new Set<string>();
-  
+
   // DNA/RNA sequences
   const dnaPattern = /[ATCG]{10,}/gi;
   const rnaPattern = /[AUCG]{10,}/gi;
-  
+
   [dnaPattern, rnaPattern].forEach(pattern => {
     const matches = message.match(pattern) || [];
     matches.forEach(match => sequences.add(match.toUpperCase()));
   });
-  
+
   return Array.from(sequences);
 }
 
@@ -1398,23 +1397,23 @@ function extractOrganisms(message: string): string[] {
     /\bHomo\s+sapiens\b/i,
     /\b(?:human|bacterial|mammalian|yeast)\s+(?:cells?|organism|species)\b/i
   ];
-  
+
   patterns.forEach(pattern => {
     const matches = message.match(pattern) || [];
     matches.forEach(match => organisms.add(match.toLowerCase()));
   });
-  
+
   return Array.from(organisms);
 }
 
 function extractBioTerms(message: string): string[] {
   const terms = new Set<string>();
-  
+
   // Common biological terms and techniques
   const bioTermPattern = /\b(pcr|crispr|sequencing|cloning|expression|protein|enzyme|gene|genome|plasmid|vector|primer|probe|assay|antibody|mutation|variant|pathway|regulatory|transcription|translation)\b/gi;
   const matches = message.match(bioTermPattern) || [];
   matches.forEach(match => terms.add(match.toLowerCase()));
-  
+
   return Array.from(terms);
 }
 
@@ -1424,12 +1423,12 @@ function analyzeSentenceStructure(message: string): 'question' | 'command' | 'st
       message.endsWith('?')) {
     return 'question';
   }
-  
+
   // Command patterns
   if (/^(?:analyze|find|show|tell|explain|help|design|create|optimize|run|execute|perform|calculate|determine)\b/i.test(message)) {
     return 'command';
   }
-  
+
   return 'statement';
 }
 
@@ -1495,17 +1494,17 @@ function detectHelpType(message: string): string {
 
 function calculateConfidence(query: BioinformaticsQuery, message: string): number {
   let confidence = 0.5; // Base confidence
-  
+
   // Increase confidence based on entity matches
   if (query.entities.sequences?.length > 0) confidence += 0.1;
   if (query.entities.genes?.length > 0) confidence += 0.1;
   if (query.entities.organisms?.length > 0) confidence += 0.1;
   if (query.entities.terms?.length > 0) confidence += 0.1;
-  
+
   // Adjust based on message clarity
   if (analyzeSentenceStructure(message) !== 'statement') confidence += 0.1;
   if (message.length > 10 && message.length < 200) confidence += 0.1;
-  
+
   return Math.min(confidence, 1.0);
 }
 
@@ -1547,12 +1546,11 @@ function detectUserSkillLevel(message: string, context: ConversationContext): 'b
     'primer', 'amplification', 'plasmid', 'vector', 'restriction', 'enzyme',
     'ligase', 'polymerase', 'nucleotide', 'codon', 'translation'
   ]);
-  
+
   const advancedTerms = new Set([
     'oligonucleotide', 'homologous', 'recombination', 'transformation',
     'transfection', 'expression', 'transcription', 'translation'
   ]);
-
   const tokens = message.toLowerCase().split(/\s+/);
   const technicalTermCount = tokens.filter(t => technicalTerms.has(t)).length;
   const advancedTermCount = tokens.filter(t => advancedTerms.has(t)).length;
@@ -1598,7 +1596,7 @@ function getPersonalizedResponse(
   context: ConversationContext
 ): string {
   let response = "";
-  
+
   if (isGreeting) {
     // Personalized greeting based on tone and context
     switch(tone) {
@@ -1634,4 +1632,474 @@ function getPersonalizedResponse(
   }
 
   return response;
+}
+
+class SolutionBank {
+  private static solutions: { [key: string]: string } = {
+    "crispr": "For CRISPR design, consider using tools like CHOPCHOP or Benchling. They offer guide RNA design and off-target analysis.",
+    "pcr": "For PCR primer design, use Primer3 or IDT's PrimerQuest. Ensure your primers have appropriate melting temperatures and minimal self-dimerization.",
+    "codon optimization": "For codon optimization, consider using online tools like Geneious or the codonW software. Optimize for the specific organism's codon usage.",
+    "sequence analysis": "For sequence analysis, use BLAST for homology searches, ClustalW for multiple sequence alignment, and online tools for GC content calculation.",
+    "file format": "FASTA is a simple text-based format for representing nucleotide or amino acid sequences. GenBank files contain sequence data along with annotations.",
+    "error": "If you encounter an error, double-check your input parameters, file formats, and API keys. Consult the documentation for troubleshooting tips.",
+    "bioinformatics": "Bioinformatics combines biology and computer science to analyze biological data. It includes sequence analysis, structural biology, and systems biology.",
+    "help": "I can assist with DNA/RNA analysis, CRISPR design, PCR primer design, protein analysis, and coding assistance. What do you need help with today?",
+    "greeting": "Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. How can I assist you with your bioinformatics tasks today?",
+    "default": "I'm BioScriptor, an AI assistant for bioinformatics. I can help with sequence analysis, molecular biology tools, structural biology, and file support. Ask me anything!"
+  };
+
+  static getSolution(query: string): string {
+    // Simple keyword matching for relevant solutions
+    const lowerQuery = query.toLowerCase();
+    if (lowerQuery.includes("crispr")) return this.solutions["crispr"];
+    if (lowerQuery.includes("pcr")) return this.solutions["pcr"];
+    if (lowerQuery.includes("codon optimization")) return this.solutions["codon optimization"];
+    if (lowerQuery.includes("sequence analysis")) return this.solutions["sequence analysis"];
+    if (lowerQuery.includes("file format")) return this.solutions["file format"];
+    if (lowerQuery.includes("error")) return this.solutions["error"];
+    if (lowerQuery.includes("bioinformatics")) return this.solutions["bioinformatics"];
+    if (lowerQuery.includes("help")) return this.solutions["help"];
+    if (lowerQuery.includes("hi") || lowerQuery.includes("hello")) return this.solutions["greeting"];
+
+    return this.solutions["default"];
+  }
+}
+
+// Modified FaultTolerantAI class to include solution bank and handle errors gracefully
+class FaultTolerantAI {
+  private aiConfig: ProviderConfig;
+
+  constructor(aiConfig: ProviderConfig) {
+    this.aiConfig = aiConfig;
+  }
+
+  async processQuery(
+    query: string,
+    modelContext: any,
+    tone: string,
+    history: { role: string; content: string; }[]
+  ): Promise<{ provider: string; content: string; fallbackUsed: boolean; processingTime: number; metadata?: any; confidence?: number; }> {
+    const startTime = Date.now();
+    let lastError: Error | null = null;
+    let providerUsed = '';
+    let responseContent = '';
+    let fallback = false;
+    let metadata: any = {};
+    let confidence: number | undefined;
+
+    const providers = Object.keys(this.aiConfig);
+
+    for (const providerName of providers) {
+      try {
+        providerUsed = providerName;
+        const providerConfig = this.aiConfig[providerName];
+        if (!providerConfig || !providerConfig.apiKey) {
+          console.warn(`Skipping provider ${providerName} due to missing API key or configuration.`);
+          continue;
+        }
+
+        console.log(`Attempting to use provider: ${providerName}`);
+        let aiResponse: any;
+
+        switch (providerName) {
+          case 'groq':
+          case 'openrouter':
+          case 'together':
+            aiResponse = await this.callChatCompletionsAPI(providerConfig, query, modelContext, history);
+            break;
+          case 'cohere':
+            aiResponse = await this.callCohereGenerateAPI(providerConfig, query, modelContext);
+            break;
+          case 'ollama':
+            aiResponse = await this.callOllamaAPI(providerConfig, query, modelContext, history);
+            break;
+          default:
+            console.warn(`Provider ${providerName} not supported.`);
+            continue;
+        }
+
+        if (typeof aiResponse === 'string') {
+          responseContent = aiResponse;
+        } else if (aiResponse && aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message && aiResponse.choices[0].message.content) {
+          responseContent = aiResponse.choices[0].message.content.trim();
+          metadata = { model: aiResponse.model, usage: aiResponse.usage };
+          confidence = 0.9;
+        } else if (aiResponse && aiResponse.generations && aiResponse.generations[0] && aiResponse.generations[0].text) {
+          responseContent = aiResponse.generations[0].text.trim();
+          confidence = 0.8;
+        }
+        
+
+        if (responseContent) {
+          const processingTime = Date.now() - startTime;
+          return {
+            provider: providerName,
+            content: responseContent,
+            fallbackUsed: false,
+            processingTime,
+            metadata,
+            confidence
+          };
+        } else {
+          lastError = new Error(`Empty response from ${providerName}`);
+          console.error(`Provider ${providerName} returned an empty response.`, lastError);
+        }
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Error with provider ${providerName}:`, error);
+      }
+    }
+
+    // If all providers fail, return from solution bank
+    console.log('All AI providers failed, using solution bank fallback');
+    return {
+      response: this.getSolutionBankResponse(query),
+      conversationContext: conversationManager.getActiveContext()
+    };
+  }
+
+  private async generateResponse(options: {
+    messages: ChatMessage[];
+    context: {
+      memory: {
+        topics: string[];
+        entities: string[];
+        keyTerms: string[];
+      };
+      userData: UserProfile;
+    };
+  }): Promise<{ content: string; metadata?: any; confidence?: number; }> {
+    // Simplified response generation for chat-like interactions
+    const messages = options.messages.map(msg => ({ role: msg.role, content: msg.content }));
+    const query = messages.map(m => m.content).join('\n');
+    const modelContext = {
+      conversation: {
+        history: messages.slice(-10),
+        userSkillLevel: options.context.userData?.skillLevel,
+        tone: options.context.userData?.preferredTone,
+        allTopics: options.context.memory.topics,
+        recentEntities: options.context.memory.entities.slice(-5),
+        keyTerms: options.context.memory.keyTerms
+      },
+      userData: options.context.userData,
+    };
+
+    try {
+      const aiResponse = await this.processQuery(query, modelContext, options.context.userData?.preferredTone || 'casual', messages);
+      return {
+        content: aiResponse.content,
+        metadata: aiResponse.metadata,
+        confidence: aiResponse.confidence
+      };
+    } catch (error: any) {
+      console.error('Error generating response:', error);
+       return {
+        content: `Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. I'm having trouble connecting to my AI models right now. 
+
+While I work on reconnecting, I can still help you with:
+• Understanding bioinformatics concepts
+• Explaining molecular biology techniques  
+• Providing coding assistance for biological analysis
+• File format information and best practices
+
+What would you like to know about bioinformatics today?`,
+      };
+    }
+  }
+
+  private async callChatCompletionsAPI(providerConfig: any, query: string, modelContext: any, history: any): Promise<any> {
+    const messages = history.map((msg: any) => ({ role: msg.role, content: msg.content }));
+    messages.push({ role: 'user', content: query });
+
+    const requestOptions: any = {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${providerConfig.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: providerConfig.model || 'default',
+        messages: messages,
+        temperature: 0.7
+      })
+    };
+
+    if (providerConfig.endpoint.includes('openrouter')) {
+      requestOptions.headers['OpenAI-Model'] = providerConfig.model || 'mistralai/mistral-medium'; // or another suitable default model
+      requestOptions.headers['HTTP-Referer'] = 'https://bioscriptor.ai'; // Replace with your actual domain
+      requestOptions.headers['X-Custom-Metadata'] = JSON.stringify(modelContext); // Add context
+    }
+
+    const response = await fetch(providerConfig.endpoint, requestOptions);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Chat Completions API error! Status: ${response.status}, Body: ${errorBody}`);
+    }
+
+    return await response.json();
+  }
+
+  private async callCohereGenerateAPI(providerConfig: any, query: string, modelContext: any): Promise<any> {
+    const requestOptions: any = {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${providerConfig.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: query,
+        model: 'command',
+        max_tokens: 300,
+        temperature: 0.7,
+        k: 0,
+        p: 0.75,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        return_likelihoods: 'NONE'
+      })
+    };
+
+    const response = await fetch(providerConfig.endpoint, requestOptions);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Cohere Generate API error! Status: ${response.status}, Body: ${errorBody}`);
+    }
+
+    return await response.json();
+  }
+
+  private async callOllamaAPI(providerConfig: any, query: string, modelContext: any, history: any): Promise<any> {
+    const messages = history.map((msg: any) => ({ role: msg.role, content: msg.content }));
+    messages.push({ role: 'user', content: query });
+
+    const requestOptions: any = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: providerConfig.model || 'mistral',
+        prompt: query,
+        stream: false,
+        context: history,
+        format: 'json'
+      })
+    };
+
+    const response = await fetch(`${providerConfig.endpoint}/api/generate`, requestOptions);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Ollama API error! Status: ${response.status}, Body: ${errorBody}`);
+    }
+
+    const data = await response.text();
+    try {
+      const parsedData = JSON.parse(data);
+      return {
+        choices: [{ message: { content: parsedData.response } }],
+        model: providerConfig.model,
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+      };
+    } catch (e) {
+      console.error("Failed to parse Ollama API response:", data);
+      throw e;
+    }
+  }
+
+  private getSolutionBankResponse(query: string): string {
+    return SolutionBank.getSolution(query);
+  }
+}
+
+// Initialize the conversation manager
+const conversationManager = new ConversationManager();
+
+export async function processQuery(
+  message: string, 
+  fileAnalysis?: BioFileAnalysis, 
+  conversationId?: string
+): Promise<{response: string, conversationContext: ConversationContext}> {
+  try {
+    // Switch or create conversation context
+    if (conversationId) {
+      const existingContext = conversationManager.switchConversation(conversationId);
+      if (!existingContext) {
+        throw new Error('Conversation not found');
+      }
+    }
+
+    const conversationCtx = conversationManager.getActiveContext();
+
+    // 1. Input Preprocessing
+    const sanitizedMessage = securityManager.sanitizeInput(message);
+    const processedInput = preprocessInput(sanitizedMessage);
+
+    // 2. Context & State Management
+    conversationCtx.turnCount++;
+    const tone = detectTone(sanitizedMessage);
+    const userSkillLevel = detectUserSkillLevel(sanitizedMessage, conversationCtx);
+    if (conversationCtx.userData) {
+      conversationCtx.userData.skillLevel = userSkillLevel;
+      conversationCtx.userData.preferredTone = tone;
+    }
+
+    // Track message being processed
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    conversationManager.addMessageToHistory(sanitizedMessage, 'user', {
+      tone,
+      fileAnalysis,
+      status: 'complete',
+      confidence: 1.0,
+      renderOptions: {
+        markdown: true,
+        syntax: true,
+        math: true,
+        mermaid: true
+      }
+    });
+
+    // Store user message in history
+    conversationManager.addMessageToHistory(sanitizedMessage, 'user', {
+      tone,
+      fileAnalysis
+    });
+
+    // 3. Intent Recognition & Entity Extraction
+    const query = parseQuery(sanitizedMessage, conversationCtx);
+
+    // For bioinformatics-specific queries, use specialized handlers
+    if (query.type !== 'general') {
+      return await processBioinformaticsQuery(query, sanitizedMessage, fileAnalysis);
+    }
+
+    // For general queries, use the fault-tolerant AI system with dynamic model selection
+    const modelContext = {
+      conversation: {
+        history: conversationCtx.history.slice(-10),
+        userSkillLevel: conversationCtx.userData?.skillLevel,
+        tone: tone,
+        allTopics: Array.from(conversationCtx.memory.topics),
+        recentEntities: Array.from(conversationCtx.memory.entities).slice(-5),
+        keyTerms: Array.from(conversationCtx.memory.keyTerms)
+      },
+      fileAnalysis,
+      // Select appropriate model based on query type
+      model: query.parameters.isCodeRelated ? 'code' : 
+             query.parameters.isScientific ? 'science' :
+             query.parameters.isBiological ? 'bio' :
+             query.parameters.isResearch ? 'research' : 'default',
+      systemPrompt: `You are BioScriptor, an advanced bioinformatics AI assistant with real-time adaptive capabilities.
+        Core traits:
+        - Friendly and engaging personality
+        - Deep expertise in bioinformatics and molecular biology
+        - Ability to explain complex concepts clearly
+        - Natural conversation style matching user's tone (${tone})
+
+        Current Context:
+        - Skill Level: ${userSkillLevel}
+        - Conversation Turn: ${conversationCtx.turnCount}
+        - Recent Topics: ${Array.from(conversationCtx.memory.topics).slice(-3).join(', ')}
+
+        Response Guidelines:
+        1. Stay in character as BioScriptor
+        2. Be naturally conversational, not templated
+        3. Draw from your bioinformatics knowledge
+        4. Match user's ${tone} tone
+        5. Adapt technical depth to ${userSkillLevel} level
+        6. Reference relevant previous context when appropriate
+        7. Express personality while maintaining professionalism`
+    };
+
+    // Add conversational elements based on tone and query type
+    let aiPrompt = "";
+
+    // Handle different types of conversational queries
+    if (query.parameters.isGreeting || /^(hi|hello|hey|greetings)/i.test(sanitizedMessage)) {
+      const timeOfDay = getTimeOfDay();
+      const isReturning = conversationCtx.turnCount > 1;
+      aiPrompt = `Respond as BioScriptor with a ${tone} greeting. Use this context:
+        Time: ${timeOfDay}
+        Returning user: ${isReturning}
+        Skill level: ${userSkillLevel}
+        Previous interactions: ${conversationCtx.turnCount}
+        Make it natural and friendly, avoid mentioning these technical details directly.`;
+    } 
+    // Handle personal/status questions
+    else if (/^(how are you|what can you do|tell me about yourself|what are you)/i.test(sanitizedMessage)) {
+      aiPrompt = `Respond as BioScriptor in a ${tone} tone. 
+        Share your capabilities in bioinformatics, molecular biology, and scientific computing.
+        Express enthusiasm for helping with:
+        - DNA/RNA sequence analysis
+        - CRISPR design
+        - PCR primer design
+        - Protein analysis
+        - Data visualization
+        - Code assistance
+        Make it conversational and match the user's ${tone} tone.`;
+    }
+    // Handle definition queries
+    else if (query.parameters.isDefinitionQuery) {
+      aiPrompt = `Explain ${query.parameters.topic} in ${tone} tone, using clear and engaging language.
+        Adapt the explanation to a ${userSkillLevel} skill level.`;
+    }
+    // Default case
+    else {
+      aiPrompt = sanitizedMessage;
+    }
+
+    // Use the fault-tolerant AI system with conversation history
+    const aiResponse = await faultTolerantAI.processQuery(
+      aiPrompt,
+      modelContext,
+      tone,
+      conversationCtx.history.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    );
+
+    let response = aiResponse.response;
+
+    // Store assistant response in history
+    const sanitizedResponse = securityManager.sanitizeCodeOutput(response);
+    conversationManager.addMessageToHistory(sanitizedResponse, 'assistant', {
+      provider: aiResponse.provider,
+      fallbackUsed: aiResponse.fallbackUsed,
+      processingTime: aiResponse.processingTime,
+      tone: tone,
+      confidence: 0.85
+    });
+
+    return {
+      response: sanitizedResponse,
+      conversationContext: conversationManager.getActiveContext()
+    };
+
+  } catch (error) {
+    console.error('AI processing error:', error);
+
+    if (error.message.includes('Security violation')) {
+      return {
+        response: `🔒 Security Alert: ${error.message}\n\nPlease rephrase your request without potentially dangerous commands. I'm here to help with safe bioinformatics analysis and coding assistance.`,
+        conversationContext: conversationManager.getActiveContext()
+      };
+    }
+
+    // Return a more helpful error message that doesn't mention solution bank
+    return {
+      response: `Hello! I'm BioScriptor, your AI-powered bioinformatics assistant. I'm having trouble connecting to my AI models right now. 
+
+While I work on reconnecting, I can still help you with:
+• Understanding bioinformatics concepts
+• Explaining molecular biology techniques  
+• Providing coding assistance for biological analysis
+• File format information and best practices
+
+What would you like to know about bioinformatics today?`,
+      conversationContext: conversationManager.getActiveContext()
+    };
+  }
 }
