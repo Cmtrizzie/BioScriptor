@@ -1,7 +1,4 @@
-` tags.
 
-```
-<replit_final_file>
 import { pgTable, text, integer, boolean, timestamp, jsonb, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 

@@ -3,23 +3,21 @@ import { neon } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
 
 // Database connection with fallback for development
-const connectionString = process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/bioscriptor_dev";
+const connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/bioscriptor_dev";
 
-let sql: any;
-let db: any;
+let db: ReturnType<typeof drizzle>;
 
-try {
-  sql = neon(connectionString);
+if (process.env.DATABASE_URL) {
+  // Production: Use Neon database
+  const sql = neon(connectionString);
   db = drizzle(sql, { schema });
-} catch (error) {
-  console.warn("Database connection failed, using mock storage:", error);
-  // Create mock database for development
-  db = {
-    select: () => ({ from: () => ({ where: () => [] }) }),
-    insert: () => ({ values: () => ({ returning: () => [{ id: 1 }] }) }),
-    update: () => ({ set: () => ({ where: () => ({ returning: () => [{}] }) }) }),
-    delete: () => ({ where: () => ({ returning: () => [{}] }) })
-  };
+} else {
+  // Development: Use in-memory fallback or local PostgreSQL
+  console.log("Warning: No DATABASE_URL found. Using mock database for development.");
+
+  // Create a mock database object for development
+  const mockSql = () => Promise.resolve([]);
+  db = drizzle(mockSql as any, { schema });
 }
 
 export const storage = {
@@ -190,3 +188,6 @@ export const storage = {
     }
   }
 };
+
+export { db };
+export * from "@shared/schema";
