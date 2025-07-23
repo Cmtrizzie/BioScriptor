@@ -70,23 +70,24 @@ export function useChat() {
         requestData = await response.json();
       } else {
         const response = await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-firebase-uid': user.uid,
-          'x-firebase-email': user.email || '',
-          'x-firebase-display-name': user.displayName || '',
-          'x-firebase-photo-url': user.photoURL || '',
-        },
-        body: JSON.stringify({ message: content }),
-      });
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-firebase-uid': user.uid,
+            'x-firebase-email': user.email || '',
+            'x-firebase-display-name': user.displayName || '',
+            'x-firebase-photo-url': user.photoURL || '',
+          },
+          body: JSON.stringify({ message: content }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Failed to send message');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to send message');
+        }
+
+        requestData = await response.json();
       }
-
-      const requestData = await response.json();
 
       // Ensure we always have a string response
       let responseContent = '';
