@@ -75,9 +75,9 @@ export class FaultTolerantAI {
       }
     }
 
-    // If all providers fail, return fallback response
+    // If all providers fail, return intelligent fallback response
     return {
-      content: this.getFallbackResponse(message),
+      content: this.getSolutionBankResponse(message),
       provider: 'fallback',
       fallbackUsed: true,
       processingTime: Date.now() - startTime
@@ -142,8 +142,13 @@ export class FaultTolerantAI {
       }
     }
 
-    // If all providers fail, return a helpful error message
-    throw new Error('All AI providers are currently unavailable. Please try again in a moment.');
+    // If all providers fail, use solution bank fallback
+    return {
+      content: this.getSolutionBankResponse(prompt),
+      provider: 'solution_bank',
+      fallbackUsed: true,
+      processingTime: Date.now() - startTime
+    };
   }
 
   private async tryProvider(provider: AIProvider, prompt: string, history?: Array<{role: string, content: string}>): Promise<string | null> {
@@ -164,6 +169,7 @@ export class FaultTolerantAI {
             throw new Error(`Unknown provider: ${provider.name}`);
         }
       } catch (error) {
+        console.log(`Provider ${provider.name} attempt ${attempt + 1} failed:`, error);
         if (attempt === provider.maxRetries - 1) throw error;
         await this.delay(Math.pow(2, attempt) * 1000); // Exponential backoff
       }

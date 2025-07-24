@@ -286,15 +286,20 @@ Guidelines:
 4. Provide accurate, actionable advice`;
 
         // Generate AI response
-        const response = await faultTolerantAI.processMessage(query, {
-            systemPrompt,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                ...recentHistory
-            ],
-            maxTokens: 1500,
-            temperature: 0.7
-        });
+        const response = await faultTolerantAI.processQuery(
+            query,
+            {
+                systemPrompt,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...recentHistory
+                ],
+                maxTokens: 1500,
+                temperature: 0.7
+            },
+            tone as any,
+            recentHistory
+        );
 
         // Create assistant message
         const assistantMessage: ChatMessage = {
