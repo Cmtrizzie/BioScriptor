@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 // Database connection with fallback for development
@@ -23,7 +24,7 @@ if (process.env.DATABASE_URL) {
 export const storage = {
   async getUserByFirebaseUid(firebaseUid: string) {
     try {
-      const users = await db.select().from(schema.users).where(schema.users.firebaseUid.eq(firebaseUid));
+      const users = await db.select().from(schema.users).where(eq(schema.users.firebaseUid, firebaseUid));
       return users[0] || null;
     } catch (error) {
       console.error("Database error:", error);
@@ -43,7 +44,7 @@ export const storage = {
 
   async updateUser(userId: number, updates: any) {
     try {
-      const [user] = await db.update(schema.users).set(updates).where(schema.users.id.eq(userId)).returning();
+      const [user] = await db.update(schema.users).set(updates).where(eq(schema.users.id, userId)).returning();
       return user;
     } catch (error) {
       console.error("Database error:", error);
@@ -53,7 +54,7 @@ export const storage = {
 
   async getChatSessions(userId: number) {
     try {
-      return await db.select().from(schema.chatSessions).where(schema.chatSessions.userId.eq(userId));
+      return await db.select().from(schema.chatSessions).where(eq(schema.chatSessions.userId, userId));
     } catch (error) {
       console.error("Database error:", error);
       return [];
@@ -62,7 +63,7 @@ export const storage = {
 
   async getChatSession(sessionId: number) {
     try {
-      const sessions = await db.select().from(schema.chatSessions).where(schema.chatSessions.id.eq(sessionId));
+      const sessions = await db.select().from(schema.chatSessions).where(eq(schema.chatSessions.id, sessionId));
       return sessions[0] || null;
     } catch (error) {
       console.error("Database error:", error);
@@ -72,7 +73,7 @@ export const storage = {
 
   async deleteChatSession(sessionId: number) {
     try {
-      await db.delete(schema.chatSessions).where(schema.chatSessions.id.eq(sessionId));
+      await db.delete(schema.chatSessions).where(eq(schema.chatSessions.id, sessionId));
       return true;
     } catch (error) {
       console.error("Database error:", error);
@@ -92,7 +93,7 @@ export const storage = {
 
   async getBioFiles(userId: number) {
     try {
-      return await db.select().from(schema.bioFiles).where(schema.bioFiles.userId.eq(userId));
+      return await db.select().from(schema.bioFiles).where(eq(schema.bioFiles.userId, userId));
     } catch (error) {
       console.error("Database error:", error);
       return [];
@@ -112,8 +113,8 @@ export const storage = {
   async getActiveSubscription(userId: number) {
     try {
       const subscriptions = await db.select().from(schema.subscriptions)
-        .where(schema.subscriptions.userId.eq(userId))
-        .where(schema.subscriptions.status.eq('active'));
+        .where(eq(schema.subscriptions.userId, userId))
+        .where(eq(schema.subscriptions.status, 'active'));
       return subscriptions[0] || null;
     } catch (error) {
       console.error("Database error:", error);
@@ -141,7 +142,7 @@ export const storage = {
 
   async getPlanLimit(tier: string) {
     try {
-      const limits = await db.select().from(schema.planLimits).where(schema.planLimits.tier.eq(tier));
+      const limits = await db.select().from(schema.planLimits).where(eq(schema.planLimits.tier, tier));
       return limits[0] || null;
     } catch (error) {
       console.error("Database error:", error);
@@ -151,7 +152,7 @@ export const storage = {
 
   async updatePlanLimit(tier: string, updates: any) {
     try {
-      const [limit] = await db.update(schema.planLimits).set(updates).where(schema.planLimits.tier.eq(tier)).returning();
+      const [limit] = await db.update(schema.planLimits).set(updates).where(eq(schema.planLimits.tier, tier)).returning();
       return limit;
     } catch (error) {
       console.error("Database error:", error);
@@ -180,7 +181,7 @@ export const storage = {
 
   async resetUserDailyLimit(userId: number) {
     try {
-      const [user] = await db.update(schema.users).set({ queryCount: 0 }).where(schema.users.id.eq(userId)).returning();
+      const [user] = await db.update(schema.users).set({ queryCount: 0 }).where(eq(schema.users.id, userId)).returning();
       return user;
     } catch (error) {
       console.error("Database error:", error);

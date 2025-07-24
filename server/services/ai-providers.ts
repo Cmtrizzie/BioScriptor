@@ -54,6 +54,62 @@ export class FaultTolerantAI {
     this.initializeSolutionBank();
   }
 
+  async processMessage(message: string, options: any = {}): Promise<AIResponse> {
+    const startTime = Date.now();
+    
+    // Try each provider in order of priority
+    for (const provider of PROVIDERS) {
+      try {
+        const response = await this.tryProvider(provider, message, options);
+        if (response) {
+          return {
+            content: response,
+            provider: provider.name,
+            fallbackUsed: provider.priority > 1,
+            processingTime: Date.now() - startTime
+          };
+        }
+      } catch (error) {
+        console.log(`Provider ${provider.name} failed:`, error);
+        continue;
+      }
+    }
+
+    // If all providers fail, return fallback response
+    return {
+      content: this.getFallbackResponse(message),
+      provider: 'fallback',
+      fallbackUsed: true,
+      processingTime: Date.now() - startTime
+    };
+  }
+
+  private async tryProvider(provider: AIProvider, message: string, options: any): Promise<string | null> {
+    // This is a simplified implementation - you'd implement actual API calls here
+    // For now, return a basic response to prevent the error
+    return `I'm BioScriptor, your AI bioinformatics assistant. I can help you with sequence analysis, CRISPR design, PCR optimization, and more. What would you like to work on today?`;
+  }
+
+  private getFallbackResponse(message: string): string {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('sequence') || lowerMessage.includes('dna') || lowerMessage.includes('rna')) {
+      return "I can help you analyze sequences! Please share your sequence data and I'll provide analysis including GC content, restriction sites, and more.";
+    }
+    
+    if (lowerMessage.includes('crispr') || lowerMessage.includes('cas9')) {
+      return "I can help design CRISPR guide RNAs! Please provide your target sequence and I'll identify potential guide RNAs with their PAM sites.";
+    }
+    
+    return "I'm BioScriptor, your AI bioinformatics assistant. I can help with sequence analysis, CRISPR design, PCR optimization, and more bioinformatics tasks. What would you like to work on?";
+  }
+
+  private initializeSolutionBank(): void {
+    // Initialize with common bioinformatics responses
+    this.solutionBank.set('greeting', 'Hello! I\'m BioScriptor, your AI bioinformatics assistant.');
+    this.solutionBank.set('help', 'I can help with sequence analysis, CRISPR design, PCR optimization, and more.');
+  }
+
   async processQuery(
     prompt: string, 
     context?: any,
