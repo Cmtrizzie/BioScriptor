@@ -24,34 +24,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
     });
   };
 
-  const renderMessageContent = (content: string, type: 'user' | 'ai') => {
-    // Ensure content is a string
-    const safeContent = typeof content === 'string' ? content : String(content || '');
-
-    // Simple parsing for code blocks and special content
-    const parts = safeContent.split(/(```[\s\S]*?```)/);
-
-    return parts.map((part, index) => {
-      if (part.startsWith('```') && part.endsWith('```')) {
-        const codeMatch = part.match(/```(\w*)\n?([\s\S]*?)```/);
-        const language = codeMatch?.[1] || 'text';
-        const code = codeMatch?.[2] || '';
-        return <CodeBlock key={index} language={language} code={code} />;
-      }
-
-      // Check for molecular viewer requests
-      if (type === 'ai' && part.includes('3D visualization') && part.includes('PDB')) {
-        return (
-          <div key={index} className="my-4">
-            <p className="mb-4">{part}</p>
-            <MolecularViewer pdbId="1JM7" />
-          </div>
-        );
-      }
-
-      return <p key={index} className="whitespace-pre-wrap">{part || ''}</p>;
-    });
-  };
+  
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
@@ -83,29 +56,72 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               <div className="max-w-3xl">
                 <div className="bg-bio-blue text-white rounded-2xl rounded-br-md px-4 py-3">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
                     components={{
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                          <CodeBlock
-                            language={match[1]}
-                            value={String(children).replace(/\n$/, '')}
-                          />
-                        ) : (
-                          <code className={className} {...props}>
+                      code({ node, inline, children, ...props }) {
+                        if (!inline) {
+                          return (
+                            <CodeBlock
+                              language="text"
+                              code={String(children).replace(/\n$/, '')}
+                            />
+                          );
+                        }
+                        return (
+                          <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
                             {children}
                           </code>
                         );
                       },
-                      p: ({ node, ...props }) => <p className="mb-2" {...props} />,
-                      ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                      ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                      li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                      h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-2" {...props} />,
-                      h2: ({ node, ...props }) => <h2 className="text-lg font-semibold mb-2" {...props} />,
-                      h3: ({ node, ...props }) => <h3 className="text-md font-semibold mb-1" {...props} />,
-                      blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2" {...props} />,
-                      pre: ({ node, ...props }) => <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 overflow-x-auto" {...props} />
+                      pre: ({ children }) => <div>{children}</div>,
+                      p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                      h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">{children}</h3>,
+                      h4: ({ children }) => <h4 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">{children}</h4>,
+                      h5: ({ children }) => <h5 className="text-sm font-semibold mb-1 text-gray-800 dark:text-gray-200">{children}</h5>,
+                      h6: ({ children }) => <h6 className="text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">{children}</h6>,
+                      ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-3 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-3 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-bio-blue/50 bg-gray-50 dark:bg-gray-800/50 pl-4 py-2 my-4 italic text-gray-700 dark:text-gray-300">
+                          {children}
+                        </blockquote>
+                      ),
+                      strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-white">{children}</strong>,
+                      em: ({ children }) => <em className="italic text-gray-800 dark:text-gray-200">{children}</em>,
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto my-4">
+                          <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-lg">
+                            {children}
+                          </table>
+                        </div>
+                      ),
+                      thead: ({ children }) => <thead className="bg-gray-50 dark:bg-gray-800">{children}</thead>,
+                      tbody: ({ children }) => <tbody className="divide-y divide-gray-200 dark:divide-gray-700">{children}</tbody>,
+                      tr: ({ children }) => <tr>{children}</tr>,
+                      th: ({ children }) => (
+                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700">
+                          {children}
+                        </th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                          {children}
+                        </td>
+                      ),
+                      a: ({ href, children }) => (
+                        <a 
+                          href={href} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-bio-blue hover:text-bio-blue/80 underline"
+                        >
+                          {children}
+                        </a>
+                      ),
+                      hr: () => <hr className="my-6 border-gray-200 dark:border-gray-700" />,
                     }}
                   >
                     {message.content}
@@ -125,8 +141,80 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                         <path fillRule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3a2 2 0 012 0v1a1 1 0 102 0V3a2 2 0 012 2v6.5a2.5 2.5 0 01-2.5 2.5h-7A2.5 2.5 0 014 11.5V5z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex-1 text-gray-900 dark:text-white">
-                      {renderMessageContent(message.content, 'ai')}
+                    <div className="flex-1 text-gray-900 dark:text-white prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        components={{
+                          code({ node, inline, children, ...props }) {
+                            if (!inline) {
+                              const match = /language-(\w+)/.exec(props.className || '');
+                              const language = match ? match[1] : 'text';
+                              return (
+                                <CodeBlock
+                                  language={language}
+                                  code={String(children).replace(/\n$/, '')}
+                                />
+                              );
+                            }
+                            return (
+                              <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({ children }) => <div>{children}</div>,
+                          p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                          h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">{children}</h3>,
+                          h4: ({ children }) => <h4 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">{children}</h4>,
+                          h5: ({ children }) => <h5 className="text-sm font-semibold mb-1 text-gray-800 dark:text-gray-200">{children}</h5>,
+                          h6: ({ children }) => <h6 className="text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">{children}</h6>,
+                          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-3 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-3 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-bio-teal/50 bg-gray-50 dark:bg-gray-800/50 pl-4 py-2 my-4 italic text-gray-700 dark:text-gray-300">
+                              {children}
+                            </blockquote>
+                          ),
+                          strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-white">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-gray-800 dark:text-gray-200">{children}</em>,
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-4">
+                              <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-lg">
+                                {children}
+                              </table>
+                            </div>
+                          ),
+                          thead: ({ children }) => <thead className="bg-gray-50 dark:bg-gray-800">{children}</thead>,
+                          tbody: ({ children }) => <tbody className="divide-y divide-gray-200 dark:divide-gray-700">{children}</tbody>,
+                          tr: ({ children }) => <tr>{children}</tr>,
+                          th: ({ children }) => (
+                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700">
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                              {children}
+                            </td>
+                          ),
+                          a: ({ href, children }) => (
+                            <a 
+                              href={href} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-bio-teal hover:text-bio-teal/80 underline"
+                            >
+                              {children}
+                            </a>
+                          ),
+                          hr: () => <hr className="my-6 border-gray-200 dark:border-gray-700" />,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 </div>

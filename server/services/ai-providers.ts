@@ -278,22 +278,125 @@ export class FaultTolerantAI {
 
   getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
+    
     if (lowerPrompt.includes('sequence')) {
-      return "I can help with sequence analysis...";
+      return `## 🧬 Sequence Analysis
+
+I can help with **sequence analysis** tasks including:
+
+- **DNA/RNA sequence parsing** and validation
+- **GC content calculation**
+- **Reverse complement generation**
+- **Open reading frame (ORF) detection**
+- **Motif searching** and pattern recognition
+
+\`\`\`python
+def calculate_gc_content(sequence):
+    gc_count = sequence.count('G') + sequence.count('C')
+    return (gc_count / len(sequence)) * 100
+\`\`\`
+
+What specific sequence analysis would you like help with?`;
     }
+    
     if (lowerPrompt.includes('crispr')) {
-      return "CRISPR guide RNA design is my specialty...";
+      return `## ✂️ CRISPR Guide RNA Design
+
+**CRISPR guide RNA design** is my specialty! I can help with:
+
+- **Target site identification**
+- **PAM sequence validation**
+- **Off-target analysis**
+- **Guide RNA scoring**
+
+### Example CRISPR Workflow:
+1. **Input target sequence**
+2. **Identify PAM sites** (NGG for Cas9)
+3. **Design 20-nucleotide guides**
+4. **Score for efficiency**
+
+Would you like me to help design guides for a specific target?`;
     }
+    
     if (lowerPrompt.includes('pcr')) {
-      return "PCR primer design is something I can definitely help with...";
+      return `## 🧪 PCR Primer Design
+
+**PCR primer design** is something I can definitely help with:
+
+| Parameter | Typical Range |
+|-----------|---------------|
+| **Length** | 18-25 nucleotides |
+| **Tm** | 55-65°C |
+| **GC Content** | 40-60% |
+| **3' GC Clamp** | 1-2 G/C residues |
+
+### Key Considerations:
+- ✅ **Specificity** - avoid secondary structures
+- ✅ **Efficiency** - balanced Tm values
+- ✅ **Amplicon size** - appropriate for application
+
+What target would you like to design primers for?`;
     }
+    
     if (lowerPrompt.includes('protein')) {
-      return "Protein analysis is one of my strengths...";
+      return `## 🧬 Protein Analysis
+
+**Protein analysis** is one of my strengths! I can assist with:
+
+### Structure Analysis:
+- **Secondary structure prediction**
+- **Hydrophobicity plots**
+- **Domain identification**
+- **Post-translational modification sites**
+
+### Functional Analysis:
+- **Enzyme classification**
+- **Active site prediction**
+- **Protein-protein interactions**
+
+\`\`\`python
+# Example: Calculate molecular weight
+def calculate_mw(sequence):
+    aa_weights = {'A': 89.1, 'R': 174.2, 'N': 132.1, ...}
+    return sum(aa_weights.get(aa, 0) for aa in sequence)
+\`\`\`
+
+What type of protein analysis do you need?`;
     }
+    
     if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
-      return "Hello! I'm BioScriptor, your AI bioinformatics assistant...";
+      return `# Hello! 👋
+
+I'm **BioScriptor**, your AI bioinformatics assistant! I'm here to help with:
+
+## 🧬 Core Capabilities:
+- **DNA/RNA sequence analysis**
+- **Protein structure & function**
+- **CRISPR guide design**
+- **PCR primer design**
+- **Phylogenetic analysis**
+
+## 🛠️ Popular Tools:
+- Sequence alignment & BLAST searches
+- Restriction enzyme analysis
+- Molecular cloning workflows
+- Gene expression analysis
+
+*What bioinformatics challenge can I help you solve today?*`;
     }
-    return "I'm here to help with bioinformatics tasks. Could you please provide more specific details about what you need?";
+    
+    return `## 🔬 BioScriptor Assistant
+
+I'm here to help with **bioinformatics tasks**! Please provide more specific details about what you need.
+
+### Common Tasks I Handle:
+- 🧬 **Sequence analysis** (DNA/RNA/Protein)
+- ✂️ **CRISPR design** and analysis
+- 🧪 **PCR primer** design
+- 📊 **Data analysis** and visualization
+- 🔍 **Literature research** assistance
+
+*Could you please describe your specific research question or task?*`;
   }
 }
 
