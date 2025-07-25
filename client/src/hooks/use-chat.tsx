@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -112,23 +112,20 @@ export function useChat() {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save session to localStorage
-      const currentSession: ChatSession = {
-        id: Date.now().toString(),
-        title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-        timestamp: new Date().toLocaleDateString(),
-        messages: [...messages, userMessage, aiMessage],
-      };
+      // Save session to localStorage only if it's a new conversation
+      if (messages.length === 1) { // Only save when it's the first exchange
+        const currentSession: ChatSession = {
+          id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+          timestamp: new Date().toLocaleDateString(),
+          messages: [userMessage, aiMessage],
+        };
 
-      const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-      // Remove any existing session with same messages to avoid duplicates
-      const filteredSessions = savedSessions.filter((session: ChatSession) => 
-        session.messages.length !== currentSession.messages.length || 
-        session.title !== currentSession.title
-      );
-      const updatedSessions = [currentSession, ...filteredSessions.slice(0, 9)]; // Keep last 10 sessions
-      localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-      setSessions(updatedSessions);
+        const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
+        const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)]; // Keep last 10 sessions
+        localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+        setSessions(updatedSessions);
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -149,14 +146,17 @@ export function useChat() {
   }, []);
 
   const switchToSession = useCallback((session: ChatSession) => {
-    setMessages(session.messages);
+    // Ensure we have valid messages array
+    const sessionMessages = Array.isArray(session.messages) ? session.messages : [];
+    setMessages(sessionMessages);
+    setIsLoading(false);
   }, []);
 
   // Load sessions from localStorage on mount
-  useState(() => {
+  useEffect(() => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
     setSessions(savedSessions);
-  });
+  }, []);
 
   return {
     messages,
