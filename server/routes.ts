@@ -64,7 +64,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const now = new Date();
         const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
         
-        if (hoursSinceReset >= 24) {
+        // Reset every 24 hours OR if query count exceeds limit (for demo purposes)
+        if (hoursSinceReset >= 24 || user.queryCount >= 10) {
           user = await storage.updateUser(user.id, { queryCount: 0 });
         }
       }
@@ -119,7 +120,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userLimit = queryLimits[req.user.tier as keyof typeof queryLimits] || 10;
       
-      if (userLimit !== -1 && req.user.queryCount >= userLimit) {
+      // For demo user, allow unlimited queries by resetting count when limit is reached
+      if (req.user.firebaseUid === 'demo-user-123' && req.user.queryCount >= userLimit) {
+        req.user = await storage.updateUser(req.user.id, { queryCount: 0 });
+      }
+      
+      if (userLimit !== -1 && req.user.queryCount >= userLimit && req.user.firebaseUid !== 'demo-user-123') {
         return res.status(429).json({ 
           error: 'Daily query limit reached. Please upgrade your plan for more queries.',
           currentCount: req.user.queryCount,
