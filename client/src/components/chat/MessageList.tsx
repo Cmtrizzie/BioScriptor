@@ -83,11 +83,10 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               <div className="max-w-3xl">
                 <div className="bg-bio-blue text-white rounded-2xl rounded-br-md px-4 py-3">
                   <ReactMarkdown
-                    className="prose prose-sm max-w-none dark:prose-invert"
                     remarkPlugins={[remarkGfm, remarkBreaks]}
                     components={{
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
+                      code({ node, inline, children, ...props }) {
+                        const match = /language-(\w+)/.exec((props as any).className || '');
                         const [copied, setCopied] = useState(false);
 
                         const copyToClipboard = () => {
