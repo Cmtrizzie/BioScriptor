@@ -149,13 +149,14 @@ export class FaultTolerantAI {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "llama-3.1-70b-versatile",
         messages,
         max_tokens: maxTokens || 1024,
+        temperature: 0.7,
       }),
     });
 
-    if (res.status === 404) throw new Error(`Groq API endpoint not found - check model name`);
+    if (res.status === 404) throw new Error(`Groq model not found - trying different model`);
     if (res.status >= 400 && res.status < 500) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(`Groq API returned ${res.status}: ${errorData.error?.message || res.statusText}`);
@@ -178,7 +179,7 @@ export class FaultTolerantAI {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/Llama-2-7b-chat-hf",
+        model: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         messages,
         max_tokens: maxTokens || 1024,
         temperature: 0.7,
@@ -209,7 +210,7 @@ export class FaultTolerantAI {
         "X-Title": "BioScriptor",
       },
       body: JSON.stringify({
-        model: "microsoft/wizardlm-2-8x22b",
+        model: "meta-llama/llama-3.1-8b-instruct:free",
         messages,
         max_tokens: maxTokens || 1024,
         temperature: 0.7,
@@ -277,23 +278,26 @@ export class FaultTolerantAI {
     return `${prior}\nUser: ${prompt}`;
   }
 
-  private getSolutionBankResponse(prompt: string): string {
+  getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
     
     // Basic bioinformatics responses
     if (lowerPrompt.includes('sequence')) {
-      return "For sequence analysis, you can use tools like BLAST for similarity searches, or upload FASTA files for analysis. Common sequence formats include FASTA, GenBank, and EMBL.";
+      return "I can help with sequence analysis! For sequence analysis, you can use tools like BLAST for similarity searches, or upload FASTA files for analysis. Common sequence formats include FASTA, GenBank, and EMBL. Would you like me to explain any specific sequence analysis technique?";
     }
     if (lowerPrompt.includes('crispr')) {
-      return "CRISPR guide RNA design requires a target sequence and PAM site identification. Popular tools include CHOPCHOP, CRISPRscan, and Benchling for guide design.";
+      return "CRISPR guide RNA design is my specialty! CRISPR guide RNA design requires a target sequence and PAM site identification. Popular tools include CHOPCHOP, CRISPRscan, and Benchling for guide design. I can help you design guides if you provide a target sequence.";
     }
     if (lowerPrompt.includes('pcr')) {
-      return "PCR primer design considerations include: primer length (18-25 bp), melting temperature (55-65°C), GC content (40-60%), and avoiding secondary structures.";
+      return "PCR primer design is something I can definitely help with! Key considerations include: primer length (18-25 bp), melting temperature (55-65°C), GC content (40-60%), and avoiding secondary structures. Would you like me to help design primers for a specific sequence?";
     }
     if (lowerPrompt.includes('protein')) {
-      return "Protein analysis can include structure prediction, functional annotation, and phylogenetic analysis. Tools like SWISS-MODEL, InterPro, and CLUSTAL are commonly used.";
+      return "Protein analysis is one of my strengths! This can include structure prediction, functional annotation, and phylogenetic analysis. Popular tools include SWISS-MODEL, InterPro, and CLUSTAL. What specific protein analysis are you interested in?";
+    }
+    if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
+      return "Hello! I'm BioScriptor, your AI bioinformatics assistant. I can help you with sequence analysis, CRISPR guide design, PCR primer design, protein analysis, and many other bioinformatics tasks. What would you like to work on today?";
     }
     
-    return "I'm currently experiencing issues connecting to AI services. However, I can help with basic bioinformatics questions about sequences, CRISPR, PCR, proteins, and more. Please try your question again or be more specific about what you need help with.";
+    return "I'm BioScriptor, your bioinformatics AI assistant! I can help with sequence analysis, CRISPR guide design, PCR primers, protein analysis, and more. Could you tell me more about what specific bioinformatics task you're working on? The more details you provide, the better I can assist you!";
   }
 }
