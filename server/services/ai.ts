@@ -126,7 +126,7 @@ class ConversationManager {
 }
 
 // ========== AI Service ==========
-// Initialize AI configuration
+// Initialize AI configuration with validation
 const aiConfig: ProviderConfig = {
     groq: {
         apiKey: process.env.GROQ_API_KEY || '',
@@ -149,6 +149,13 @@ const aiConfig: ProviderConfig = {
         model: 'mistral',
     },
 };
+
+// Log configuration status
+console.log('AI Provider Configuration:');
+console.log(`- Groq API Key: ${aiConfig.groq.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- Together API Key: ${aiConfig.together.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- OpenRouter API Key: ${aiConfig.openrouter.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- Cohere API Key: ${aiConfig.cohere.apiKey ? 'Set' : 'Missing'}`);
 
 const faultTolerantAI = new FaultTolerantAI(aiConfig);
 const conversationManager = new ConversationManager();
