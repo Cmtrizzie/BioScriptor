@@ -292,18 +292,25 @@ Guidelines:
 3. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
 4. Provide accurate, actionable advice`;
 
-        // Generate AI response
+        // Generate AI response with enhanced context
+        const enhancedContext = {
+            systemPrompt,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                ...recentHistory
+            ],
+            maxTokens: 2000,
+            temperature: 0.7,
+            fileAnalysis,
+            userMemory: {
+                topics: Array.from(memory.topics),
+                entities: Array.from(memory.entities)
+            }
+        };
+
         const response = await faultTolerantAI.processQuery(
             query,
-            {
-                systemPrompt,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    ...recentHistory
-                ],
-                maxTokens: 1500,
-                temperature: 0.7
-            },
+            enhancedContext,
             tone as any,
             recentHistory
         );

@@ -21,7 +21,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const [isDragging, setIsDragging] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -43,7 +43,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
 
     const fileType = getFileType(file);
     let preview = '';
-    
+
     if (fileType === 'image') {
       preview = URL.createObjectURL(file);
     } else if (fileType === 'text' || fileType === 'bio') {
@@ -58,7 +58,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   // Handle paste events
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
     const items = Array.from(e.clipboardData?.items || []);
-    
+
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
@@ -95,7 +95,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     for (const file of files) {
       await addFile(file);
@@ -105,11 +105,11 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   // Submit handler
   const handleSubmit = () => {
     if ((!message.trim() && files.length === 0) || disabled || isComposing) return;
-    
+
     onSendMessage(message, files[0]?.file);
     setMessage("");
     setFiles([]);
-    
+
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -122,7 +122,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
       e.preventDefault();
       handleSubmit();
     }
-    
+
     // Markdown shortcuts
     if (e.ctrlKey || e.metaKey) {
       switch (e.key) {
@@ -145,14 +145,14 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   // Text insertion helper
   const insertText = (before: string, after: string) => {
     if (!textareaRef.current) return;
-    
+
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
     const selectedText = message.substring(start, end);
     const newText = message.substring(0, start) + before + selectedText + after + message.substring(end);
-    
+
     setMessage(newText);
-    
+
     // Set cursor position
     setTimeout(() => {
       if (textareaRef.current) {
@@ -164,9 +164,27 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   };
 
   // File input handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
-    selectedFiles.forEach(addFile);
+
+    for (const file of selectedFiles) {
+      // Check file type for bioinformatics files
+      const validExtensions = ['.fasta', '.fa', '.fastq', '.fq', '.vcf', '.gtf', '.gff', '.pdb', '.txt', '.csv', '.tsv', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+      const fileName = file.name.toLowerCase();
+      const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
+
+      if (!isValidFile) {
+        alert(`Unsupported file type. Supported formats: ${validExtensions.join(', ')}`);
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        alert('File size must be less than 10MB');
+        return;
+      }
+
+      await addFile(file);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -238,7 +256,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
                       </div>
                     )}
                   </div>
-                  
+
                   {/* File details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
@@ -257,7 +275,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
                     )}
                   </div>
                 </div>
-                
+
                 {/* Remove button */}
                 <button
                   onClick={() => removeFile(index)}
@@ -379,7 +397,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               rows={1}
               disabled={disabled}
             />
-            
+
             {/* Send Button */}
             <Button
               onClick={handleSubmit}
@@ -401,7 +419,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
             </Button>
           </div>
         </div>
-        
+
         {/* Input Help Text */}
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
           <div className="flex items-center space-x-4 flex-wrap">

@@ -1,4 +1,12 @@
-import { Message } from "@/hooks/use-chat";
+import { Message } from '@/hooks/use-chat';
+import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import { Copy, Check } from 'lucide-react';
+import { useState } from 'react';
 import CodeBlock from "@/components/ui/code-block";
 import MolecularViewer from "@/components/visualization/MolecularViewer";
 
@@ -19,10 +27,10 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
   const renderMessageContent = (content: string, type: 'user' | 'ai') => {
     // Ensure content is a string
     const safeContent = typeof content === 'string' ? content : String(content || '');
-    
+
     // Simple parsing for code blocks and special content
     const parts = safeContent.split(/(```[\s\S]*?```)/);
-    
+
     return parts.map((part, index) => {
       if (part.startsWith('```') && part.endsWith('```')) {
         const codeMatch = part.match(/```(\w*)\n?([\s\S]*?)```/);
@@ -30,7 +38,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
         const code = codeMatch?.[2] || '';
         return <CodeBlock key={index} language={language} code={code} />;
       }
-      
+
       // Check for molecular viewer requests
       if (type === 'ai' && part.includes('3D visualization') && part.includes('PDB')) {
         return (
@@ -40,7 +48,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
           </div>
         );
       }
-      
+
       return <p key={index} className="whitespace-pre-wrap">{part || ''}</p>;
     });
   };
@@ -74,7 +82,97 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
             {message.type === 'user' ? (
               <div className="max-w-3xl">
                 <div className="bg-bio-blue text-white rounded-2xl rounded-br-md px-4 py-3">
-                  {renderMessageContent(message.content, 'user')}
+                  <ReactMarkdown
+                    className="prose prose-sm max-w-none dark:prose-invert"
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={{
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const [copied, setCopied] = useState(false);
+
+                        const copyToClipboard = () => {
+                          navigator.clipboard.writeText(String(children));
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        };
+
+                        return !inline && match ? (
+                          <div className="relative group">
+                            <button
+                              onClick={copyToClipboard}
+                              className="absolute right-2 top-2 p-1 rounded bg-gray-700 hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Copy code"
+                            >
+                              {copied ? (
+                                <Check className="h-4 w-4 text-green-400" />
+                              ) : (
+                                <Copy className="h-4 w-4 text-gray-300" />
+                              )}
+                            </button>
+                            <SyntaxHighlighter
+                              style={oneDark}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          </div>
+                        ) : (
+                          <code className={cn("px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-800 text-sm font-mono", className)} {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      table({ children }) {
+                        return (
+                          <div className="overflow-x-auto my-4">
+                            <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-lg">
+                              {children}
+                            </table>
+                          </div>
+                        );
+                      },
+                      th({ children }) {
+                        return (
+                          <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-left font-semibold">
+                            {children}
+                          </th>
+                        );
+                      },
+                      td({ children }) {
+                        return (
+                          <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                            {children}
+                          </td>
+                        );
+                      },
+                      blockquote({ children }) {
+                        return (
+                          <blockquote className="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-600 dark:text-gray-400">
+                            {children}
+                          </blockquote>
+                        );
+                      },
+                      ul({ children }) {
+                        return <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>;
+                      },
+                      ol({ children }) {
+                        return <ol className="list-decimal list-inside space-y-1 my-2">{children}</ol>;
+                      },
+                      h1({ children }) {
+                        return <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-white">{children}</h1>;
+                      },
+                      h2({ children }) {
+                        return <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white">{children}</h2>;
+                      },
+                      h3({ children }) {
+                        return <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">{children}</h3>;
+                      },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
                 <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {formatTime(message.timestamp)}
