@@ -6,6 +6,8 @@ const PROVIDERS: AIProvider[] = [
 ];
 
 export class FaultTolerantAI {
+  private responseCache = new Map<string, { response: string; timestamp: number }>();
+  
   constructor(private config: any) {}
 
   async processQuery(
@@ -17,6 +19,20 @@ export class FaultTolerantAI {
     const startTime = Date.now();
     this.validateInput(prompt);
 
+    // Simple cache key based on prompt and context
+    const cacheKey = this.generateCacheKey(prompt, context);
+    const cached = this.responseCache.get(cacheKey);
+    
+    // Return cached response if less than 5 minutes old
+    if (cached && Date.now() - cached.timestamp < 300000) {
+      return {
+        content: cached.response,
+        provider: "cache",
+        fallbackUsed: false,
+        processingTime: Date.now() - startTime,
+      };
+    }
+
     const tone = toneDetection || this.detectTone(prompt);
     const messages = this.buildMessageArray(prompt, conversationHistory, context, tone);
 
@@ -25,6 +41,18 @@ export class FaultTolerantAI {
       try {
         const response = await this.tryProvider(provider, messages);
         if (response) {
+          // Cache successful response
+          this.responseCache.set(cacheKey, {
+            response,
+            timestamp: Date.now()
+          });
+          
+          // Limit cache size
+          if (this.responseCache.size > 100) {
+            const oldestKey = this.responseCache.keys().next().value;
+            this.responseCache.delete(oldestKey);
+          }
+          
           return {
             content: response,
             provider: provider.name,
@@ -100,27 +128,43 @@ export class FaultTolerantAI {
   private async callGroq(messages: any[], maxTokens?: number): Promise<string> {
     if (!this.config.groq?.apiKey) throw new Error("Groq API key not set");
 
-    const res = await fetch(this.config.groq.endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.config.groq.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages,
-        max_tokens: maxTokens || 1024,
-        temperature: 0.7,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    try {
+      const res = await fetch(this.config.groq.endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.config.groq.apiKey}`,
+          "Content-Type": "application/json",
+          "Connection": "keep-alive",
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages,
+          max_tokens: maxTokens || 512, // Reduced for faster responses
+          temperature: 0.7,
+          stream: false,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(`Groq API error ${res.status}: ${data.error?.message || res.statusText}`);
-    }
+        const data = await res.json().catch(() => ({}));
+        throw new Error(`Groq API error ${res.status}: ${data.error?.message || res.statusText}`);
+      }
 
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? "";
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content ?? "";
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Groq API request timeout');
+      }
+      throw error;
+    }
   }
 
   private async callTogether(messages: any[], maxTokens?: number): Promise<string> {
@@ -225,6 +269,11 @@ export class FaultTolerantAI {
     tone?: string
   ): Array<{ role: string; content: string }> {
     return (history ?? []).concat({ role: "user", content: prompt });
+  }
+
+  private generateCacheKey(prompt: string, context?: any): string {
+    const contextStr = context ? JSON.stringify(context).slice(0, 100) : '';
+    return `${prompt.slice(0, 100)}_${contextStr}`.replace(/\s+/g, '_');
   }
 
   getSolutionBankResponse(prompt: string): string {

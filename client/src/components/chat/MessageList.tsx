@@ -83,91 +83,29 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               <div className="max-w-3xl">
                 <div className="bg-bio-blue text-white rounded-2xl rounded-br-md px-4 py-3">
                   <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
                     components={{
-                      code({ node, inline, children, ...props }) {
-                        const match = /language-(\w+)/.exec((props as any).className || '');
-                        const [copied, setCopied] = useState(false);
-
-                        const copyToClipboard = () => {
-                          navigator.clipboard.writeText(String(children));
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        };
-
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '');
                         return !inline && match ? (
-                          <div className="relative group">
-                            <button
-                              onClick={copyToClipboard}
-                              className="absolute right-2 top-2 p-1 rounded bg-gray-700 hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Copy code"
-                            >
-                              {copied ? (
-                                <Check className="h-4 w-4 text-green-400" />
-                              ) : (
-                                <Copy className="h-4 w-4 text-gray-300" />
-                              )}
-                            </button>
-                            <SyntaxHighlighter
-                              style={oneDark}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          </div>
+                          <CodeBlock
+                            language={match[1]}
+                            value={String(children).replace(/\n$/, '')}
+                          />
                         ) : (
-                          <code className="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-800 text-sm font-mono" {...props}>
+                          <code className={className} {...props}>
                             {children}
                           </code>
                         );
                       },
-                      table({ children }) {
-                        return (
-                          <div className="overflow-x-auto my-4">
-                            <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-lg">
-                              {children}
-                            </table>
-                          </div>
-                        );
-                      },
-                      th({ children }) {
-                        return (
-                          <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-left font-semibold">
-                            {children}
-                          </th>
-                        );
-                      },
-                      td({ children }) {
-                        return (
-                          <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                            {children}
-                          </td>
-                        );
-                      },
-                      blockquote({ children }) {
-                        return (
-                          <blockquote className="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-600 dark:text-gray-400">
-                            {children}
-                          </blockquote>
-                        );
-                      },
-                      ul({ children }) {
-                        return <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>;
-                      },
-                      ol({ children }) {
-                        return <ol className="list-decimal list-inside space-y-1 my-2">{children}</ol>;
-                      },
-                      h1({ children }) {
-                        return <h1 className="text-2xl font-bold mt-6 mb-4 text-gray-900 dark:text-white">{children}</h1>;
-                      },
-                      h2({ children }) {
-                        return <h2 className="text-xl font-bold mt-5 mb-3 text-gray-900 dark:text-white">{children}</h2>;
-                      },
-                      h3({ children }) {
-                        return <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">{children}</h3>;
-                      },
+                      p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                      li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                      h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-2" {...props} />,
+                      h2: ({ node, ...props }) => <h2 className="text-lg font-semibold mb-2" {...props} />,
+                      h3: ({ node, ...props }) => <h3 className="text-md font-semibold mb-1" {...props} />,
+                      blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2" {...props} />,
+                      pre: ({ node, ...props }) => <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 overflow-x-auto" {...props} />
                     }}
                   >
                     {message.content}
