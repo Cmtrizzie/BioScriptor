@@ -93,9 +93,13 @@ export function useChat() {
       let responseContent = '';
       if (typeof requestData.response === 'string') {
         responseContent = requestData.response;
+      } else if (requestData.response && typeof requestData.response.content === 'string') {
+        // Handle the ChatMessage format from the AI service
+        responseContent = requestData.response.content;
       } else if (requestData.response && typeof requestData.response.response === 'string') {
         responseContent = requestData.response.response;
       } else {
+        console.error('Unexpected response format:', requestData);
         responseContent = 'Sorry, I encountered an error processing your request.';
       }
 
