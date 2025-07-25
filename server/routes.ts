@@ -57,6 +57,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           queryCount: 0,
         });
       }
+
+      // Reset demo user query count daily
+      if (firebaseUid === 'demo-user-123') {
+        const lastReset = user.updatedAt ? new Date(user.updatedAt) : new Date(user.createdAt);
+        const now = new Date();
+        const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceReset >= 24) {
+          user = await storage.updateUser(user.id, { queryCount: 0 });
+        }
+      }
       
       req.user = user;
       next();
@@ -99,9 +110,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message is required' });
       }
 
-      // Check query limits for free tier
-      if (req.user.tier === 'free' && req.user.queryCount >= 10) {
-        return res.status(429).json({ error: 'Daily query limit reached. Upgrade to Pro for unlimited queries.' });
+      // Check query limits based on tier
+      const queryLimits = {
+        'free': 10,
+        'premium': 1000,
+        'enterprise': -1 // unlimited
+      };
+      
+      const userLimit = queryLimits[req.user.tier as keyof typeof queryLimits] || 10;
+      
+      if (userLimit !== -1 && req.user.queryCount >= userLimit) {
+        return res.status(429).json({ 
+          error: 'Daily query limit reached. Please upgrade your plan for more queries.',
+          currentCount: req.user.queryCount,
+          limit: userLimit,
+          tier: req.user.tier
+        });
       }
 
       let fileContent = null;

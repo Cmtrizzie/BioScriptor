@@ -57,11 +57,11 @@ export interface BioinformaticsQuery {
 // ========== Conversation Manager ==========
 class ConversationManager {
     private currentConversation: ConversationContext;
-    
+
     constructor() {
         this.currentConversation = this.createNewConversation();
     }
-    
+
     private createNewConversation(): ConversationContext {
         return {
             id: `conv_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
@@ -73,7 +73,7 @@ class ConversationManager {
             }
         };
     }
-    
+
     getContext(): ConversationContext {
         // Reset conversation if inactive for more than 30 minutes
         if (Date.now() - this.currentConversation.lastActive > 30 * 60 * 1000) {
@@ -81,46 +81,46 @@ class ConversationManager {
         }
         return this.currentConversation;
     }
-    
+
     addMessage(message: ChatMessage): void {
         const context = this.getContext();
         context.history.push(message);
         context.lastActive = Date.now();
-        
+
         // Update conversation memory
         this.updateMemory(message.content);
     }
-    
+
     private updateMemory(text: string): void {
         const context = this.getContext();
-        
+
         // Extract and store topics
         const topics = this.extractTopics(text);
         topics.forEach(topic => context.memory.topics.add(topic));
-        
+
         // Extract and store entities
         const entities = this.extractEntities(text);
         entities.forEach(entity => context.memory.entities.add(entity));
     }
-    
+
     private extractTopics(text: string): string[] {
         const topics = new Set<string>();
         const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
         scientificTerms.forEach(term => topics.add(term.toLowerCase()));
         return Array.from(topics);
     }
-    
+
     private extractEntities(text: string): string[] {
         const entities = new Set<string>();
         const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
         sequenceIds.forEach(id => entities.add(id));
-        
+
         const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
         geneNames.forEach(gene => entities.add(gene));
-        
+
         const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
         speciesNames.forEach(species => entities.add(species));
-        
+
         return Array.from(entities);
     }
 }
@@ -161,31 +161,31 @@ function generateUniqueId(): string {
 // Function to detect query type
 function detectQueryType(text: string): BioinformaticsQueryType {
     const lowerText = text.toLowerCase();
-    
+
     if (/(crispr|guide rna|grna|cas9)/.test(lowerText)) return 'crispr';
     if (/(pcr|polymerase chain reaction|primer)/.test(lowerText)) return 'pcr';
     if (/(codon optimization|codon usage|expression)/.test(lowerText)) return 'codon_optimization';
     if (/(sequence analysis|sequence alignment|blast|fasta|genbank)/.test(lowerText)) return 'sequence_analysis';
-    
+
     return 'general';
 }
 
 // Function to detect tone
 function detectTone(text: string): string {
     const lowerText = text.toLowerCase();
-    
+
     if (/(please|thank you|would you|kindly|appreciate)/.test(lowerText)) return 'polite';
     if (/(urgent|asap|quickly|immediately|emergency)/.test(lowerText)) return 'urgent';
     if (/(simple|brief|concise|summarize)/.test(lowerText)) return 'concise';
     if (/(😊|🙂|please|thank)/.test(lowerText)) return 'friendly';
-    
+
     return 'professional';
 }
 
 // Function to get time-based greeting
 function getTimeBasedGreeting(): string {
     const hour = new Date().getHours();
-    
+
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
@@ -222,7 +222,7 @@ export const processQuery = async (
         if (queryType !== 'general' && fileAnalysis) {
             let responseContent = '';
             let metadata: any = { confidence: 0.95, processingTime: 1200 };
-            
+
             switch (queryType) {
                 case 'crispr':
                     const guides = generateCRISPRGuides(fileAnalysis.sequence);
@@ -230,21 +230,21 @@ export const processQuery = async (
                         guides.map((g, i) => `${i+1}. ${g.sequence} (PAM: ${g.pam})`).join('\n');
                     metadata.guides = guides;
                     break;
-                    
+
                 case 'pcr':
                     const pcrResults = simulatePCR(fileAnalysis.sequence);
                     responseContent = `PCR simulation completed:\n- Optimal annealing: ${pcrResults.annealingTemp}°C\n` +
                         `- Product size: ${pcrResults.productSize}bp\n- Efficiency: ${pcrResults.efficiency}%`;
                     metadata.pcrResults = pcrResults;
                     break;
-                    
+
                 case 'codon_optimization':
                     const optimized = optimizeCodonUsage(fileAnalysis.sequence);
                     responseContent = `Codon optimization completed:\n- Original CAI: ${optimized.originalCAI.toFixed(2)}\n` +
                         `- Optimized CAI: ${optimized.optimizedCAI.toFixed(2)}\n- Host: ${optimized.host}`;
                     metadata.optimization = optimized;
                     break;
-                    
+
                 case 'sequence_analysis':
                     responseContent = `Sequence analysis completed:\n- Length: ${fileAnalysis.sequence.length}bp\n` +
                         `- GC Content: ${fileAnalysis.gcContent}%\n- Type: ${fileAnalysis.sequenceType}`;
@@ -323,7 +323,7 @@ Guidelines:
         return assistantMessage;
     } catch (error) {
         console.error('Error processing query:', error);
-        
+
         return {
             id: `error_${Date.now()}`,
             role: 'error',
