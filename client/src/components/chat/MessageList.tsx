@@ -151,7 +151,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                         h2: ({ children }) => <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{children}</h2>,
                         h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">{children}</h3>,
                         ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
                         li: ({ children }) => <li className="text-gray-700 dark:text-gray-300">{children}</li>,
                         strong: ({ children }) => <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>,
                         em: ({ children }) => <em className="italic">{children}</em>,
