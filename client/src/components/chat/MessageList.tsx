@@ -7,7 +7,6 @@ import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/pris
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
 import CodeBlock from "@/components/ui/code-block";
 import MolecularViewer from "@/components/visualization/MolecularViewer";
 
