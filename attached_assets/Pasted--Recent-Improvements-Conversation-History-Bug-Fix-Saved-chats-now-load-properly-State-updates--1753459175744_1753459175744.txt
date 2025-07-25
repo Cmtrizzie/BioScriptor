@@ -1,0 +1,61 @@
+🧩 Recent Improvements
+Conversation History Bug Fix: Saved chats now load properly.
+State updates: Panel view function as expected.
+Full message content retrieval: No longer limited to metadata.
+📌 Example Prompts BioScriptor Understands
+"Write a Python script to compute GC content from a FASTA and save as CSV."
+"Will these primers amplify this gene? Simulate the PCR."
+"Design gRNA for a CRISPR edit in E. coli. Check off-targets."
+"Parse this VCF. Show nonsynonymous SNPs only."
+✍️ How BioScriptor Formats Chat Replies
+Headings:
+# Heading 1
+## Heading 2
+### Heading 3
+Bold, Italic, Emojis:
+**bold**, *italic*, 🧬 Emoji
+Code Blocks:
+def calculate_gc(seq):
+    return (seq.count("G") + seq.count("C")) / len(seq) * 100
+Inline Code: Use the calculate_gc() function to compute GC content.
+Checklists:
+- ✅ Feature complete
+- ❌ Needs refactor
+Tables:
+Tool	Function
+Primer3	Primer design
+BLAST	Sequence alignment
+💬 Chat Input Design
+Minimal, intuitive layout supporting attachments and quick messaging:
+
++----------------------------------------------------------+
+| 📎 | Type your message here...                   |   ➤   |
++----------------------------------------------------------+
+🧠 Chat Input Behavior
+Action	Behavior
+Enter	Sends message
+Shift+Enter	Adds newline
+📎	Opens file upload dialog
+Autoclear	Clears input after send
+Autoscroll	New messages scroll into view
+Paste support	Preserves formatting
+🛠️ Bonus: React Autoscroll + Markdown Rendering
+React Markdown:
+
+import ReactMarkdown from 'react-markdown';
+<ReactMarkdown>{responseText}</ReactMarkdown>
+Autoscroll Logic:
+
+import { useRef, useEffect } from 'react';
+function ChatWindow({ messages }) {
+  const bottomRef = useRef();
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  return (
+    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      {messages.map((msg, i) => <div key={i}>{msg}</div>)}
+      <div ref={bottomRef} />
+    </div>
+  );
+}

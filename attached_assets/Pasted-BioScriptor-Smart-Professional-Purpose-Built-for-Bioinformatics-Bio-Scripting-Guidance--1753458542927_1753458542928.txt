@@ -1,0 +1,150 @@
+BioScriptor
+Smart. Professional. Purpose-Built for Bioinformatics.
+
+(Bio + Scripting + Guidance)
+
+🧠 What Is BioScriptor?
+A powerful AI-driven assistant purpose-built for molecular biology, bioinformatics, and computational biology.
+BioScriptor doesn’t just answer questions — it analyzes data, writes code, simulates lab protocols, and helps plan projects from bench to pipeline.
+
+🧰 Key Capabilities (Expanded)
+🧬 1. Bioinformatics Intelligence
+🔍 DNA/RNA/protein sequence parsing and functional annotation
+
+🧪 gRNA design with off-target prediction
+
+🧬 Primer design + PCR simulation, with product prediction
+
+🧬 Genomic variant parsing and classification from .vcf files
+
+🌳 Multiple sequence alignment + phylogenetic tree construction
+
+💻 2. Programming Assistant
+🐍 Writes code in Python, R, Perl, Bash
+
+FASTA, GTF, VCF, PDB, BAM parsers
+
+matplotlib, seaborn, ggplot2 visualizations
+
+🧠 Explains and improves your code
+
+⚙️ Builds pipelines in Nextflow, Snakemake, or Galaxy
+
+🧭 3. Project Planning & Workflow Design
+🗂️ Suggests folder structures, naming schemes, versioning
+
+📄 Auto-generates:
+
+README.md
+
+Doc templates
+
+Unit tests
+
+📅 Helps with task breakdowns, deadlines, and agile planning
+
+🌐 4. Multi-Provider AI Backend
+      
+🛡️ Resilient fallback logic to guarantee quality
+
+🧩 Recent Improvements
+✅ Conversation History Bug Fix
+Saved chats now load properly
+
+Fixed loadChat(chatId) logic
+
+State updates panel view as expected
+
+Full message content now retrieved, not just metadata
+
+📌 Example Prompts BioScriptor Understands
+“Write a Python script to compute GC content from a FASTA and save as CSV.”
+
+“Will these primers amplify this gene? Simulate the PCR.”
+
+“Design gRNA for a CRISPR edit in E. coli. Check off-targets.”
+
+“Parse this VCF. Show nonsynonymous SNPs only.”
+
+✍️ How BioScriptor Formats Chat Replies
+These formatting practices ensure clarity and structure across messages, docs, or tutorials.
+
+✅ 1. Headings
+md
+Copy
+Edit
+# Heading 1
+## Heading 2
+### Heading 3
+✅ 2. Bold, Italic, Emojis
+md
+Copy
+Edit
+**bold** | *italic* | 🧬 Emoji
+✅ 3. Code Blocks
+<pre> ```python def calculate_gc(seq): return (seq.count("G") + seq.count("C")) / len(seq) * 100 ``` </pre>
+✅ 4. Inline Code
+md
+Copy
+Edit
+Use the `calculate_gc()` function to compute GC content.
+✅ 5. Checklists
+md
+Copy
+Edit
+- ✅ Feature complete
+- ❌ Needs refactor
+✅ 6. Tables
+md
+Copy
+Edit
+| Tool     | Function            |
+|----------|---------------------|
+| Primer3  | Primer design       |
+| BLAST    | Sequence alignment  |
+💬 Chat Input Design
+Minimal, intuitive layout that supports attachments and quick sending:
+
+diff
+Copy
+Edit
++--------------------------------------------------------------------------------+
+| 📎     | Type your message here...                                           |   ➤   |
++--------------------------------------------------------------------------------+
+🧠 Chat Input Behavior
+Action	Behavior
+Enter	Sends message
+Shift+Enter	Adds newline
+📎	Opens file upload dialog (e.g. .fasta, .vcf)
+Autoclear	Input clears after send
+Autoscroll	New messages scroll into view automatically
+Paste support	Preserves formatting (code blocks, markdown)
+
+🛠️ Bonus: React Autoscroll + Markdown Rendering
+React Markdown:
+jsx
+Copy
+Edit
+import ReactMarkdown from 'react-markdown';
+
+<ReactMarkdown>{responseText}</ReactMarkdown>
+Autoscroll Logic:
+jsx
+Copy
+Edit
+import { useRef, useEffect } from 'react';
+
+function ChatWindow({ messages }) {
+  const bottomRef = useRef();
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      {messages.map((msg, i) => <div key={i}>{msg}</div>)}
+      <div ref={bottomRef} />
+    </div>
+  );
+}

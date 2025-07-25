@@ -119,7 +119,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                             </SyntaxHighlighter>
                           </div>
                         ) : (
-                          <code className={cn("px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-800 text-sm font-mono", className)} {...props}>
+                          <code className="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-800 text-sm font-mono" {...props}>
                             {children}
                           </code>
                         );

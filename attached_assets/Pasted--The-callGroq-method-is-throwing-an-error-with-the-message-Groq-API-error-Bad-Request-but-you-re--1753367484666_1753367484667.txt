@@ -1,0 +1,64 @@
+❌ The callGroq method is throwing an error with the message Groq API error: Bad Request, but you're not setting a special flag (like isBadRequest = true) on the error object.
+
+As a result, your tryProvider method can't tell that this is a client-side error and shouldn't be retried.
+
+✅ Fix: Mark 400-level errors as .isBadRequest = true
+Update your callGroq method like this:
+
+ts
+Copy
+Edit
+private async callGroq(prompt: string, maxTokens?: number, history?: any): Promise<string> {
+  if (!this.config.groq?.apiKey) throw new Error('Groq API key not set');
+
+  const messages = history?.length
+    ? [...history.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: prompt }]
+    : [{ role: 'user', content: prompt }];
+
+  const res = await fetch(this.config.groq.endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${this.config.groq.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-70b-versatile',
+      messages,
+      max_tokens: maxTokens
+    })
+  });
+
+  if (res.status >= 400 && res.status < 500) {
+    const error = new Error(`Groq API error: ${res.statusText}`);
+    (error as any).isBadRequest = true; // 👈 Add this
+    throw error;
+  }
+
+  if (!res.ok) {
+    throw new Error(`Groq API failed: ${res.status} ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? '';
+}
+🔁 Update other providers similarly
+For every callXXX method (callOpenRouter, callTogether, etc.), check res.status, and:
+
+ts
+Copy
+Edit
+if (res.status >= 400 && res.status < 500) {
+  const error = new Error(`{Provider} API error: ${res.statusText}`);
+  (error as any).isBadRequest = true;
+  throw error;
+}
+🔁 Your retry logic already works as long as errors are marked:
+ts
+Copy
+Edit
+if (error.isBadRequest) {
+  console.warn(`Skipping ${provider.name} due to bad request.`);
+  continue;
+}
+This part of your logic is sound — you just need to flag the errors correctly.
+
