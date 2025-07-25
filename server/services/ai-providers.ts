@@ -1,29 +1,8 @@
-// Free provider definitions (priority order: 1 = most preferred)
 const PROVIDERS: AIProvider[] = [
-  {
-    name: "groq",
-    priority: 1,
-    maxRetries: 3,
-    maxTokens: 1024,
-  },
-  {
-    name: "together",
-    priority: 2,
-    maxRetries: 2,
-    maxTokens: 1024,
-  },
-  {
-    name: "openrouter",
-    priority: 3,
-    maxRetries: 2,
-    maxTokens: 1024,
-  },
-  {
-    name: "cohere",
-    priority: 4,
-    maxRetries: 2,
-    maxTokens: 1024,
-  },
+  { name: "groq", priority: 1, maxRetries: 3, maxTokens: 1024 },
+  { name: "together", priority: 2, maxRetries: 2, maxTokens: 1024 },
+  { name: "openrouter", priority: 3, maxRetries: 2, maxTokens: 1024 },
+  { name: "cohere", priority: 4, maxRetries: 2, maxTokens: 1024 },
 ];
 
 export class FaultTolerantAI {
@@ -33,25 +12,18 @@ export class FaultTolerantAI {
     prompt: string,
     context?: any,
     toneDetection?: string,
-    conversationHistory?: Array<{ role: string; content: string }>,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<AIResponse> {
     const startTime = Date.now();
     this.validateInput(prompt);
+
     const tone = toneDetection || this.detectTone(prompt);
-    const conversationalPrompt = this.buildConversationalPrompt(
-      prompt,
-      conversationHistory,
-      context,
-      tone,
-    );
+    const messages = this.buildMessageArray(prompt, conversationHistory, context, tone);
 
     for (const provider of PROVIDERS) {
+      console.log(`Trying provider: ${provider.name}`);
       try {
-        const response = await this.tryProvider(
-          provider,
-          conversationalPrompt,
-          conversationHistory,
-        );
+        const response = await this.tryProvider(provider, messages);
         if (response) {
           return {
             content: response,
@@ -77,29 +49,21 @@ export class FaultTolerantAI {
     };
   }
 
-  private async tryProvider(
-    provider: AIProvider,
-    prompt: string,
-    history?: Array<{ role: string; content: string }>,
-  ): Promise<string | null> {
+  private async tryProvider(provider: AIProvider, messages: any[]): Promise<string | null> {
     for (let attempt = 1; attempt <= provider.maxRetries; attempt++) {
       try {
-        const result = await this.callProvider(
-          provider.name,
-          prompt,
-          provider.maxTokens,
-          history,
-        );
+        const result = await this.callProvider(provider.name, messages, provider.maxTokens);
         return result;
       } catch (error: any) {
         if (error.isBadRequest) throw error;
 
-        console.log(
-          `Attempt ${attempt} for ${provider.name} failed:`,
-          error.message || error,
+        console.warn(
+          `Attempt ${attempt}/${provider.maxRetries} for ${provider.name} failed:`,
+          error.message || error
         );
+
         if (attempt < provider.maxRetries) {
-          await this.delay(Math.pow(2, attempt) * 1000); // Exponential backoff
+          await this.delay(Math.pow(2, attempt) * 1000);
         } else {
           throw error;
         }
@@ -108,12 +72,7 @@ export class FaultTolerantAI {
     return null;
   }
 
-  private async callProvider(
-    name: string,
-    prompt: string,
-    maxTokens?: number,
-    history?: any,
-  ): Promise<string> {
+  private async callProvider(name: string, messages: any[], maxTokens?: number): Promise<string> {
     const endpointMap: Record<string, Function> = {
       groq: this.callGroq.bind(this),
       together: this.callTogether.bind(this),
@@ -123,8 +82,9 @@ export class FaultTolerantAI {
 
     const fn = endpointMap[name];
     if (!fn) throw new Error(`Unknown provider: ${name}`);
+
     try {
-      return await fn(prompt, maxTokens, history);
+      return await fn(messages, maxTokens);
     } catch (err: any) {
       if (err.message?.match(/^.*?: 4\d{2} /)) {
         const badErr = new Error(`${name} responded with bad request: ${err.message}`);
@@ -135,12 +95,10 @@ export class FaultTolerantAI {
     }
   }
 
-  // ========== PROVIDER CALL METHODS ==========
+  // ===== PROVIDER CALL METHODS =====
 
-  private async callGroq(prompt: string, maxTokens?: number, history?: any): Promise<string> {
+  private async callGroq(messages: any[], maxTokens?: number): Promise<string> {
     if (!this.config.groq?.apiKey) throw new Error("Groq API key not set");
-
-    const messages = (history ?? []).concat({ role: "user", content: prompt });
 
     const res = await fetch(this.config.groq.endpoint, {
       method: "POST",
@@ -156,21 +114,17 @@ export class FaultTolerantAI {
       }),
     });
 
-    if (res.status === 404) throw new Error(`Groq model not found - trying different model`);
-    if (res.status >= 400 && res.status < 500) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(`Groq API returned ${res.status}: ${errorData.error?.message || res.statusText}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(`Groq API error ${res.status}: ${data.error?.message || res.statusText}`);
     }
-    if (!res.ok) throw new Error(`Groq API failed: ${res.statusText}`);
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
 
-  private async callTogether(prompt: string, maxTokens?: number, history?: any): Promise<string> {
+  private async callTogether(messages: any[], maxTokens?: number): Promise<string> {
     if (!this.config.together?.apiKey) throw new Error("Together API key not set");
-
-    const messages = (history ?? []).concat({ role: "user", content: prompt });
 
     const res = await fetch(this.config.together.endpoint, {
       method: "POST",
@@ -186,20 +140,17 @@ export class FaultTolerantAI {
       }),
     });
 
-    if (res.status >= 400 && res.status < 500) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(`Together API returned ${res.status}: ${errorData.error?.message || res.statusText}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(`Together API error ${res.status}: ${data.error?.message || res.statusText}`);
     }
-    if (!res.ok) throw new Error(`Together API failed: ${res.statusText}`);
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
 
-  private async callOpenRouter(prompt: string, maxTokens?: number, history?: any): Promise<string> {
+  private async callOpenRouter(messages: any[], maxTokens?: number): Promise<string> {
     if (!this.config.openrouter?.apiKey) throw new Error("OpenRouter API key not set");
-
-    const messages = (history ?? []).concat({ role: "user", content: prompt });
 
     const res = await fetch(this.config.openrouter.endpoint, {
       method: "POST",
@@ -217,18 +168,19 @@ export class FaultTolerantAI {
       }),
     });
 
-    if (res.status >= 400 && res.status < 500) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(`OpenRouter API returned ${res.status}: ${errorData.error?.message || res.statusText}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(`OpenRouter API error ${res.status}: ${data.error?.message || res.statusText}`);
     }
-    if (!res.ok) throw new Error(`OpenRouter API failed: ${res.statusText}`);
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
 
-  private async callCohere(prompt: string, maxTokens?: number): Promise<string> {
+  private async callCohere(messages: any[], maxTokens?: number): Promise<string> {
     if (!this.config.cohere?.apiKey) throw new Error("Cohere API key not set");
+
+    const prompt = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
 
     const res = await fetch(this.config.cohere.endpoint, {
       method: "POST",
@@ -244,14 +196,13 @@ export class FaultTolerantAI {
       }),
     });
 
-    if (res.status >= 400 && res.status < 500) throw new Error(`Cohere API returned ${res.status}`);
-    if (!res.ok) throw new Error(`Cohere API failed: ${res.statusText}`);
+    if (!res.ok) throw new Error(`Cohere API error ${res.status}: ${res.statusText}`);
 
     const data = await res.json();
     return data.generations?.[0]?.text ?? "";
   }
 
-  // ========== UTILITIES ==========
+  // ===== UTILITIES =====
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -264,40 +215,74 @@ export class FaultTolerantAI {
   }
 
   private detectTone(prompt: string): string {
-    return "neutral"; // Placeholder
+    return "neutral"; // Future: NLP tone detection
   }
 
-  private buildConversationalPrompt(
+  private buildMessageArray(
     prompt: string,
     history?: Array<{ role: string; content: string }>,
     context?: any,
-    tone?: string,
-  ): string {
-    // Simplified: use last few messages as context
-    const prior = history?.map((msg) => `${msg.role}: ${msg.content}`).join("\n") ?? "";
-    return `${prior}\nUser: ${prompt}`;
+    tone?: string
+  ): Array<{ role: string; content: string }> {
+    return (history ?? []).concat({ role: "user", content: prompt });
   }
 
   getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
-    
-    // Basic bioinformatics responses
     if (lowerPrompt.includes('sequence')) {
-      return "I can help with sequence analysis! For sequence analysis, you can use tools like BLAST for similarity searches, or upload FASTA files for analysis. Common sequence formats include FASTA, GenBank, and EMBL. Would you like me to explain any specific sequence analysis technique?";
+      return "I can help with sequence analysis...";
     }
     if (lowerPrompt.includes('crispr')) {
-      return "CRISPR guide RNA design is my specialty! CRISPR guide RNA design requires a target sequence and PAM site identification. Popular tools include CHOPCHOP, CRISPRscan, and Benchling for guide design. I can help you design guides if you provide a target sequence.";
+      return "CRISPR guide RNA design is my specialty...";
     }
     if (lowerPrompt.includes('pcr')) {
-      return "PCR primer design is something I can definitely help with! Key considerations include: primer length (18-25 bp), melting temperature (55-65°C), GC content (40-60%), and avoiding secondary structures. Would you like me to help design primers for a specific sequence?";
+      return "PCR primer design is something I can definitely help with...";
     }
     if (lowerPrompt.includes('protein')) {
-      return "Protein analysis is one of my strengths! This can include structure prediction, functional annotation, and phylogenetic analysis. Popular tools include SWISS-MODEL, InterPro, and CLUSTAL. What specific protein analysis are you interested in?";
+      return "Protein analysis is one of my strengths...";
     }
     if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
-      return "Hello! I'm BioScriptor, your AI bioinformatics assistant. I can help you with sequence analysis, CRISPR guide design, PCR primer design, protein analysis, and many other bioinformatics tasks. What would you like to work on today?";
+      return "Hello! I'm BioScriptor, your AI bioinformatics assistant...";
     }
-    
-    return "I'm BioScriptor, your bioinformatics AI assistant! I can help with sequence analysis, CRISPR guide design, PCR primers, protein analysis, and more. Could you tell me more about what specific bioinformatics task you're working on? The more details you provide, the better I can assist you!";
+    return "I'm here to help with bioinformatics tasks. Could you please provide more specific details about what you need?";
   }
 }
+
+// Type definitions
+interface AIProvider {
+  name: string;
+  priority: number;
+  maxRetries: number;
+  maxTokens: number;
+}
+
+export interface ProviderConfig {
+  groq?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  together?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  openrouter?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  cohere?: {
+    apiKey: string;
+    endpoint: string;
+  };
+  ollama?: {
+    endpoint: string;
+    model: string;
+  };
+}
+
+export interface AIResponse {
+  content: string;
+  provider: string;
+  fallbackUsed: boolean;
+  processingTime: number;
+}
+
