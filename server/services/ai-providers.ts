@@ -1,8 +1,8 @@
 const PROVIDERS: AIProvider[] = [
-  { name: "groq", priority: 1, maxRetries: 3, maxTokens: 1024 },
-  { name: "together", priority: 2, maxRetries: 2, maxTokens: 1024 },
-  { name: "openrouter", priority: 3, maxRetries: 2, maxTokens: 1024 },
-  { name: "cohere", priority: 4, maxRetries: 2, maxTokens: 1024 },
+  { name: "groq", priority: 1, maxRetries: 2, maxTokens: 512 },
+  { name: "together", priority: 2, maxRetries: 2, maxTokens: 512 },
+  { name: "openrouter", priority: 3, maxRetries: 1, maxTokens: 512 },
+  { name: "cohere", priority: 4, maxRetries: 1, maxTokens: 512 },
 ];
 
 export class FaultTolerantAI {
@@ -129,7 +129,7 @@ export class FaultTolerantAI {
     if (!this.config.groq?.apiKey) throw new Error("Groq API key not set");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
     try {
       const res = await fetch(this.config.groq.endpoint, {

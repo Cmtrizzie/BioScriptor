@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export interface Message {
@@ -22,6 +21,17 @@ export function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = useCallback(async (content: string, file?: File) => {
     if (!user) return;
@@ -38,7 +48,6 @@ export function useChat() {
     setIsLoading(true);
 
     try {
-      // Prepare form data if file is included
       let requestData: any = { message: content };
 
       if (file) {
@@ -46,16 +55,13 @@ export function useChat() {
         formData.append('message', content);
         formData.append('file', file);
 
-        // Add Firebase auth headers for file uploads
-        const headers: Record<string, string> = {};
-        if (user) {
-          headers['x-firebase-uid'] = user.uid;
-          headers['x-firebase-email'] = user.email || '';
-          headers['x-firebase-display-name'] = user.displayName || '';
-          headers['x-firebase-photo-url'] = user.photoURL || '';
-        }
+        const headers: Record<string, string> = {
+          'x-firebase-uid': user.uid,
+          'x-firebase-email': user.email || '',
+          'x-firebase-display-name': user.displayName || '',
+          'x-firebase-photo-url': user.photoURL || '',
+        };
 
-        // For file uploads, we need to send FormData
         const response = await fetch('/api/chat/message', {
           method: 'POST',
           headers,
@@ -63,10 +69,7 @@ export function useChat() {
           credentials: 'include',
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to send message');
-        }
-
+        if (!response.ok) throw new Error('Failed to send message');
         requestData = await response.json();
       } else {
         const response = await fetch('/api/chat/message', {
@@ -89,14 +92,12 @@ export function useChat() {
         requestData = await response.json();
       }
 
-      // Ensure we always have a string response
       let responseContent = '';
       if (typeof requestData.response === 'string') {
         responseContent = requestData.response;
-      } else if (requestData.response && typeof requestData.response.content === 'string') {
-        // Handle the ChatMessage format from the AI service
+      } else if (typeof requestData.response?.content === 'string') {
         responseContent = requestData.response.content;
-      } else if (requestData.response && typeof requestData.response.response === 'string') {
+      } else if (typeof requestData.response?.response === 'string') {
         responseContent = requestData.response.response;
       } else {
         console.error('Unexpected response format:', requestData);
@@ -112,19 +113,28 @@ export function useChat() {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save session to localStorage only if it's a new conversation
-      if (messages.length === 1) { // Only save when it's the first exchange
+      // Save session after first exchange (when we have exactly 2 messages: user + ai)
+      if (messages.length === 1) {
         const currentSession: ChatSession = {
-          id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
           timestamp: new Date().toLocaleDateString(),
           messages: [userMessage, aiMessage],
         };
 
         const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-        const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)]; // Keep last 10 sessions
+        const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
         localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
         setSessions(updatedSessions);
+      } else if (messages.length > 1) {
+        // Update existing session with new messages
+        const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
+        if (savedSessions.length > 0) {
+          const currentMessages = [...messages, userMessage, aiMessage];
+          savedSessions[0].messages = currentMessages;
+          localStorage.setItem('bioscriptor-sessions', JSON.stringify(savedSessions));
+          setSessions(savedSessions);
+        }
       }
 
     } catch (error) {
@@ -146,13 +156,16 @@ export function useChat() {
   }, []);
 
   const switchToSession = useCallback((session: ChatSession) => {
-    // Ensure we have valid messages array
-    const sessionMessages = Array.isArray(session.messages) ? session.messages : [];
+    const sessionMessages = Array.isArray(session.messages) 
+      ? session.messages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }))
+      : [];
     setMessages(sessionMessages);
     setIsLoading(false);
   }, []);
 
-  // Load sessions from localStorage on mount
   useEffect(() => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
     setSessions(savedSessions);
@@ -165,5 +178,6 @@ export function useChat() {
     newChat,
     switchToSession,
     isLoading,
+    bottomRef, // Export this for use in your ChatWindow
   };
 }
