@@ -395,6 +395,12 @@ I'm here to help with **bioinformatics tasks**! Please provide more specific det
 - 🧪 **PCR primer** design
 - 📊 **Data analysis** and visualization
 - 🔍 **Literature research** assistance
+- 🌐 **Web search** for latest research and tools
+
+### Web Search Examples:
+- "Search the web for latest CRISPR tools"
+- "Look up recent studies on gene editing"
+- I automatically search when you mention "latest", "recent", or "2024"
 
 *Could you please describe your specific research question or task?*`;
   }

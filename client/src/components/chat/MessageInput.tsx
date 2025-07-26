@@ -20,7 +20,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  const [showFormatting, setShowFormatting] = useState(false);
+  
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,45 +123,10 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
       handleSubmit();
     }
 
-    // Markdown shortcuts
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          insertText('**', '**');
-          break;
-        case 'i':
-          e.preventDefault();
-          insertText('*', '*');
-          break;
-        case 'k':
-          e.preventDefault();
-          insertText('`', '`');
-          break;
-      }
-    }
+    
   };
 
-  // Text insertion helper
-  const insertText = (before: string, after: string) => {
-    if (!textareaRef.current) return;
-
-    const start = textareaRef.current.selectionStart;
-    const end = textareaRef.current.selectionEnd;
-    const selectedText = message.substring(start, end);
-    const newText = message.substring(0, start) + before + selectedText + after + message.substring(end);
-
-    setMessage(newText);
-
-    // Set cursor position
-    setTimeout(() => {
-      if (textareaRef.current) {
-        const newPos = start + before.length + selectedText.length;
-        textareaRef.current.setSelectionRange(newPos, newPos);
-        textareaRef.current.focus();
-      }
-    }, 0);
-  };
+  
 
   // File input handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -290,74 +255,9 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
           </div>
         )}
 
-        {/* Formatting Toolbar */}
-        {showFormatting && (
-          <div className="mb-3 flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => insertText('**', '**')}
-              className="h-8 px-2 text-xs"
-              title="Bold (Ctrl+B)"
-            >
-              <strong>B</strong>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => insertText('*', '*')}
-              className="h-8 px-2 text-xs italic"
-              title="Italic (Ctrl+I)"
-            >
-              I
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => insertText('`', '`')}
-              className="h-8 px-2 text-xs font-mono"
-              title="Inline Code (Ctrl+K)"
-            >
-              {'</>'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => insertText('\n```\n', '\n```\n')}
-              className="h-8 px-2 text-xs"
-              title="Code Block"
-            >
-              [ ]
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => insertText('\n- ', '')}
-              className="h-8 px-2 text-xs"
-              title="List"
-            >
-              •
-            </Button>
-          </div>
-        )}
+        
 
         <div className="flex items-end space-x-2">
-          {/* Formatting Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFormatting(!showFormatting)}
-            disabled={disabled}
-            className={cn(
-              "flex-shrink-0 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal",
-              showFormatting && "bg-gray-100 dark:bg-gray-600 text-bio-blue"
-            )}
-            title="Toggle formatting toolbar"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </Button>
 
           {/* Hidden File Input */}
           <input
@@ -430,7 +330,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               </svg>
               <span>Drag & drop files • Paste images</span>
             </span>
-            <span className="hidden sm:inline">Ctrl+B/I/K for formatting</span>
+            <span className="hidden sm:inline">Web search available</span>
           </div>
           <span className="text-bio-teal font-medium">Free Tier</span>
         </div>

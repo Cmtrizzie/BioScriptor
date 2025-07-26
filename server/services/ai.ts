@@ -1,6 +1,7 @@
 // services/ai.ts
 import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
+import { webSearchService, WebSearchResponse } from './web-search';
 
 // ========== Type Definitions ==========
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'error';
@@ -27,6 +28,7 @@ export interface ChatMessage {
             url?: string;
             type: 'paper' | 'database' | 'tool';
         }>;
+        webSearchResults?: WebSearchResponse;
         codeBlocks?: Array<{
             language: string;
             code: string;
@@ -279,6 +281,28 @@ export const processQuery = async (
             .slice(-6) // Last 3 exchanges (user + assistant)
             .map(m => ({ role: m.role, content: m.content }));
 
+        // Check if web search is needed
+        let webSearchResults: WebSearchResponse | undefined;
+        let searchContext = '';
+
+        const shouldSearch = webSearchService.detectExplicitSearch(query) || 
+                           webSearchService.detectImplicitTriggers(query);
+
+        if (shouldSearch) {
+            console.log('🔍 Performing web search for:', query);
+            const searchTerms = webSearchService.extractSearchTerms(query);
+            webSearchResults = await webSearchService.search(searchTerms, {
+                maxResults: 5,
+                bioinformatics: true
+            });
+            
+            if (webSearchResults.results.length > 0) {
+                searchContext = '\n\nWeb Search Context:\n' + 
+                              webSearchService.formatResultsForAI(webSearchResults);
+                console.log(`✅ Found ${webSearchResults.results.length} search results`);
+            }
+        }
+
         // Generate context-aware system prompt
         const memory = context.memory;
         const systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant. 
@@ -290,7 +314,9 @@ Guidelines:
 1. Respond in a ${tone} manner
 2. Explain concepts clearly
 3. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
-4. Provide accurate, actionable advice`;
+4. ${webSearchResults ? 'Use the provided web search results to enhance your response with current information' : ''}
+5. Provide accurate, actionable advice
+${searchContext}`;
 
         // Generate AI response with enhanced context
         const enhancedContext = {
@@ -327,7 +353,8 @@ Guidelines:
                 confidence: response.confidence || 0.85,
                 processingTime: response.processingTime,
                 queryType,
-                tone
+                tone,
+                webSearchResults
             }
         };
 
