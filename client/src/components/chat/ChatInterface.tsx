@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Header from "./Header";
-import { Sidebar } from "./Sidebar";
+import Sidebar from "./Sidebar";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { useChat } from "@/hooks/use-chat";
