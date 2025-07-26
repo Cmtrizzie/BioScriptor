@@ -167,7 +167,7 @@ export const storage = {
       console.error('Error fetching all plan limits:', error);
       return [];
     }
-  }
+  },
 
   async createPlanLimit(planData: any) {
     try {
@@ -181,7 +181,7 @@ export const storage = {
       console.error('Error creating plan limit:', error);
       throw error;
     }
-  }
+  },
 
   async deletePlanLimit(tier: any) {
     try {
@@ -195,7 +195,7 @@ export const storage = {
       console.error('Error deleting plan limit:', error);
       return false;
     }
-  }
+  },
 
   // Promo Code Methods
   async getAllPromoCodes() {
@@ -205,7 +205,7 @@ export const storage = {
       console.error('Error fetching promo codes:', error);
       return [];
     }
-  }
+  },
 
   async createPromoCode(promoData: any) {
     try {
@@ -219,7 +219,7 @@ export const storage = {
       console.error('Error creating promo code:', error);
       throw error;
     }
-  }
+  },
 
   async updatePromoCode(id: number, updates: any) {
     try {
@@ -234,7 +234,7 @@ export const storage = {
       console.error('Error updating promo code:', error);
       return null;
     }
-  }
+  },
 
   async deletePromoCode(id: number) {
     try {
@@ -248,7 +248,7 @@ export const storage = {
       console.error('Error deleting promo code:', error);
       return false;
     }
-  }
+  },
 
   async getPromoCodeByCode(code: string) {
     try {
@@ -263,7 +263,7 @@ export const storage = {
       console.error('Error fetching promo code:', error);
       return null;
     }
-  }
+  },
 
   async resetUserDailyLimit(userId: number) {
     try {
@@ -273,7 +273,46 @@ export const storage = {
       console.error("Database error:", error);
       return { id: userId, queryCount: 0 };
     }
-  }
+  },
+
+  async getUserByEmail(email: string) {
+    try {
+      const users = await db.select().from(schema.users).where(eq(schema.users.email, email));
+      return users[0] || null;
+    } catch (error) {
+      console.error("Database error:", error);
+      return null;
+    }
+  },
+
+  async getUserById(userId: number) {
+    try {
+      const users = await db.select().from(schema.users).where(eq(schema.users.id, userId));
+      return users[0] || null;
+    } catch (error) {
+      console.error("Database error:", error);
+      return null;
+    }
+  },
+
+  async createAdminLog(logData: any) {
+    try {
+      const [log] = await db.insert(schema.adminLogs).values(logData).returning();
+      return log;
+    } catch (error) {
+      console.error("Database error:", error);
+      return { id: 1, ...logData };
+    }
+  },
+
+  async getAdminLogs(limit: number = 100) {
+    try {
+      return await db.select().from(schema.adminLogs).orderBy(desc(schema.adminLogs.timestamp)).limit(limit);
+    } catch (error) {
+      console.error("Database error:", error);
+      return [];
+    }
+  },
 };
 
 export { db };

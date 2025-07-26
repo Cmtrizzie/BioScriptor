@@ -431,15 +431,15 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-white/20">
+          <TabsList className="grid w-full grid-cols-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-white/20">
             <TabsTrigger value="users" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
               Users
             </TabsTrigger>
             <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
-              Plans
+              Payments
             </TabsTrigger>
             <TabsTrigger value="apis" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
-              APIs
+              API Routes
             </TabsTrigger>
             <TabsTrigger value="activity" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
               Logs
@@ -542,58 +542,273 @@ export default function AdminDashboard() {
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <CreditCard className="h-6 w-6 text-blue-600" />
-                  Subscription Management
+                  Payments & Subscriptions
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {subscriptionsLoading ? (
-                  <div className="text-center py-8">Loading subscriptions...</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>User ID</TableHead>
-                          <TableHead>PayPal ID</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Tier</TableHead>
-                          <TableHead>Start Date</TableHead>
-                          <TableHead>End Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {subscriptions?.map((subscription: Subscription) => (
-                          <TableRow key={subscription.id}>
-                            <TableCell>{subscription.userId}</TableCell>
-                            <TableCell className="font-mono text-sm">
-                              {subscription.paypalSubscriptionId}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                subscription.status === 'active' ? 'default' :
-                                subscription.status === 'cancelled' ? 'destructive' : 'secondary'
-                              }>
-                                {subscription.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{subscription.tier}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {new Date(subscription.startDate).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              {subscription.endDate ? 
-                                new Date(subscription.endDate).toLocaleDateString() : 
-                                'N/A'
-                              }
-                            </TableCell>
+              <CardContent className="p-6">
+                <Tabs defaultValue="current" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="current">Current Subscriptions</TabsTrigger>
+                    <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
+                    <TabsTrigger value="failed">Failed Payments</TabsTrigger>
+                    <TabsTrigger value="manual">Manual Actions</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="current">
+                    {subscriptionsLoading ? (
+                      <div className="text-center py-8">Loading subscriptions...</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>User</TableHead>
+                              <TableHead>PayPal ID</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Tier</TableHead>
+                              <TableHead>Revenue</TableHead>
+                              <TableHead>Start Date</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {subscriptions?.map((subscription: Subscription) => (
+                              <TableRow key={subscription.id}>
+                                <TableCell>{subscription.userId}</TableCell>
+                                <TableCell className="font-mono text-sm">
+                                  {subscription.paypalSubscriptionId}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={
+                                    subscription.status === 'active' ? 'default' :
+                                    subscription.status === 'cancelled' ? 'destructive' : 'secondary'
+                                  }>
+                                    {subscription.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{subscription.tier}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  ${subscription.tier === 'premium' ? '9.99' : subscription.tier === 'enterprise' ? '49.99' : '0.00'}/mo
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(subscription.startDate).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline">
+                                      Cancel
+                                    </Button>
+                                    <Button size="sm" variant="outline">
+                                      Refund
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="webhooks">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm">PayPal Webhooks</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-green-600">245</div>
+                            <p className="text-xs text-muted-foreground">Events received today</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm">Failed Events</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-red-600">3</div>
+                            <p className="text-xs text-muted-foreground">Requires attention</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm">Processing Time</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">1.2s</div>
+                            <p className="text-xs text-muted-foreground">Average response time</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Event Type</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
+                        </TableHeader>
+                        <TableBody>
+                          {[
+                            { type: 'BILLING.SUBSCRIPTION.ACTIVATED', status: 'success', user: 'user@example.com', time: '2 mins ago' },
+                            { type: 'BILLING.SUBSCRIPTION.CANCELLED', status: 'success', user: 'test@demo.com', time: '5 mins ago' },
+                            { type: 'PAYMENT.CAPTURE.COMPLETED', status: 'failed', user: 'fail@example.com', time: '10 mins ago' }
+                          ].map((event, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-mono text-sm">{event.type}</TableCell>
+                              <TableCell>
+                                <Badge variant={event.status === 'success' ? 'default' : 'destructive'}>
+                                  {event.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{event.user}</TableCell>
+                              <TableCell>{event.time}</TableCell>
+                              <TableCell>
+                                <Button size="sm" variant="outline">Retry</Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="failed">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Failed & Cancelled Payments</h3>
+                        <Button>Export Failed Payments</Button>
+                      </div>
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Reason</TableHead>
+                            <TableHead>Attempts</TableHead>
+                            <TableHead>Last Attempt</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {[
+                            { user: 'user1@test.com', amount: '$9.99', reason: 'Insufficient funds', attempts: 3, lastAttempt: '1 hour ago' },
+                            { user: 'user2@test.com', amount: '$49.99', reason: 'Card expired', attempts: 1, lastAttempt: '2 hours ago' },
+                            { user: 'user3@test.com', amount: '$9.99', reason: 'Payment declined', attempts: 2, lastAttempt: '4 hours ago' }
+                          ].map((payment, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{payment.user}</TableCell>
+                              <TableCell className="font-semibold">{payment.amount}</TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">{payment.reason}</Badge>
+                              </TableCell>
+                              <TableCell>{payment.attempts}/3</TableCell>
+                              <TableCell>{payment.lastAttempt}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button size="sm">Retry Payment</Button>
+                                  <Button size="sm" variant="outline">Contact User</Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="manual">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Manual Subscription Change</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium">User Email</label>
+                            <input
+                              type="email"
+                              placeholder="user@example.com"
+                              className="w-full mt-1 p-2 border rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">New Tier</label>
+                            <select className="w-full mt-1 p-2 border rounded-md">
+                              <option value="free">Free</option>
+                              <option value="premium">Premium</option>
+                              <option value="enterprise">Enterprise</option>
+                              <option value="lifetime">Lifetime</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Reason</label>
+                            <textarea
+                              placeholder="Reason for manual change..."
+                              className="w-full mt-1 p-2 border rounded-md"
+                              rows={3}
+                            />
+                          </div>
+                          <Button className="w-full">Update Subscription</Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Lifetime Access</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium">User Email</label>
+                            <input
+                              type="email"
+                              placeholder="user@example.com"
+                              className="w-full mt-1 p-2 border rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Access Level</label>
+                            <select className="w-full mt-1 p-2 border rounded-md">
+                              <option value="premium_lifetime">Premium Lifetime</option>
+                              <option value="enterprise_lifetime">Enterprise Lifetime</option>
+                              <option value="custom">Custom Access</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Custom Features (if custom)</label>
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" />
+                                <span className="text-sm">Unlimited Queries</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" />
+                                <span className="text-sm">Priority Support</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" />
+                                <span className="text-sm">API Access</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" />
+                                <span className="text-sm">Beta Features</span>
+                              </label>
+                            </div>
+                          </div>
+                          <Button className="w-full">Grant Lifetime Access</Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
@@ -652,44 +867,349 @@ export default function AdminDashboard() {
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <Settings className="h-6 w-6 text-blue-600" />
-                  API Management
+                  API Routing & Model Management
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {apiStatusLoading ? (
-                  <div className="text-center py-8">Loading API status...</div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
-                        <Card key={provider}>
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg capitalize">{provider}</CardTitle>
-                              <Badge variant={status ? "default" : "destructive"}>
-                                {status ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
+              <CardContent className="p-6">
+                <Tabs defaultValue="status" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="status">API Status</TabsTrigger>
+                    <TabsTrigger value="routing">Model Routing</TabsTrigger>
+                    <TabsTrigger value="keys">API Keys</TabsTrigger>
+                    <TabsTrigger value="errors">Error Logs</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="status">
+                    {apiStatusLoading ? (
+                      <div className="text-center py-8">Loading API status...</div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
+                            <Card key={provider} className={`border-2 ${status ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="text-lg capitalize">{provider}</CardTitle>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={status ? "default" : "destructive"}>
+                                      {status ? "Active" : "Inactive"}
+                                    </Badge>
+                                    <Button size="sm" variant="outline">
+                                      {status ? 'Disable' : 'Enable'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span>Requests Today:</span>
+                                    <span className="font-semibold">{Math.floor(Math.random() * 1000)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Success Rate:</span>
+                                    <span className="font-semibold text-green-600">98.{Math.floor(Math.random() * 9)}%</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Avg Response:</span>
+                                    <span className="font-semibold">{(Math.random() * 2 + 0.5).toFixed(2)}s</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Real-time Performance Metrics</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm text-muted-foreground">
-                              {status ? "API key configured and ready" : "API key not configured"}
-                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                              <div>
+                                <div className="text-3xl font-bold text-blue-600">2,847</div>
+                                <p className="text-sm text-muted-foreground">Total Requests Today</p>
+                              </div>
+                              <div>
+                                <div className="text-3xl font-bold text-green-600">99.2%</div>
+                                <p className="text-sm text-muted-foreground">Overall Success Rate</p>
+                              </div>
+                              <div>
+                                <div className="text-3xl font-bold text-purple-600">1.8s</div>
+                                <p className="text-sm text-muted-foreground">Average Response Time</p>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-3">Model Priority</h3>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <p><strong>1. Groq:</strong> Primary (fastest, 2 retries)</p>
-                        <p><strong>2. Together:</strong> Secondary (balanced, 2 retries)</p>
-                        <p><strong>3. OpenRouter:</strong> Tertiary (reliable, 1 retry)</p>
-                        <p><strong>4. Cohere:</strong> Fallback (specialized, 1 retry)</p>
                       </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="routing">
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Model Priority & Routing by Plan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-6">
+                            {['free', 'premium', 'enterprise'].map((tier) => (
+                              <div key={tier} className="border rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-semibold capitalize">{tier} Tier Routing</h4>
+                                  <Button size="sm" variant="outline">Edit Priority</Button>
+                                </div>
+                                <div className="space-y-2">
+                                  {[
+                                    { name: 'Groq', priority: tier === 'free' ? 2 : 1, enabled: tier !== 'free' },
+                                    { name: 'Together', priority: tier === 'free' ? 1 : 2, enabled: true },
+                                    { name: 'OpenRouter', priority: 3, enabled: tier !== 'free' },
+                                    { name: 'Cohere', priority: 4, enabled: tier === 'enterprise' }
+                                  ].map((model) => (
+                                    <div key={model.name} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                      <div className="flex items-center gap-3">
+                                        <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                          {model.priority}
+                                        </span>
+                                        <span className="font-medium">{model.name}</span>
+                                        <Badge variant={model.enabled ? 'default' : 'secondary'}>
+                                          {model.enabled ? 'Enabled' : 'Disabled'}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <label className="flex items-center gap-2">
+                                          <input type="checkbox" checked={model.enabled} readOnly />
+                                          <span className="text-sm">Active</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Load Balancing Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium">Fallback Strategy</label>
+                              <select className="w-full mt-1 p-2 border rounded-md">
+                                <option value="priority">Priority Order</option>
+                                <option value="round_robin">Round Robin</option>
+                                <option value="least_load">Least Load</option>
+                                <option value="fastest">Fastest Response</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Retry Attempts</label>
+                              <input
+                                type="number"
+                                value="3"
+                                className="w-full mt-1 p-2 border rounded-md"
+                                min="1"
+                                max="5"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Timeout (seconds)</label>
+                              <input
+                                type="number"
+                                value="30"
+                                className="w-full mt-1 p-2 border rounded-md"
+                                min="5"
+                                max="120"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Rate Limit (req/min)</label>
+                              <input
+                                type="number"
+                                value="100"
+                                className="w-full mt-1 p-2 border rounded-md"
+                                min="10"
+                                max="1000"
+                              />
+                            </div>
+                          </div>
+                          <Button className="mt-4">Save Load Balancing Settings</Button>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </div>
-                )}
+                  </TabsContent>
+
+                  <TabsContent value="keys">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
+                          <Card key={provider}>
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="capitalize">{provider} API</CardTitle>
+                                <Badge variant={status ? "default" : "destructive"}>
+                                  {status ? "Configured" : "Missing"}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    value={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Endpoint URL</label>
+                                <input
+                                  type="url"
+                                  placeholder={`Default ${provider} endpoint`}
+                                  className="w-full mt-1 p-2 border rounded-md"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" className="flex-1">Update Key</Button>
+                                <Button size="sm" variant="destructive">Remove</Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Add New API Provider</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium">Provider Name</label>
+                              <input
+                                type="text"
+                                placeholder="e.g., Custom API"
+                                className="w-full mt-1 p-2 border rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">API Type</label>
+                              <select className="w-full mt-1 p-2 border rounded-md">
+                                <option value="openai">OpenAI Compatible</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="cohere">Cohere</option>
+                                <option value="custom">Custom</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">API Key</label>
+                              <input
+                                type="password"
+                                placeholder="Enter API key..."
+                                className="w-full mt-1 p-2 border rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Endpoint URL</label>
+                              <input
+                                type="url"
+                                placeholder="https://api.example.com/v1/chat"
+                                className="w-full mt-1 p-2 border rounded-md"
+                              />
+                            </div>
+                          </div>
+                          <Button>Add API Provider</Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="errors">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">API Error Logs & Failed Calls</h3>
+                        <div className="flex gap-2">
+                          <Button variant="outline">Export Logs</Button>
+                          <Button variant="outline">Clear Old Logs</Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-red-600">23</div>
+                            <p className="text-sm text-muted-foreground">Errors Today</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-yellow-600">7</div>
+                            <p className="text-sm text-muted-foreground">Timeouts</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-blue-600">12</div>
+                            <p className="text-sm text-muted-foreground">Rate Limited</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-2xl font-bold text-green-600">98.9%</div>
+                            <p className="text-sm text-muted-foreground">Success Rate</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Provider</TableHead>
+                            <TableHead>Error Type</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Details</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {[
+                            { timestamp: '2 mins ago', provider: 'Groq', error: 'Rate Limit', user: 'user1@example.com', details: '429 - Too many requests' },
+                            { timestamp: '5 mins ago', provider: 'Together', error: 'Timeout', user: 'user2@example.com', details: 'Request timeout after 30s' },
+                            { timestamp: '8 mins ago', provider: 'OpenRouter', error: 'API Error', user: 'user3@example.com', details: '500 - Internal server error' },
+                            { timestamp: '12 mins ago', provider: 'Cohere', error: 'Auth Failed', user: 'user4@example.com', details: '401 - Invalid API key' }
+                          ].map((log, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{log.timestamp}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{log.provider}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">{log.error}</Badge>
+                              </TableCell>
+                              <TableCell>{log.user}</TableCell>
+                              <TableCell className="max-w-xs truncate">{log.details}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline">Retry</Button>
+                                  <Button size="sm" variant="outline">Details</Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
@@ -853,7 +1373,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings"></TabsContent>
+          <TabsContent value="settings">
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">

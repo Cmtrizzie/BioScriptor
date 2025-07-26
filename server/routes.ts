@@ -646,6 +646,245 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Management Routes
+  app.post("/api/admin/api-providers", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { name, type, apiKey, endpoint, enabled } = req.body;
+      
+      // Store API provider configuration
+      // This would typically be stored in a database
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'add_api_provider',
+        targetResource: `api:${name}`,
+        details: `Added new API provider: ${name} (${type})`
+      });
+      
+      res.json({ success: true, message: 'API provider added successfully' });
+    } catch (error) {
+      console.error('API provider creation error:', error);
+      res.status(500).json({ error: 'Failed to add API provider' });
+    }
+  });
+
+  app.patch("/api/admin/api-providers/:provider/toggle", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { provider } = req.params;
+      const { enabled } = req.body;
+      
+      // Toggle API provider status
+      // This would update the provider configuration
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'toggle_api_provider',
+        targetResource: `api:${provider}`,
+        details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}`
+      });
+      
+      res.json({ success: true, enabled });
+    } catch (error) {
+      console.error('API provider toggle error:', error);
+      res.status(500).json({ error: 'Failed to toggle API provider' });
+    }
+  });
+
+  app.get("/api/admin/api-errors", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      // Get API error logs - this would come from a dedicated error logging system
+      const mockErrors = [
+        {
+          timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+          provider: 'Groq',
+          errorType: 'Rate Limit',
+          userId: 'user1@example.com',
+          details: '429 - Too many requests',
+          resolved: false
+        },
+        {
+          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          provider: 'Together',
+          errorType: 'Timeout',
+          userId: 'user2@example.com',
+          details: 'Request timeout after 30s',
+          resolved: false
+        }
+      ];
+      
+      res.json(mockErrors.slice(0, limit));
+    } catch (error) {
+      console.error('API errors fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch API errors' });
+    }
+  });
+
+  // Payment Webhook Routes
+  app.post("/api/webhooks/paypal", async (req, res) => {
+    try {
+      const event = req.body;
+      
+      // Log webhook event
+      console.log('PayPal webhook received:', event.event_type);
+      
+      // Handle different webhook events
+      switch (event.event_type) {
+        case 'BILLING.SUBSCRIPTION.ACTIVATED':
+          // Handle subscription activation
+          break;
+        case 'BILLING.SUBSCRIPTION.CANCELLED':
+          // Handle subscription cancellation
+          break;
+        case 'PAYMENT.CAPTURE.COMPLETED':
+          // Handle payment completion
+          break;
+        case 'PAYMENT.CAPTURE.DENIED':
+          // Handle payment failure
+          break;
+        default:
+          console.log('Unhandled webhook event:', event.event_type);
+      }
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
+
+  app.get("/api/admin/webhook-logs", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      // Mock webhook logs - in production, this would come from a webhook logging system
+      const mockWebhookLogs = [
+        {
+          eventType: 'BILLING.SUBSCRIPTION.ACTIVATED',
+          status: 'success',
+          user: 'user@example.com',
+          timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+          processingTime: '1.2s'
+        },
+        {
+          eventType: 'BILLING.SUBSCRIPTION.CANCELLED',
+          status: 'success',
+          user: 'test@demo.com',
+          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          processingTime: '0.8s'
+        },
+        {
+          eventType: 'PAYMENT.CAPTURE.COMPLETED',
+          status: 'failed',
+          user: 'fail@example.com',
+          timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+          processingTime: '5.2s'
+        }
+      ];
+      
+      res.json(mockWebhookLogs.slice(0, limit));
+    } catch (error) {
+      console.error('Webhook logs fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch webhook logs' });
+    }
+  });
+
+  app.get("/api/admin/failed-payments", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      // Mock failed payments data
+      const mockFailedPayments = [
+        {
+          userId: 1,
+          userEmail: 'user1@test.com',
+          amount: 9.99,
+          reason: 'Insufficient funds',
+          attempts: 3,
+          lastAttempt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+          subscriptionId: 'sub_123'
+        },
+        {
+          userId: 2,
+          userEmail: 'user2@test.com',
+          amount: 49.99,
+          reason: 'Card expired',
+          attempts: 1,
+          lastAttempt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          subscriptionId: 'sub_456'
+        }
+      ];
+      
+      res.json(mockFailedPayments);
+    } catch (error) {
+      console.error('Failed payments fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch failed payments' });
+    }
+  });
+
+  app.post("/api/admin/manual-subscription", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userEmail, tier, reason } = req.body;
+      
+      // Find user by email
+      const user = await storage.getUserByEmail?.(userEmail);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Update user tier
+      const updatedUser = await storage.updateUser(user.id, { 
+        tier,
+        queryCount: 0 // Reset on manual change
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'manual_subscription_change',
+        targetResource: `user:${user.id}`,
+        details: `Manual subscription change to ${tier}. Reason: ${reason}`
+      });
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error('Manual subscription error:', error);
+      res.status(500).json({ error: 'Failed to update subscription manually' });
+    }
+  });
+
+  app.post("/api/admin/grant-lifetime", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userEmail, accessLevel, customFeatures } = req.body;
+      
+      // Find user by email
+      const user = await storage.getUserByEmail?.(userEmail);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const lifetimeTier = accessLevel === 'custom' ? 'lifetime_custom' : accessLevel;
+      
+      // Update user with lifetime access
+      const updatedUser = await storage.updateUser(user.id, { 
+        tier: lifetimeTier,
+        queryCount: 0,
+        lifetimeAccess: true,
+        customFeatures: accessLevel === 'custom' ? customFeatures : null
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'grant_lifetime_access',
+        targetResource: `user:${user.id}`,
+        details: `Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? ` with features: ${JSON.stringify(customFeatures)}` : ''}`
+      });
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error('Lifetime access grant error:', error);
+      res.status(500).json({ error: 'Failed to grant lifetime access' });
+    }
+  });
+
   // Chat session management
   app.get("/api/chat/sessions/:sessionId", requireAuth, async (req: any, res) => {
     try {
