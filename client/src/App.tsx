@@ -37,7 +37,7 @@ function Router() {
       <Route path="/chat" component={user ? Chat : Auth} />
       <Route path="/chat/:sessionId" component={user ? Chat : Auth} />
       <Route path="/subscription" component={user ? Subscription : Auth} />
-      <Route path="/admin" component={user && user.tier === 'enterprise' ? AdminDashboard : Auth} />
+      <Route path="/admin" component={user ? AdminDashboard : Auth} />
       <Route component={NotFound} />
     </Switch>
   );
