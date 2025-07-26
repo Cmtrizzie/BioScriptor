@@ -301,42 +301,47 @@ export class FaultTolerantAI {
     const lowerPrompt = prompt.toLowerCase();
 
     if (lowerPrompt.includes('sequence')) {
-      return `## 🧬 Sequence Analysis
+      return `👋 **Hey there!**
 
-I can help with **sequence analysis** tasks including:
+Thanks for reaching out about sequence analysis. Here's what I can help with:
 
-- **DNA/RNA sequence parsing** and validation
-- **GC content calculation**
-- **Reverse complement generation**
-- **Open reading frame (ORF) detection**
-- **Motif searching** and pattern recognition
+✅ **Available Tools:**
+- 🧬 **DNA/RNA parsing** and validation
+- 📊 **GC content calculation** 
+- 🔄 **Reverse complement generation**
+- 🔍 **ORF detection** and analysis
+- 🎯 **Motif searching** and pattern recognition
 
+💡 **Quick Example:**
 \`\`\`python
 def calculate_gc_content(sequence):
     gc_count = sequence.count('G') + sequence.count('C')
     return (gc_count / len(sequence)) * 100
 \`\`\`
 
-What specific sequence analysis would you like help with?`;
+🚀 **Ready to start?** Just paste your sequence and let me know what analysis you need! 📩`;
     }
 
     if (lowerPrompt.includes('crispr')) {
-      return `## ✂️ CRISPR Guide RNA Design
+      return `👋 **Hey researcher!**
 
-**CRISPR guide RNA design** is my specialty! I can help with:
+CRISPR guide design is my specialty! Here's how I can help:
 
-- **Target site identification**
-- **PAM sequence validation**
-- **Off-target analysis**
-- **Guide RNA scoring**
+✅ **What I Do:**
+- 🎯 **Target site identification**
+- ✂️ **PAM sequence validation** (NGG for Cas9)
+- 🔍 **Off-target analysis**
+- ⭐ **Guide RNA efficiency scoring**
 
-### Example CRISPR Workflow:
-1. **Input target sequence**
-2. **Identify PAM sites** (NGG for Cas9)
-3. **Design 20-nucleotide guides**
-4. **Score for efficiency**
+🧪 **Typical Workflow:**
+1. **Input** your target sequence
+2. **Find** optimal PAM sites
+3. **Design** 20-nucleotide guides  
+4. **Score** for cutting efficiency
 
-Would you like me to help design guides for a specific target?`;
+💡 **Tip:** Share your target gene/sequence and I'll design optimal guides for you!
+
+Ready to start? 📩 Just paste your sequence!`;
     }
 
     if (lowerPrompt.includes('pcr')) {
@@ -386,24 +391,35 @@ What type of protein analysis do you need?`;
     }
 
     if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
-      return `# Hello! 👋
+      return `👋 **Hello there!**
 
-I'm **BioScriptor**, your AI bioinformatics assistant! I'm here to help with:
+I'm **BioScriptor**, your AI bioinformatics assistant! Great to meet you.
 
-## 🧬 Core Capabilities:
-- **DNA/RNA sequence analysis**
-- **Protein structure & function**
-- **CRISPR guide design**
-- **PCR primer design**
-- **Phylogenetic analysis**
+✅ **Here's what I can help with:**
 
-## 🛠️ Popular Tools:
-- Sequence alignment & BLAST searches
-- Restriction enzyme analysis
+🧬 **Sequence Analysis**
+- DNA/RNA parsing and validation
+- GC content & composition analysis  
+- Reverse complements & translations
+
+✂️ **CRISPR Design**
+- Guide RNA optimization
+- PAM site identification
+- Off-target analysis
+
+🧪 **Lab Protocols**
+- PCR primer design
+- Restriction enzyme mapping
 - Molecular cloning workflows
-- Gene expression analysis
 
-*What bioinformatics challenge can I help you solve today?*`;
+📊 **Data Analysis**
+- Phylogenetic trees
+- Gene expression analysis
+- Protein structure prediction
+
+💡 **Tip:** Just describe what you're working on, and I'll guide you through it step by step!
+
+What bioinformatics challenge can I help you tackle today? 🚀`;
     }
 
     return `## 🔬 BioScriptor Assistant

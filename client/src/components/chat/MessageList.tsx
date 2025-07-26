@@ -57,30 +57,36 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                className={`max-w-[85%] rounded-xl px-5 py-4 ${
                   message.type === 'user'
-                    ? 'bg-bio-blue text-white ml-auto'
-                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                    ? 'bg-bio-blue text-white ml-auto shadow-md'
+                    : 'bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm'
                 }`}
               >
                 {message.type === 'ai' ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
                         code({ node, inline, className, children, ...props }) {
                           const match = /language-(\w+)/.exec(className || '');
                           return !inline && match ? (
-                            <SyntaxHighlighter
-                              style={tomorrow}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
+                            <div className="my-4 rounded-lg overflow-hidden bg-gray-900 dark:bg-gray-900">
+                              <div className="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-mono border-b border-gray-700">
+                                {match[1]}
+                              </div>
+                              <SyntaxHighlighter
+                                style={tomorrow}
+                                language={match[1]}
+                                PreTag="div"
+                                className="!bg-gray-900 !p-4 !m-0 font-mono text-sm"
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            </div>
                           ) : (
-                            <code className={className} {...props}>
+                            <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono`} {...props}>
                               {children}
                             </code>
                           );
@@ -149,9 +155,13 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div className="whitespace-pre-wrap font-medium text-white leading-relaxed">{message.content}</div>
                 )}
-                <div className="text-xs opacity-70 mt-2">
+                <div className={`text-xs mt-3 ${
+                  message.type === 'user' 
+                    ? 'text-white/70' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
               </div>
@@ -160,14 +170,14 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 max-w-[80%]">
-                <div className="flex items-center space-x-2">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-5 py-4 max-w-[85%] shadow-sm">
+                <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-bio-blue rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-bio-blue rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-bio-blue rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">BioScriptor is thinking...</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">🧬 BioScriptor is analyzing...</span>
                 </div>
               </div>
             </div>

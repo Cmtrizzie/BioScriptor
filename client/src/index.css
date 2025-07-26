@@ -124,6 +124,80 @@
   box-sizing: border-box;
 }
 
+/* Chat Message Styling */
+.message-animation {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ChatGPT-style prose improvements */
+.prose h1, .prose h2, .prose h3 {
+  @apply font-semibold text-gray-900 dark:text-white mt-6 mb-3;
+}
+
+.prose h1 { @apply text-xl; }
+.prose h2 { @apply text-lg; }
+.prose h3 { @apply text-base; }
+
+.prose p {
+  @apply mb-4 text-gray-800 dark:text-gray-200 leading-relaxed;
+}
+
+.prose ul, .prose ol {
+  @apply mb-4 pl-6;
+}
+
+.prose li {
+  @apply mb-1 text-gray-800 dark:text-gray-200;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-bio-teal pl-4 italic text-gray-700 dark:text-gray-300 my-4;
+}
+
+.prose table {
+  @apply w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden my-4;
+}
+
+.prose th {
+  @apply bg-gray-100 dark:bg-gray-700 px-4 py-2 text-left font-semibold border-b border-gray-200 dark:border-gray-600;
+}
+
+.prose td {
+  @apply px-4 py-2 border-b border-gray-100 dark:border-gray-800;
+}
+
+.prose strong {
+  @apply font-semibold text-gray-900 dark:text-white;
+}
+
+.prose em {
+  @apply italic text-gray-700 dark:text-gray-300;
+}
+
+/* Enhanced code styling */
+.prose pre {
+  @apply !bg-gray-900 !text-gray-100 rounded-lg overflow-x-auto my-4;
+}
+
+.prose code {
+  @apply font-mono text-sm;
+}
+
+.prose :not(pre) > code {
+  @apply bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-bio-blue dark:text-bio-teal;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
