@@ -528,8 +528,7 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                           </TableRow>
-                          ))
-                        )}
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
