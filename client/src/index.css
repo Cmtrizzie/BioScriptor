@@ -117,6 +117,10 @@
   background-color: var(--bio-teal);
 }
 
+.border-bio-teal {
+  border-color: var(--bio-teal);
+}
+
 /* Global Styles */
 * {
   margin: 0;
