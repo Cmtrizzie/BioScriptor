@@ -7,7 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Users, CreditCard, Activity, Settings, RefreshCw, ShieldCheck, Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AdminAnalytics {
   totalUsers: number;
@@ -82,6 +85,8 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [editingPlan, setEditingPlan] = useState<PlanLimitEdit | null>(null);
   const [creatingPromo, setCreatingPromo] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [planFilter, setPlanFilter] = useState('all');
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([
     {
       id: 1,
@@ -120,6 +125,22 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/subscriptions'],
     enabled: true
   });
+
+  // Filter users based on search and plan filter
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    
+    return users.filter((user: User) => {
+      const matchesSearch = searchQuery === '' || 
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.id.toString().includes(searchQuery);
+      
+      const matchesPlan = planFilter === 'all' || user.tier === planFilter;
+      
+      return matchesSearch && matchesPlan;
+    });
+  }, [users, searchQuery, planFilter]);
 
   // TESTING MODE: Allow all access
   const hasAdminAccess = true;
@@ -455,16 +476,76 @@ export default function AdminDashboard() {
           <TabsContent value="users">
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                  <Users className="h-6 w-6 text-blue-600" />
-                  User Management
-                </CardTitle>
+                <div className="flex flex-col gap-4">
+                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                    <Users className="h-6 w-6 text-blue-600" />
+                    User Management
+                  </CardTitle>
+                  
+                  {/* Search and Filter Controls */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search by email, name, or user ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 bg-white/50 dark:bg-slate-800/50"
+                      />
+                    </div>
+                    <Select value={planFilter} onValueChange={setPlanFilter}>
+                      <SelectTrigger className="w-full sm:w-[200px] bg-white/50 dark:bg-slate-800/50">
+                        <SelectValue placeholder="Filter by plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Plans</SelectItem>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                        <SelectItem value="banned">Banned</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Results Summary */}
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    Showing {filteredUsers.length} of {users?.length || 0} users
+                    {searchQuery && (
+                      <span> • Search: "{searchQuery}"</span>
+                    )}
+                    {planFilter !== 'all' && (
+                      <span> • Plan: {planFilter}</span>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {usersLoading ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="text-slate-600 dark:text-slate-400 mt-4 font-medium">Loading users...</p>
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No users found</h3>
+                    <p className="text-slate-500 dark:text-slate-500">
+                      {searchQuery || planFilter !== 'all' 
+                        ? 'Try adjusting your search or filter criteria'
+                        : 'No users have been registered yet'
+                      }
+                    </p>
+                    {(searchQuery || planFilter !== 'all') && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setPlanFilter('all');
+                        }}
+                        className="mt-3 text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Clear filters
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -480,7 +561,7 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users?.map((user: User) => (
+                        {filteredUsers.map((user: User) => (
                           <TableRow key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
                             <TableCell className="font-medium text-slate-800 dark:text-slate-200">{user.email}</TableCell>
                             <TableCell className="text-slate-600 dark:text-slate-400">{user.displayName || 'N/A'}</TableCell>
