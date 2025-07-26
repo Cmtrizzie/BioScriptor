@@ -12,9 +12,13 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { newChat, sessions, sendMessage, switchToSession } = useChat();
 
-  const handleQuickAction = (prompt: string) => {
-    sendMessage(prompt);
-    onClose();
+  const handleQuickAction = async (prompt: string) => {
+    try {
+      await sendMessage(prompt);
+      onClose();
+    } catch (error) {
+      console.error('Error sending quick action:', error);
+    }
   };
 
   const handleSessionClick = (session: any) => {
@@ -128,9 +132,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Recent Sessions */}
-          <div className="flex-1 px-4 pb-4">
+          <div className="flex-1 px-4 pb-4 min-h-0 flex flex-col">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Recent Sessions</h3>
-            <ScrollArea className="h-full">
+            <div className="flex-1 overflow-y-auto max-h-[300px]">
               <div className="space-y-2">
                 {sessions.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
@@ -154,7 +158,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           {/* Usage Stats */}

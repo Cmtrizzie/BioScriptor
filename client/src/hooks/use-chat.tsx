@@ -134,49 +134,70 @@ export function useChat() {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => {
+        const newMessages = [...prev, aiMessage];
+        console.log('Updated messages:', newMessages);
+        return newMessages;
+      });
 
-      // Save session after exchange
-      try {
-        const allMessages = [...messages, userMessage, aiMessage];
-        const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-        
-        if (messages.length === 0) {
-          // New session
-          const currentSession: ChatSession = {
-            id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-            timestamp: new Date().toLocaleDateString(),
-            messages: allMessages,
-          };
-
-          const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
-          localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-          setSessions(updatedSessions);
-        } else {
-          // Update existing session
-          if (savedSessions.length > 0) {
-            savedSessions[0].messages = allMessages;
-            savedSessions[0].timestamp = new Date().toLocaleDateString();
-            localStorage.setItem('bioscriptor-sessions', JSON.stringify(savedSessions));
-            setSessions(savedSessions);
-          } else {
-            // Create new session if none exists
+      // Save session after exchange - use a timeout to ensure state is updated
+      setTimeout(() => {
+        try {
+          const currentMessages = [...messages, userMessage, aiMessage];
+          const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
+          
+          if (messages.length === 0) {
+            // New session
             const currentSession: ChatSession = {
               id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-              title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || 'New Chat',
+              title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
               timestamp: new Date().toLocaleDateString(),
-              messages: allMessages,
+              messages: currentMessages,
             };
-            
-            const updatedSessions = [currentSession];
+
+            const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
             localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
             setSessions(updatedSessions);
+          } else {
+            // Update existing session or create new one
+            let existingSessionIndex = -1;
+            if (savedSessions.length > 0) {
+              // Try to find an existing session that matches current conversation
+              existingSessionIndex = savedSessions.findIndex(session => 
+                session.messages.length > 0 && 
+                session.messages[0].content === messages[0]?.content
+              );
+            }
+
+            if (existingSessionIndex >= 0) {
+              // Update existing session
+              savedSessions[existingSessionIndex].messages = currentMessages;
+              savedSessions[existingSessionIndex].timestamp = new Date().toLocaleDateString();
+              
+              // Move updated session to top
+              const updatedSession = savedSessions.splice(existingSessionIndex, 1)[0];
+              const updatedSessions = [updatedSession, ...savedSessions];
+              
+              localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+              setSessions(updatedSessions);
+            } else {
+              // Create new session
+              const currentSession: ChatSession = {
+                id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+                timestamp: new Date().toLocaleDateString(),
+                messages: currentMessages,
+              };
+              
+              const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
+              localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+              setSessions(updatedSessions);
+            }
           }
+        } catch (error) {
+          console.error('Error saving session:', error);
         }
-      } catch (error) {
-        console.error('Error saving session:', error);
-      }
+      }, 100);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -193,24 +214,37 @@ export function useChat() {
   }, [user, messages]);
 
   const newChat = useCallback(() => {
+    console.log('Starting new chat');
     setMessages([]);
+    setIsLoading(false);
+    
+    // Scroll to bottom after clearing messages
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   }, []);
 
   const switchToSession = useCallback((session: ChatSession) => {
     try {
+      console.log('Switching to session:', session);
       const sessionMessages = Array.isArray(session.messages) 
         ? session.messages.map(msg => ({
             ...msg,
-            timestamp: new Date(msg.timestamp)
+            timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp
           }))
         : [];
       setMessages(sessionMessages);
       setIsLoading(false);
+      
+      // Update sessions to move this session to the top
+      const updatedSessions = [session, ...sessions.filter(s => s.id !== session.id)];
+      setSessions(updatedSessions);
+      localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
     } catch (error) {
       console.error('Error loading session:', error);
       setMessages([]);
     }
-  }, []);
+  }, [sessions]);
 
   useEffect(() => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
