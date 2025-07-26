@@ -68,59 +68,47 @@ export default function Sidebar({
         </div>
 
         {/* Quick Actions */}
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Actions</h3>
-          <div className="space-y-2">
+        <div className="p-3 border-b border-gray-200">
+          <h3 className="text-xs font-medium text-gray-700 mb-2">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-1">
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-left h-auto p-3"
+              className="h-8 px-2 text-xs"
               onClick={() => handleQuickAction("Help me design CRISPR guide RNA sequences for a specific gene target. I need assistance with target selection, PAM site identification, and off-target analysis.")}
             >
-              <Scissors className="h-4 w-4 mr-3 text-bio-green" />
-              <div>
-                <div className="font-medium">CRISPR Design</div>
-                <div className="text-xs text-gray-500">Guide RNA & off-targets</div>
-              </div>
+              <Scissors className="h-3 w-3 mr-1 text-bio-green" />
+              CRISPR
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-left h-auto p-3"
+              className="h-8 px-2 text-xs"
               onClick={() => handleQuickAction("I need help with PCR simulation and primer design. Can you assist with primer optimization, melting temperature calculation, and virtual gel electrophoresis?")}
             >
-              <FlaskConical className="h-4 w-4 mr-3 text-bio-green" />
-              <div>
-                <div className="font-medium">PCR Simulation</div>
-                <div className="text-xs text-gray-500">Virtual gel electrophoresis</div>
-              </div>
+              <TestTube className="h-3 w-3 mr-1 text-bio-green" />
+              PCR
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-left h-auto p-3"
+              className="h-8 px-2 text-xs"
               onClick={() => handleQuickAction("Please help me analyze biological sequences. I need assistance with DNA/RNA/protein sequence analysis, including alignment, annotation, and functional prediction.")}
             >
-              <Dna className="h-4 w-4 mr-3 text-bio-green" />
-              <div>
-                <div className="font-medium">Sequence Analysis</div>
-                <div className="text-xs text-gray-500">DNA/RNA/Protein tools</div>
-              </div>
+              <Dna className="h-3 w-3 mr-1 text-bio-green" />
+              Sequence
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-left h-auto p-3"
+              className="h-8 px-2 text-xs"
               onClick={() => handleQuickAction("I need help with research literature review and finding relevant bioinformatics papers. Can you assist with literature search and summarizing key findings?")}
             >
-              <BookOpen className="h-4 w-4 mr-3 text-bio-green" />
-              <div>
-                <div className="font-medium">Literature Review</div>
-                <div className="text-xs text-gray-500">Research & papers</div>
-              </div>
+              <BookOpen className="h-3 w-3 mr-1 text-bio-green" />
+              Research
             </Button>
           </div>
         </div>
