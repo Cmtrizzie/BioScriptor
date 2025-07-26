@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
@@ -5,11 +6,21 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { useChat } from "@/hooks/use-chat";
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  sessionId?: string;
+}
+
+export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { messages, sendMessage, isLoading, bottomRef } = useChat();
+  const { messages, sendMessage, isLoading, bottomRef, loadSession } = useChat();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (sessionId) {
+      loadSession(sessionId);
+    }
+  }, [sessionId, loadSession]);
 
   const handleScroll = useCallback(() => {
     if (messagesContainerRef.current) {
@@ -35,8 +46,6 @@ export default function ChatInterface() {
           <MessageInput onSendMessage={sendMessage} disabled={isLoading} />
         </main>
       </div>
-
-
     </div>
   );
 }

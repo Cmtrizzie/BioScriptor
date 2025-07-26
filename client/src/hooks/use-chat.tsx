@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 export interface Message {
@@ -20,6 +21,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [_, navigate] = useLocation();
   const { user } = useAuth();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -34,16 +36,12 @@ export function useChat() {
   }, [messages]);
 
   const sendMessage = useCallback(async (content: string, file?: File) => {
-    if (!user) {
-      console.warn('No user authenticated, creating demo user');
-      // For demo purposes, create a demo user
-      const demoUser = {
-        uid: 'demo-user-123',
-        email: 'demo@example.com',
-        displayName: 'Demo User',
-        photoURL: null
-      };
-    }
+    const activeUser = user || {
+      uid: 'demo-user-123',
+      email: 'demo@example.com',
+      displayName: 'Demo User',
+      photoURL: null
+    };
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -57,74 +55,45 @@ export function useChat() {
     setIsLoading(true);
 
     try {
-      let requestData: any = { message: content };
+      let responseContent = 'Simulated AI response.'; // fallback in case fetch is not used
 
+      // Prepare fetch request
       if (file) {
         const formData = new FormData();
         formData.append('message', content);
         formData.append('file', file);
 
-        const activeUser = user || {
-          uid: 'demo-user-123',
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          photoURL: null
-        };
-
-        const headers: Record<string, string> = {
-          'x-firebase-uid': activeUser.uid,
-          'x-firebase-email': activeUser.email || '',
-          'x-firebase-display-name': activeUser.displayName || '',
-          'x-firebase-photo-url': activeUser.photoURL || '',
-        };
-
         const response = await fetch('/api/chat/message', {
           method: 'POST',
-          headers,
+          headers: {
+            'x-firebase-uid': activeUser.uid,
+            'x-firebase-email': activeUser.email,
+            'x-firebase-display-name': activeUser.displayName || '',
+            'x-firebase-photo-url': activeUser.photoURL || '',
+          },
           body: formData,
           credentials: 'include',
         });
 
         if (!response.ok) throw new Error('Failed to send message');
-        requestData = await response.json();
+        const data = await response.json();
+        responseContent = data.response?.content || data.response?.response || 'AI response';
       } else {
-        const activeUser = user || {
-          uid: 'demo-user-123',
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          photoURL: null
-        };
-
         const response = await fetch('/api/chat/message', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-firebase-uid': activeUser.uid,
-            'x-firebase-email': activeUser.email || '',
+            'x-firebase-email': activeUser.email,
             'x-firebase-display-name': activeUser.displayName || '',
             'x-firebase-photo-url': activeUser.photoURL || '',
           },
           body: JSON.stringify({ message: content }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || 'Failed to send message');
-        }
-
-        requestData = await response.json();
-      }
-
-      let responseContent = '';
-      if (typeof requestData.response === 'string') {
-        responseContent = requestData.response;
-      } else if (typeof requestData.response?.content === 'string') {
-        responseContent = requestData.response.content;
-      } else if (typeof requestData.response?.response === 'string') {
-        responseContent = requestData.response.response;
-      } else {
-        console.error('Unexpected response format:', requestData);
-        responseContent = 'Sorry, I encountered an error processing your request.';
+        if (!response.ok) throw new Error('Failed to send message');
+        const data = await response.json();
+        responseContent = data.response?.content || data.response?.response || 'AI response';
       }
 
       const aiMessage: Message = {
@@ -134,117 +103,80 @@ export function useChat() {
         timestamp: new Date(),
       };
 
-      setMessages(prev => {
-        const newMessages = [...prev, aiMessage];
-        console.log('Updated messages:', newMessages);
-        return newMessages;
-      });
+      const currentMessages = [...messages, userMessage, aiMessage];
+      let updatedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
 
-      // Save session after exchange - use a timeout to ensure state is updated
-      setTimeout(() => {
-        try {
-          const currentMessages = [...messages, userMessage, aiMessage];
-          const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-          
-          if (messages.length === 0) {
-            // New session
-            const currentSession: ChatSession = {
-              id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-              title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-              timestamp: new Date().toLocaleDateString(),
-              messages: currentMessages,
-            };
+      let sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      let title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
 
-            const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
-            localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-            setSessions(updatedSessions);
-          } else {
-            // Update existing session or create new one
-            let existingSessionIndex = -1;
-            if (savedSessions.length > 0) {
-              // Try to find an existing session that matches current conversation
-              existingSessionIndex = savedSessions.findIndex(session => 
-                session.messages.length > 0 && 
-                session.messages[0].content === messages[0]?.content
-              );
-            }
+      const newSession: ChatSession = {
+        id: sessionId,
+        title,
+        timestamp: new Date().toLocaleDateString(),
+        messages: currentMessages,
+      };
 
-            if (existingSessionIndex >= 0) {
-              // Update existing session
-              savedSessions[existingSessionIndex].messages = currentMessages;
-              savedSessions[existingSessionIndex].timestamp = new Date().toLocaleDateString();
-              
-              // Move updated session to top
-              const updatedSession = savedSessions.splice(existingSessionIndex, 1)[0];
-              const updatedSessions = [updatedSession, ...savedSessions];
-              
-              localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-              setSessions(updatedSessions);
-            } else {
-              // Create new session
-              const currentSession: ChatSession = {
-                id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-                timestamp: new Date().toLocaleDateString(),
-                messages: currentMessages,
-              };
-              
-              const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
-              localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-              setSessions(updatedSessions);
-            }
-          }
-        } catch (error) {
-          console.error('Error saving session:', error);
-        }
-      }, 100);
-
+      updatedSessions = [newSession, ...updatedSessions.filter(s => s.id !== sessionId)];
+      localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+      setSessions(updatedSessions);
+      setMessages(currentMessages);
+      navigate(`/chat/${sessionId}`);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: 'I apologize, but I encountered an error processing your request. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
-  }, [user, messages]);
+  }, [messages, user, navigate]);
 
   const newChat = useCallback(() => {
-    console.log('Starting new chat');
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newSession: ChatSession = {
+      id: sessionId,
+      title: "New Chat",
+      timestamp: new Date().toLocaleDateString(),
+      messages: [],
+    };
+
+    const updatedSessions = [newSession, ...sessions];
+    localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+    setSessions(updatedSessions);
     setMessages([]);
     setIsLoading(false);
-    
-    // Scroll to bottom after clearing messages
+    navigate(`/chat/${sessionId}`);
+
     setTimeout(() => {
       scrollToBottom();
     }, 100);
-  }, []);
+  }, [navigate, sessions]);
 
   const switchToSession = useCallback((session: ChatSession) => {
-    try {
-      console.log('Switching to session:', session);
-      const sessionMessages = Array.isArray(session.messages) 
-        ? session.messages.map(msg => ({
-            ...msg,
-            timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp
-          }))
-        : [];
+    const sessionMessages = session.messages.map(msg => ({
+      ...msg,
+      timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp,
+    }));
+
+    setMessages(sessionMessages);
+    const updatedSessions = [session, ...sessions.filter(s => s.id !== session.id)];
+    setSessions(updatedSessions);
+    localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+    navigate(`/chat/${session.id}`);
+  }, [sessions, navigate]);
+
+  const loadSession = useCallback((sessionId: string) => {
+    const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
+    const session = savedSessions.find((s: ChatSession) => s.id === sessionId);
+    
+    if (session) {
+      const sessionMessages = session.messages.map(msg => ({
+        ...msg,
+        timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp,
+      }));
       setMessages(sessionMessages);
-      setIsLoading(false);
-      
-      // Update sessions to move this session to the top
-      const updatedSessions = [session, ...sessions.filter(s => s.id !== session.id)];
-      setSessions(updatedSessions);
-      localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-    } catch (error) {
-      console.error('Error loading session:', error);
+    } else {
+      // If session not found, start with empty messages
       setMessages([]);
     }
-  }, [sessions]);
+  }, []);
 
   useEffect(() => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
@@ -257,7 +189,8 @@ export function useChat() {
     sendMessage,
     newChat,
     switchToSession,
+    loadSession,
     isLoading,
-    bottomRef, // Export this for use in your ChatWindow
+    bottomRef,
   };
 }

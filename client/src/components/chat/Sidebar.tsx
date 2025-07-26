@@ -1,8 +1,9 @@
+import React from "react";
+import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useChat } from "@/hooks/use-chat";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Plus, Dna, TestTube, BarChart3, Atom, MessageSquare } from 'lucide-react';
+import { useChat } from "@/hooks/use-chat";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,15 +11,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { newChat, sessions, sendMessage, switchToSession } = useChat();
+  const { sessions, newChat, switchToSession, sendMessage } = useChat();
 
-  const handleQuickAction = async (prompt: string) => {
-    try {
-      await sendMessage(prompt);
-      onClose();
-    } catch (error) {
-      console.error('Error sending quick action:', error);
-    }
+  const handleQuickAction = async (message: string) => {
+    onClose(); // Close sidebar first
+    await sendMessage(message);
   };
 
   const handleSessionClick = (session: any) => {
