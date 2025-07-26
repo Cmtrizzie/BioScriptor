@@ -68,6 +68,9 @@ export default function AdminDashboard() {
     enabled: true
   });
 
+  // TESTING MODE: Allow all access
+  const hasAdminAccess = true;
+
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ['/api/admin/logs'],
     enabled: !!hasAdminAccess
@@ -77,9 +80,6 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/api-keys'],
     enabled: !!hasAdminAccess
   });
-
-  // TESTING MODE: Allow all access
-  const hasAdminAccess = true;
 
   const handleResetUserLimit = async (userId: number) => {
     try {
