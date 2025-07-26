@@ -56,57 +56,115 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               <div className="max-w-3xl">
                 <div className="bg-bio-blue text-white rounded-2xl rounded-br-md px-4 py-3">
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
-                      components={{
-                        code({ node, inline, children, ...props }) {
-                          if (!inline) {
-                            return (
-                              <div className="my-3">
-                                <CodeBlock
-                                  language="text"
-                                  code={String(children).replace(/\n$/, '')}
-                                />
-                              </div>
-                            );
-                          }
-                          return (
-                            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                        pre: ({ children }) => <div className="my-3">{children}</div>,
-                        p: ({ children }) => <div className="mb-3 leading-relaxed">{children}</div>,
-                        h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">{children}</h3>,
-                        ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li className="text-gray-700 dark:text-gray-300">{children}</li>,
-                        strong: ({ children }) => <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>,
-                        em: ({ children }) => <em className="italic">{children}</em>,
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic my-3">
-                            {children}
-                          </blockquote>
-                        ),
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto my-3">
-                            <table className="min-w-full border border-gray-300 dark:border-gray-600">
-                              {children}
-                            </table>
-                          </div>
-                        ),
-                        thead: ({ children }) => <thead className="bg-gray-50 dark:bg-gray-700">{children}</thead>,
-                        tbody: ({ children }) => <tbody>{children}</tbody>,
-                        tr: ({ children }) => <tr className="border-b border-gray-200 dark:border-gray-600">{children}</tr>,
-                        th: ({ children }) => <th className="px-4 py-2 text-left font-semibold text-gray-900 dark:text-white">{children}</th>,
-                        td: ({ children }) => <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{children}</td>,
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                    <ReactMarkdown 
+              components={{
+                // Custom styling through components instead of className
+                p: ({ children }) => (
+                  <p className="text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+                    {children}
+                  </p>
+                ),
+                h1: ({ children }) => (
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 mt-6">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-5">
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 mt-4">
+                    {children}
+                  </h3>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-gray-900 dark:text-white">
+                    {children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 mb-3 space-y-1">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal list-inside text-gray-700 dark:text-gray-300 mb-3 space-y-1">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => (
+                  <li className="text-gray-700 dark:text-gray-300">
+                    {children}
+                  </li>
+                ),
+                a: ({ href, children }) => (
+                  <a 
+                    href={href} 
+                    className="text-bio-blue hover:text-bio-blue/80 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {children}
+                  </a>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-600 dark:text-gray-400 mb-3">
+                    {children}
+                  </blockquote>
+                ),
+                table: ({ children }) => (
+                  <div className="overflow-x-auto mb-3">
+                    <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 px-3 py-2 text-left font-medium">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="border border-gray-300 dark:border-gray-600 px-3 py-2">
+                    {children}
+                  </td>
+                ),
+                code: ({ node, inline, className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const language = match ? match[1] : '';
+
+                  if (!inline && language) {
+                    return (
+                      <SyntaxHighlighter
+                        style={atomDark}
+                        language={language}
+                        PreTag="div"
+                        customStyle={{
+                          background: 'rgb(31 41 55)',
+                          border: '1px solid rgb(75 85 99)',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          margin: '1rem 0',
+                        }}
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    );
+                  }
+
+                  return (
+                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
                   </div>
                 </div>
                 <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -125,57 +183,115 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                     </div>
                     <div className="flex-1 text-gray-900 dark:text-white prose prose-sm max-w-none dark:prose-invert">
                       <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
-                      components={{
-                        code({ node, inline, children, ...props }) {
-                          if (!inline) {
-                            return (
-                              <div className="my-3">
-                                <CodeBlock
-                                  language="text"
-                                  code={String(children).replace(/\n$/, '')}
-                                />
-                              </div>
-                            );
-                          }
-                          return (
-                            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                        pre: ({ children }) => <div className="my-3">{children}</div>,
-                        p: ({ children }) => <div className="mb-3 leading-relaxed">{children}</div>,
-                        h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">{children}</h3>,
-                        ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li className="text-gray-700 dark:text-gray-300">{children}</li>,
-                        strong: ({ children }) => <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>,
-                        em: ({ children }) => <em className="italic">{children}</em>,
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic my-3">
-                            {children}
-                          </blockquote>
-                        ),
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto my-3">
-                            <table className="min-w-full border border-gray-300 dark:border-gray-600">
-                              {children}
-                            </table>
-                          </div>
-                        ),
-                        thead: ({ children }) => <thead className="bg-gray-50 dark:bg-gray-700">{children}</thead>,
-                        tbody: ({ children }) => <tbody>{children}</tbody>,
-                        tr: ({ children }) => <tr className="border-b border-gray-200 dark:border-gray-600">{children}</tr>,
-                        th: ({ children }) => <th className="px-4 py-2 text-left font-semibold text-gray-900 dark:text-white">{children}</th>,
-                        td: ({ children }) => <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{children}</td>,
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                    <ReactMarkdown 
+              components={{
+                // Custom styling through components instead of className
+                p: ({ children }) => (
+                  <p className="text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+                    {children}
+                  </p>
+                ),
+                h1: ({ children }) => (
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 mt-6">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-5">
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 mt-4">
+                    {children}
+                  </h3>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-gray-900 dark:text-white">
+                    {children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 mb-3 space-y-1">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal list-inside text-gray-700 dark:text-gray-300 mb-3 space-y-1">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => (
+                  <li className="text-gray-700 dark:text-gray-300">
+                    {children}
+                  </li>
+                ),
+                a: ({ href, children }) => (
+                  <a 
+                    href={href} 
+                    className="text-bio-blue hover:text-bio-blue/80 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {children}
+                  </a>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-600 dark:text-gray-400 mb-3">
+                    {children}
+                  </blockquote>
+                ),
+                table: ({ children }) => (
+                  <div className="overflow-x-auto mb-3">
+                    <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 px-3 py-2 text-left font-medium">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="border border-gray-300 dark:border-gray-600 px-3 py-2">
+                    {children}
+                  </td>
+                ),
+                code: ({ node, inline, className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const language = match ? match[1] : '';
+
+                  if (!inline && language) {
+                    return (
+                      <SyntaxHighlighter
+                        style={atomDark}
+                        language={language}
+                        PreTag="div"
+                        customStyle={{
+                          background: 'rgb(31 41 55)',
+                          border: '1px solid rgb(75 85 99)',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          margin: '1rem 0',
+                        }}
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    );
+                  }
+
+                  return (
+                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
                   </div>
                     </div>
                   </div>

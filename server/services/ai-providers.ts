@@ -7,7 +7,7 @@ const PROVIDERS: AIProvider[] = [
 
 export class FaultTolerantAI {
   private responseCache = new Map<string, { response: string; timestamp: number }>();
-  
+
   constructor(private config: any) {}
 
   async processQuery(
@@ -22,7 +22,7 @@ export class FaultTolerantAI {
     // Simple cache key based on prompt and context
     const cacheKey = this.generateCacheKey(prompt, context);
     const cached = this.responseCache.get(cacheKey);
-    
+
     // Return cached response if less than 5 minutes old
     if (cached && Date.now() - cached.timestamp < 300000) {
       return {
@@ -46,13 +46,13 @@ export class FaultTolerantAI {
             response,
             timestamp: Date.now()
           });
-          
+
           // Limit cache size
           if (this.responseCache.size > 100) {
             const oldestKey = this.responseCache.keys().next().value;
             this.responseCache.delete(oldestKey);
           }
-          
+
           return {
             content: response,
             provider: provider.name,
@@ -278,7 +278,7 @@ export class FaultTolerantAI {
 
   getSolutionBankResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
-    
+
     if (lowerPrompt.includes('sequence')) {
       return `## 🧬 Sequence Analysis
 
@@ -298,7 +298,7 @@ def calculate_gc_content(sequence):
 
 What specific sequence analysis would you like help with?`;
     }
-    
+
     if (lowerPrompt.includes('crispr')) {
       return `## ✂️ CRISPR Guide RNA Design
 
@@ -317,7 +317,7 @@ What specific sequence analysis would you like help with?`;
 
 Would you like me to help design guides for a specific target?`;
     }
-    
+
     if (lowerPrompt.includes('pcr')) {
       return `## 🧪 PCR Primer Design
 
@@ -337,7 +337,7 @@ Would you like me to help design guides for a specific target?`;
 
 What target would you like to design primers for?`;
     }
-    
+
     if (lowerPrompt.includes('protein')) {
       return `## 🧬 Protein Analysis
 
@@ -363,7 +363,7 @@ def calculate_mw(sequence):
 
 What type of protein analysis do you need?`;
     }
-    
+
     if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
       return `# Hello! 👋
 
@@ -384,7 +384,7 @@ I'm **BioScriptor**, your AI bioinformatics assistant! I'm here to help with:
 
 *What bioinformatics challenge can I help you solve today?*`;
     }
-    
+
     return `## 🔬 BioScriptor Assistant
 
 I'm here to help with **bioinformatics tasks**! Please provide more specific details about what you need.
@@ -437,4 +437,3 @@ export interface AIResponse {
   fallbackUsed: boolean;
   processingTime: number;
 }
-
