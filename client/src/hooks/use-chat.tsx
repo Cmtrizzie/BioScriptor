@@ -34,7 +34,16 @@ export function useChat() {
   }, [messages]);
 
   const sendMessage = useCallback(async (content: string, file?: File) => {
-    if (!user) return;
+    if (!user) {
+      console.warn('No user authenticated, creating demo user');
+      // For demo purposes, create a demo user
+      const demoUser = {
+        uid: 'demo-user-123',
+        email: 'demo@example.com',
+        displayName: 'Demo User',
+        photoURL: null
+      };
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -55,11 +64,18 @@ export function useChat() {
         formData.append('message', content);
         formData.append('file', file);
 
+        const activeUser = user || {
+          uid: 'demo-user-123',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          photoURL: null
+        };
+
         const headers: Record<string, string> = {
-          'x-firebase-uid': user.uid,
-          'x-firebase-email': user.email || '',
-          'x-firebase-display-name': user.displayName || '',
-          'x-firebase-photo-url': user.photoURL || '',
+          'x-firebase-uid': activeUser.uid,
+          'x-firebase-email': activeUser.email || '',
+          'x-firebase-display-name': activeUser.displayName || '',
+          'x-firebase-photo-url': activeUser.photoURL || '',
         };
 
         const response = await fetch('/api/chat/message', {
@@ -72,14 +88,21 @@ export function useChat() {
         if (!response.ok) throw new Error('Failed to send message');
         requestData = await response.json();
       } else {
+        const activeUser = user || {
+          uid: 'demo-user-123',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          photoURL: null
+        };
+
         const response = await fetch('/api/chat/message', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-firebase-uid': user.uid,
-            'x-firebase-email': user.email || '',
-            'x-firebase-display-name': user.displayName || '',
-            'x-firebase-photo-url': user.photoURL || '',
+            'x-firebase-uid': activeUser.uid,
+            'x-firebase-email': activeUser.email || '',
+            'x-firebase-display-name': activeUser.displayName || '',
+            'x-firebase-photo-url': activeUser.photoURL || '',
           },
           body: JSON.stringify({ message: content }),
         });
@@ -113,41 +136,46 @@ export function useChat() {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save session after first exchange (when we have exactly 1 message before this response)
-      if (messages.length === 1) {
-        const currentSession: ChatSession = {
-          id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-          timestamp: new Date().toLocaleDateString(),
-          messages: [userMessage, aiMessage],
-        };
-
+      // Save session after exchange
+      try {
+        const allMessages = [...messages, userMessage, aiMessage];
         const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-        const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
-        localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-        setSessions(updatedSessions);
-      } else if (messages.length > 1) {
-        // Update existing session with new messages
-        const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
-        if (savedSessions.length > 0) {
-          const currentMessages = [...messages, userMessage, aiMessage];
-          savedSessions[0].messages = currentMessages;
-          savedSessions[0].timestamp = new Date().toLocaleDateString(); // Update timestamp
-          localStorage.setItem('bioscriptor-sessions', JSON.stringify(savedSessions));
-          setSessions(savedSessions);
-        } else {
-          // Create new session if none exists
+        
+        if (messages.length === 0) {
+          // New session
           const currentSession: ChatSession = {
             id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || 'New Chat',
+            title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
             timestamp: new Date().toLocaleDateString(),
-            messages: [...messages, userMessage, aiMessage],
+            messages: allMessages,
           };
-          
-          const updatedSessions = [currentSession];
+
+          const updatedSessions = [currentSession, ...savedSessions.slice(0, 9)];
           localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
           setSessions(updatedSessions);
+        } else {
+          // Update existing session
+          if (savedSessions.length > 0) {
+            savedSessions[0].messages = allMessages;
+            savedSessions[0].timestamp = new Date().toLocaleDateString();
+            localStorage.setItem('bioscriptor-sessions', JSON.stringify(savedSessions));
+            setSessions(savedSessions);
+          } else {
+            // Create new session if none exists
+            const currentSession: ChatSession = {
+              id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || 'New Chat',
+              timestamp: new Date().toLocaleDateString(),
+              messages: allMessages,
+            };
+            
+            const updatedSessions = [currentSession];
+            localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+            setSessions(updatedSessions);
+          }
         }
+      } catch (error) {
+        console.error('Error saving session:', error);
       }
 
     } catch (error) {
@@ -169,14 +197,19 @@ export function useChat() {
   }, []);
 
   const switchToSession = useCallback((session: ChatSession) => {
-    const sessionMessages = Array.isArray(session.messages) 
-      ? session.messages.map(msg => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }))
-      : [];
-    setMessages(sessionMessages);
-    setIsLoading(false);
+    try {
+      const sessionMessages = Array.isArray(session.messages) 
+        ? session.messages.map(msg => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        : [];
+      setMessages(sessionMessages);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading session:', error);
+      setMessages([]);
+    }
   }, []);
 
   useEffect(() => {
