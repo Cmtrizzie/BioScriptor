@@ -60,7 +60,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                 className={`max-w-[85%] ${
                   message.type === 'user'
                     ? 'chatgpt-user-message ml-auto'
-                    : 'chatgpt-message-light dark:chatgpt-message-dark'
+                    : 'chatgpt-message'
                 }`}
               >
                 {message.type === 'ai' ? (
@@ -166,7 +166,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="chatgpt-message-light dark:chatgpt-message-dark max-w-[85%]">
+              <div className="chatgpt-message max-w-[85%]">
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce"></div>
