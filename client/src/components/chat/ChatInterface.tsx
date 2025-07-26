@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import MessageList from "./MessageList";
@@ -12,39 +12,50 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { messages, sendMessage, isLoading, bottomRef, loadSession } = useChat();
-  const [isNearBottom, setIsNearBottom] = useState(true);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const { 
+    messages, 
+    sessions, 
+    sendMessage, 
+    newChat, 
+    switchToSession,
+    loadSession,
+    isLoading, 
+    bottomRef 
+  } = useChat();
 
+  // Load session when sessionId changes
   useEffect(() => {
     if (sessionId) {
       loadSession(sessionId);
     }
   }, [sessionId, loadSession]);
 
-  const handleScroll = useCallback(() => {
-    if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-      const threshold = 100;
-      setIsNearBottom(scrollHeight - scrollTop - clientHeight < threshold);
-    }
-  }, []);
-
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
-      <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
-      <div className="flex h-[calc(100vh-4rem)]">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-        <main className="flex-1 flex flex-col">
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        sessions={sessions}
+        onNewChat={newChat}
+        onSwitchSession={switchToSession}
+        onSendMessage={sendMessage}
+      />
+      
+      <div className="flex-1 flex flex-col">
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        
+        <div className="flex-1 overflow-hidden">
           <MessageList 
             messages={messages} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
             bottomRef={bottomRef}
           />
-          <MessageInput onSendMessage={sendMessage} disabled={isLoading} />
-        </main>
+        </div>
+        
+        <MessageInput 
+          onSendMessage={sendMessage} 
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/" component={user ? Chat : Auth} />
       <Route path="/auth" component={Auth} />
       <Route path="/chat" component={user ? Chat : Auth} />
+      <Route path="/chat/:sessionId" component={user ? Chat : Auth} />
       <Route path="/subscription" component={user ? Subscription : Auth} />
       <Route path="/admin" component={user && user.tier === 'enterprise' ? AdminDashboard : Auth} />
       <Route component={NotFound} />
