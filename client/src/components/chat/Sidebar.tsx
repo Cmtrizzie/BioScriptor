@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown } from "lucide-react";
+import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown, BarChart3, Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/hooks/use-chat";
@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="w-full justify-start text-left h-auto p-3"
                 onClick={() => handleQuickAction("I need help with PCR simulation and primer design. Can you assist with primer optimization, melting temperature calculation, and virtual gel electrophoresis?")}
               >
-                <TestTube className="h-4 w-4 mr-3 text-bio-green" />
+                <FlaskConical className="h-4 w-4 mr-3 text-bio-green" />
                 <div>
                   <div className="font-medium">PCR Simulation</div>
                   <div className="text-xs text-gray-500">Virtual gel electrophoresis</div>
