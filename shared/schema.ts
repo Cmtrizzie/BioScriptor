@@ -1,4 +1,3 @@
-
 import { pgTable, text, integer, boolean, timestamp, jsonb, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -9,7 +8,7 @@ export const users = pgTable("users", {
   photoURL: text("photo_url"),
   firebaseUid: text("firebase_uid").notNull().unique(),
   tier: text("tier").notNull().default("free"),
-  role: text("role").default("user"), // Added role field for admin access
+  role: text("role").default("user"),
   queryCount: integer("query_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
