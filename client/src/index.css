@@ -121,6 +121,10 @@
   border-color: var(--bio-teal);
 }
 
+.text-bio-blue {
+  color: var(--bio-blue);
+}
+
 /* Global Styles */
 * {
   margin: 0;
