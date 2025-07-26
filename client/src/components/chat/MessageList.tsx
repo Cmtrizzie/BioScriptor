@@ -57,10 +57,10 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-xl px-5 py-4 ${
+                className={`max-w-[85%] ${
                   message.type === 'user'
-                    ? 'bg-bio-blue text-white ml-auto shadow-md'
-                    : 'bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm'
+                    ? 'chatgpt-user-message ml-auto'
+                    : 'chatgpt-message-light dark:chatgpt-message-dark'
                 }`}
               >
                 {message.type === 'ai' ? (
@@ -155,13 +155,9 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap font-medium text-white leading-relaxed">{message.content}</div>
+                  <div className="whitespace-pre-wrap font-medium leading-relaxed">{message.content}</div>
                 )}
-                <div className={`text-xs mt-3 ${
-                  message.type === 'user' 
-                    ? 'text-white/70' 
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
+                <div className={`text-xs mt-3 opacity-70`}>
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
               </div>
@@ -170,14 +166,14 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-5 py-4 max-w-[85%] shadow-sm">
+              <div className="chatgpt-message-light dark:chatgpt-message-dark max-w-[85%]">
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">🧬 BioScriptor is analyzing...</span>
+                  <span className="text-sm font-medium opacity-80">🧬 BioScriptor is analyzing...</span>
                 </div>
               </div>
             </div>

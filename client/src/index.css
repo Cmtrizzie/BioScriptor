@@ -178,9 +178,50 @@
   }
 }
 
+/* ChatGPT-style theme improvements */
+.chatgpt-message-light {
+  background-color: #f9f9f9;
+  color: #111111;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-family: 'Inter', 'Roboto', sans-serif;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chatgpt-message-dark {
+  background-color: #121212;
+  color: #eaeaea;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'Inter', 'Roboto', sans-serif;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chatgpt-user-message {
+  background-color: var(--bio-blue);
+  color: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', 'Roboto', sans-serif;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-weight: 500;
+}
+
 /* ChatGPT-style prose improvements */
 .prose h1, .prose h2, .prose h3 {
-  @apply font-semibold text-gray-900 dark:text-white mt-6 mb-3;
+  @apply font-semibold mt-6 mb-3;
+  color: inherit;
 }
 
 .prose h1 { @apply text-xl; }
@@ -188,7 +229,8 @@
 .prose h3 { @apply text-base; }
 
 .prose p {
-  @apply mb-4 text-gray-800 dark:text-gray-200 leading-relaxed;
+  @apply mb-4 leading-relaxed;
+  color: inherit;
 }
 
 .prose ul, .prose ol {
@@ -196,44 +238,69 @@
 }
 
 .prose li {
-  @apply mb-1 text-gray-800 dark:text-gray-200;
+  @apply mb-1;
+  color: inherit;
 }
 
 .prose blockquote {
-  @apply border-l-4 border-bio-teal pl-4 italic text-gray-700 dark:text-gray-300 my-4;
+  @apply border-l-4 border-bio-teal pl-4 italic my-4;
+  color: inherit;
+  opacity: 0.8;
 }
 
 .prose table {
-  @apply w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden my-4;
+  @apply w-full border-collapse rounded-lg overflow-hidden my-4;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .prose table {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prose table {
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .prose th {
-  @apply bg-gray-100 dark:bg-gray-700 px-4 py-2 text-left font-semibold border-b border-gray-200 dark:border-gray-600;
+  @apply px-4 py-2 text-left font-semibold border-b;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: inherit;
 }
 
 .prose td {
-  @apply px-4 py-2 border-b border-gray-100 dark:border-gray-800;
+  @apply px-4 py-2 border-b;
+  border-color: rgba(255, 255, 255, 0.05);
+  color: inherit;
 }
 
 .prose strong {
-  @apply font-semibold text-gray-900 dark:text-white;
+  @apply font-semibold;
+  color: inherit;
 }
 
 .prose em {
-  @apply italic text-gray-700 dark:text-gray-300;
+  @apply italic;
+  color: inherit;
+  opacity: 0.9;
 }
 
-/* Enhanced code styling */
+/* Enhanced code styling - ChatGPT style */
 .prose pre {
   @apply !bg-gray-900 !text-gray-100 rounded-lg overflow-x-auto my-4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .prose code {
-  @apply font-mono text-sm;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  @apply text-sm;
 }
 
 .prose :not(pre) > code {
-  @apply bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-bio-blue dark:text-bio-teal;
+  @apply px-1.5 py-0.5 rounded;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--bio-teal);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 /* Custom scrollbar */
