@@ -55,17 +55,17 @@ export default function AdminDashboard() {
 
   const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery({
     queryKey: ['/api/admin/analytics/dashboard'],
-    enabled: !!user && user.tier === 'enterprise'
+    enabled: true
   });
 
   const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
     queryKey: ['/api/admin/users'],
-    enabled: !!user && user.tier === 'enterprise'
+    enabled: true
   });
 
   const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['/api/admin/subscriptions'],
-    enabled: !!user && user.tier === 'enterprise'
+    enabled: true
   });
 
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
@@ -78,26 +78,8 @@ export default function AdminDashboard() {
     enabled: !!hasAdminAccess
   });
 
-  // Check for admin access - TEMPORARY: Allow all authenticated users
-  const hasAdminAccess = !!user;
-
-  if (!hasAdminAccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <Card className="w-96">
-          <CardHeader className="text-center">
-            <ShieldCheck className="h-12 w-12 mx-auto text-red-500 mb-4" />
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center">
-              Admin access required. Contact support if you believe this is an error.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // TESTING MODE: Allow all access
+  const hasAdminAccess = true;
 
   const handleResetUserLimit = async (userId: number) => {
     try {

@@ -86,12 +86,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin authentication middleware
   const requireAdmin = async (req: any, res: any, next: any) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      // TEMPORARY: Allow all authenticated users for testing
-      console.log('Admin access granted to user:', req.user.email, 'FirebaseUID:', req.user.firebaseUid);
+      // TESTING MODE: Allow all requests to admin routes
+      console.log('Admin access granted (testing mode)');
       next();
     } catch (error) {
       console.error('Admin middleware error:', error);
