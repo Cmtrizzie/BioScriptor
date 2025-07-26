@@ -125,6 +125,10 @@
   color: var(--bio-blue);
 }
 
+.dark .text-bio-teal {
+  color: var(--bio-teal);
+}
+
 /* Global Styles */
 * {
   margin: 0;
