@@ -1,4 +1,7 @@
 
+import { spawn } from 'child_process';
+import * as path from 'path';
+
 export interface SearchResult {
   title: string;
   url: string;
@@ -13,13 +16,24 @@ export interface WebSearchResponse {
 }
 
 export class WebSearchService {
-  private scrapeDuckApiKey: string;
-  private baseUrl = 'https://api.scrapeduck.com/v1/search';
+  private scrapeDuckPath: string;
+  private isAvailable: boolean = false;
 
   constructor() {
-    this.scrapeDuckApiKey = process.env.SCRAPEDUCK_API_KEY || '';
-    if (!this.scrapeDuckApiKey) {
-      console.warn('ScrapeDuck API key not found. Web search will be disabled.');
+    this.scrapeDuckPath = path.join(process.cwd(), 'ScrapedDuck');
+    this.checkScrapeDuckAvailability();
+  }
+
+  private async checkScrapeDuckAvailability(): Promise<void> {
+    try {
+      // Check if ScrapedDuck directory exists
+      const fs = await import('fs').then(m => m.promises);
+      await fs.access(this.scrapeDuckPath);
+      this.isAvailable = true;
+      console.log('✅ ScrapeDuck found and available for web search');
+    } catch (error) {
+      this.isAvailable = false;
+      console.warn('⚠️ ScrapeDuck not found. Run "git clone https://github.com/bigfoott/ScrapedDuck.git" to enable web search');
     }
   }
 
@@ -79,14 +93,14 @@ export class WebSearchService {
     return cleanQuery || query;
   }
 
-  // Perform web search using ScrapeDuck
+  // Perform web search using local ScrapeDuck
   public async search(query: string, options: {
     maxResults?: number;
     bioinformatics?: boolean;
   } = {}): Promise<WebSearchResponse> {
     const startTime = Date.now();
     
-    if (!this.scrapeDuckApiKey) {
+    if (!this.isAvailable) {
       return {
         results: [],
         query,
@@ -96,36 +110,8 @@ export class WebSearchService {
 
     try {
       const searchQuery = this.buildSearchQuery(query, options.bioinformatics);
+      const results = await this.runScrapeDuck(searchQuery, options.maxResults || 5);
       
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.scrapeDuckApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: searchQuery,
-          num_results: options.maxResults || 5,
-          search_type: 'web',
-          include_answer: true,
-          include_raw_content: false,
-          max_chars_per_result: 300
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`ScrapeDuck API error: ${response.status}`);
-      }
-
-      const data = await response.json() as any;
-      
-      const results: SearchResult[] = (data.results || []).map((result: any) => ({
-        title: result.title || 'Untitled',
-        url: result.url || '',
-        snippet: result.description || result.snippet || '',
-        date: result.date || undefined
-      }));
-
       return {
         results,
         query: searchQuery,
@@ -140,6 +126,71 @@ export class WebSearchService {
         searchTime: Date.now() - startTime
       };
     }
+  }
+
+  // Run ScrapeDuck locally
+  private async runScrapeDuck(query: string, maxResults: number): Promise<SearchResult[]> {
+    return new Promise((resolve, reject) => {
+      const pythonProcess = spawn('python3', [
+        path.join(this.scrapeDuckPath, 'main.py'),
+        '--query', query,
+        '--num-results', maxResults.toString(),
+        '--output-format', 'json'
+      ], {
+        cwd: this.scrapeDuckPath,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let output = '';
+      let errorOutput = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('ScrapeDuck error:', errorOutput);
+          reject(new Error(`ScrapeDuck exited with code ${code}: ${errorOutput}`));
+          return;
+        }
+
+        try {
+          // Parse the JSON output from ScrapeDuck
+          const lines = output.trim().split('\n');
+          const jsonLine = lines.find(line => line.startsWith('{') || line.startsWith('['));
+          
+          if (!jsonLine) {
+            console.warn('No JSON output from ScrapeDuck');
+            resolve([]);
+            return;
+          }
+
+          const data = JSON.parse(jsonLine);
+          const results: SearchResult[] = (Array.isArray(data) ? data : data.results || []).map((result: any) => ({
+            title: result.title || 'Untitled',
+            url: result.url || result.link || '',
+            snippet: result.description || result.snippet || result.content || '',
+            date: result.date || result.published_date || undefined
+          }));
+
+          resolve(results);
+        } catch (parseError) {
+          console.error('Failed to parse ScrapeDuck output:', parseError);
+          console.log('Raw output:', output);
+          resolve([]);
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('Failed to start ScrapeDuck:', error);
+        reject(error);
+      });
+    });
   }
 
   // Build optimized search query for bioinformatics
@@ -173,7 +224,7 @@ export class WebSearchService {
   // Format search results for AI context
   public formatResultsForAI(searchResponse: WebSearchResponse): string {
     if (searchResponse.results.length === 0) {
-      return "No web search results found.";
+      return "No web search results found. To enable web search, clone ScrapeDuck: git clone https://github.com/bigfoott/ScrapedDuck.git";
     }
 
     let formatted = `## Web Search Results for "${searchResponse.query}"\n\n`;
