@@ -1,6 +1,4 @@
 
-import fetch from 'node-fetch';
-
 export interface SearchResult {
   title: string;
   url: string;

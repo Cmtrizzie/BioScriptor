@@ -1,0 +1,28 @@
+[vite] connecting...
+[vite] connected.
+Unexpected `className` prop, remove it (see  for more info)
+Unexpected `className` prop, remove it (see  for more info)
+The above error occurred in the <Markdown> component:
+
+    at Markdown (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-markdown.js?v=77076f32:7080:21)
+    at div
+    at div
+    at div
+    at div
+    at div
+    at MessageList (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/src/components/chat/MessageList.tsx:26:39)
+    at main
+    at div
+    at div
+    at ChatInterface (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/src/components/chat/ChatInterface.tsx:26:41)
+    at Chat
+    at Route (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=77076f32:323:16)
+    at Switch (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=77076f32:379:17)
+    at Router (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/src/App.tsx?v=4n7gYrkt8NFP1RoKW0IC3:32:29)
+    at Provider (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TUJC4YLD.js?v=77076f32:39:15)
+    at TooltipProvider (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=77076f32:54:5)
+    at QueryClientProvider (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=77076f32:2805:3)
+    at App (https://ccf80b31-f35c-445f-b368-d3bcc5f4fb1e-00-1fxnt782ea7zj.riker.replit.dev/src/App.tsx?v=4n7gYrkt8NFP1RoKW0IC3:106:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries

@@ -1,0 +1,137 @@
+❗ Issues Summary
+✅ Recent Sessions show but:
+
+❌ Cannot scroll
+
+❌ Cannot open a selected session
+
+❌ Quick Actions buttons do nothing when clicked
+
+❌ New Chat button does not start a new conversation
+
+You're using:
+
+React 18 + Vite + TypeScript + TanStack Query + Shadcn/UI + Wouter + localStorage
+
+Let's fix this step-by-step with examples and reasons.
+
+✅ PART 1: Fix Scrolling in Recent Sessions
+🔧 Fix
+Ensure the container with the session list has a scrollable area.
+
+📦 Add styles like this:
+tsx
+Copy
+Edit
+<div className="max-h-[400px] overflow-y-auto">
+  {sessions.map((session) => (
+    <button
+      key={session.id}
+      onClick={() => handleOpenSession(session.id)}
+      className="w-full text-left p-2 hover:bg-accent"
+    >
+      {session.title}
+    </button>
+  ))}
+</div>
+✅ Make sure a parent container doesn't have overflow-hidden or prevent scrolling.
+
+✅ PART 2: Make Past Sessions Open Properly
+🧠 Logic:
+Clicking a session should navigate to /chat/:id
+
+That ID is used to load the correct chat from localStorage
+
+🔧 Example:
+handleOpenSession function:
+tsx
+Copy
+Edit
+import { useLocation } from "wouter";
+const [_, navigate] = useLocation();
+
+const handleOpenSession = (sessionId: string) => {
+  navigate(`/chat/${sessionId}`);
+};
+Your route should look like this:
+tsx
+Copy
+Edit
+<Route path="/chat/:id">
+  {({ id }) => <ChatView sessionId={id} />}
+</Route>
+✅ PART 3: Fix Quick Actions and New Chat Buttons
+🧠 Common Mistakes:
+onClick is missing or broken
+
+No handler logic wired up
+
+State not updating / localStorage not synced
+
+✅ Example: New Chat Button
+This should:
+
+Create a new session with a unique ID
+
+Save it to localStorage
+
+Navigate to /chat/:id
+
+🧪 Code:
+tsx
+Copy
+Edit
+const [_, navigate] = useLocation();
+
+const handleNewChat = () => {
+  const newChat = {
+    id: crypto.randomUUID(),
+    title: "New Chat",
+    messages: [],
+    createdAt: Date.now(),
+  };
+
+  const stored = JSON.parse(localStorage.getItem("recentSessions") || "[]");
+  const updated = [newChat, ...stored];
+  localStorage.setItem("recentSessions", JSON.stringify(updated));
+
+  navigate(`/chat/${newChat.id}`);
+};
+✅ Example: Quick Action Buttons
+These should:
+
+Create a new session with a predefined message
+
+Store it and navigate
+
+tsx
+Copy
+Edit
+const handleQuickAction = (prompt: string) => {
+  const newChat = {
+    id: crypto.randomUUID(),
+    title: prompt.slice(0, 20),
+    messages: [{ role: "user", content: prompt }],
+    createdAt: Date.now(),
+  };
+
+  const stored = JSON.parse(localStorage.getItem("recentSessions") || "[]");
+  const updated = [newChat, ...stored];
+  localStorage.setItem("recentSessions", JSON.stringify(updated));
+
+  navigate(`/chat/${newChat.id}`);
+};
+Then in your JSX:
+
+tsx
+Copy
+Edit
+<Button onClick={() => handleQuickAction("What is AI?")}>What is AI?</Button>
+<Button onClick={() => handleQuickAction("Tell me a joke")}>Tell me a joke</Button>
+✅ Recap of What to Fix
+Feature	What to Fix
+Scroll on Sessions	Add max-h and overflow-y-auto
+Session Click	Wire onClick to navigate() and route loader
+New Chat Button	Add handleNewChat logic, store to localStorage, navigate
+Quick Action Buttons	Create chat with message, store, and navigate
+
