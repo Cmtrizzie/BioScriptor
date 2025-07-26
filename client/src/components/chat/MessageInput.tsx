@@ -342,20 +342,6 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         )}
 
         <div className="flex items-end space-x-2">
-          {/* File Upload Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
-            className="flex-shrink-0 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal"
-            title="Upload file (.fasta, .gb, .pdb, .csv, images)"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-            </svg>
-          </Button>
-
           {/* Formatting Toggle */}
           <Button
             variant="ghost"
@@ -393,17 +379,31 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               placeholder="Ask biobuddy about DNA sequences, protein analysis, molecular biology... (Shift+Enter for new line)"
-              className="w-full px-4 py-3 pr-14 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[52px] max-h-[200px] overflow-y-auto"
+              className="w-full pl-12 pr-14 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[52px] max-h-[200px] overflow-y-auto"
               rows={1}
               disabled={disabled}
             />
+
+            {/* File Upload Button - Inside Input */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled}
+              className="absolute left-2 bottom-2 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal h-8 w-8"
+              title="Upload file (.fasta, .gb, .pdb, .csv, images)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            </Button>
 
             {/* Send Button */}
             <Button
               onClick={handleSubmit}
               disabled={(!message.trim() && files.length === 0) || disabled || isComposing}
               size="icon"
-              className="absolute right-2 bottom-2 bg-bio-blue hover:bg-bio-blue/90 disabled:bg-gray-300 text-white rounded-xl transition-colors"
+              className="absolute right-2 bottom-2 bg-bio-blue hover:bg-bio-blue/90 disabled:bg-gray-300 text-white rounded-xl transition-colors h-8 w-8"
               title="Send message (Enter)"
             >
               {disabled ? (
