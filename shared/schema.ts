@@ -10,8 +10,6 @@ export const users = pgTable("users", {
   tier: text("tier").notNull().default("free"),
   role: text("role").default("user"),
   queryCount: integer("query_count").notNull().default(0),
-  lifetimeAccess: boolean("lifetime_access").notNull().default(false),
-  customFeatures: jsonb("custom_features"),
   lastActive: timestamp("last_active"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -203,7 +203,8 @@ function getTimeBasedGreeting(): string {
 // Main processing function
 export const processQuery = async (
     query: string,
-    fileAnalysis?: BioFileAnalysis
+    fileAnalysis?: BioFileAnalysis,
+    userTier?: string
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
@@ -295,7 +296,7 @@ export const processQuery = async (
                 maxResults: 5,
                 bioinformatics: true
             });
-            
+
             if (webSearchResults.results.length > 0) {
                 searchContext = '\n\nWeb Search Context:\n' + 
                               webSearchService.formatResultsForAI(webSearchResults);
@@ -338,7 +339,8 @@ ${searchContext}`;
             query,
             enhancedContext,
             tone as any,
-            recentHistory
+            recentHistory,
+            userTier
         );
 
         // Create assistant message

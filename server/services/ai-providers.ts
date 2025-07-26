@@ -5,6 +5,8 @@ const PROVIDERS: AIProvider[] = [
   { name: "cohere", priority: 4, maxRetries: 1, maxTokens: 512 },
 ];
 
+import { SubscriptionAccessControl } from './subscription-access';
+
 export class FaultTolerantAI {
   private responseCache = new Map<string, { response: string; timestamp: number }>();
 
@@ -14,7 +16,8 @@ export class FaultTolerantAI {
     prompt: string,
     context?: any,
     toneDetection?: string,
-    conversationHistory?: Array<{ role: string; content: string }>
+    conversationHistory?: Array<{ role: string; content: string }>,
+    userTier?: string
   ): Promise<AIResponse> {
     const startTime = Date.now();
     this.validateInput(prompt);
@@ -36,7 +39,25 @@ export class FaultTolerantAI {
     const tone = toneDetection || this.detectTone(prompt);
     const messages = this.buildMessageArray(prompt, conversationHistory, context, tone);
 
-    for (const provider of PROVIDERS) {
+    // Filter providers based on user subscription
+    const accessibleProviders = userTier ? 
+      SubscriptionAccessControl.getAccessibleProviders(userTier) : 
+      ['together', 'openrouter']; // Default for free users
+
+    const availableProviders = PROVIDERS.filter(provider => 
+      accessibleProviders.includes(provider.name)
+    );
+
+    if (availableProviders.length === 0) {
+      return {
+        content: "❌ **Subscription Required**\n\nYour current plan doesn't include access to AI providers. Please upgrade to Premium or Enterprise to access our AI assistant.",
+        provider: "access_denied",
+        fallbackUsed: true,
+        processingTime: 0,
+      };
+    }
+
+    for (const provider of availableProviders) {
       console.log(`Trying provider: ${provider.name}`);
       try {
         const response = await this.tryProvider(provider, messages);

@@ -6,12 +6,29 @@ import { processQuery } from "./services/ai";
 import { analyzeBioFile } from "./services/bioinformatics";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { securityManager } from "./services/security";
+import { SubscriptionAccessControl } from "./services/subscription-access";
 import multer from "multer";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
+
+// Helper functions for exports
+function convertToCSV(data: any): string {
+  if (Array.isArray(data) && data.length > 0) {
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => Object.values(row).join(','));
+    return [headers, ...rows].join('\n');
+  }
+  return 'No data available for CSV export';
+}
+
+async function generatePDF(data: any): Promise<Buffer> {
+  // Simple PDF generation - in production, use a proper PDF library
+  const pdfContent = `PDF Export\n\n${JSON.stringify(data, null, 2)}`;
+  return Buffer.from(pdfContent, 'utf-8');
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Security and authentication middleware
@@ -80,7 +97,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // User routes
   app.get("/api/user/profile", requireAuth, async (req: any, res) => {
-    res.json(req.user);
+    const subscriptionInfo = SubscriptionAccessControl.generateAccessSummary(req.user.tier);
+    res.json({
+      ...req.user,
+      subscriptionInfo
+    });
+  });
+
+  app.get("/api/user/subscription-limits", requireAuth, async (req: any, res) => {
+    try {
+      const planLimits = SubscriptionAccessControl.getPlanLimits(req.user.tier);
+      const subscriptionInfo = SubscriptionAccessControl.generateAccessSummary(req.user.tier);
+      
+      res.json({
+        tier: req.user.tier,
+        limits: planLimits,
+        usage: {
+          currentQueries: req.user.queryCount,
+          remainingQueries: planLimits.maxQueries === -1 ? 'unlimited' : Math.max(0, planLimits.maxQueries - req.user.queryCount)
+        },
+        accessSummary: subscriptionInfo
+      });
+    } catch (error) {
+      console.error('Subscription limits fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription limits' });
+    }
   });
 
   // Admin authentication middleware
@@ -103,27 +144,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message is required' });
       }
 
-      // Check query limits based on tier
-      const queryLimits = {
-        'free': 10,
-        'premium': 1000,
-        'enterprise': -1 // unlimited
-      };
+      // Get subscription limits
+      const planLimits = SubscriptionAccessControl.getPlanLimits(req.user.tier);
       
-      const userLimit = queryLimits[req.user.tier as keyof typeof queryLimits] || 10;
-      
-      // For demo user, allow unlimited queries by resetting count when limit is reached
-      if (req.user.firebaseUid === 'demo-user-123' && req.user.queryCount >= userLimit) {
-        req.user = await storage.updateUser(req.user.id, { queryCount: 0 });
-      }
-      
-      if (userLimit !== -1 && req.user.queryCount >= userLimit && req.user.firebaseUid !== 'demo-user-123') {
-        return res.status(429).json({ 
-          error: 'Daily query limit reached. Please upgrade your plan for more queries.',
-          currentCount: req.user.queryCount,
-          limit: userLimit,
-          tier: req.user.tier
-        });
+      // Check query limits
+      if (SubscriptionAccessControl.hasQueryLimit(req.user.tier, req.user.queryCount)) {
+        // For demo user, allow unlimited queries by resetting count when limit is reached
+        if (req.user.firebaseUid === 'demo-user-123') {
+          req.user = await storage.updateUser(req.user.id, { queryCount: 0 });
+        } else {
+          return res.status(429).json({ 
+            error: `Query limit reached. Your ${req.user.tier} plan allows ${planLimits.maxQueries} queries per month. Please upgrade for more queries.`,
+            currentCount: req.user.queryCount,
+            limit: planLimits.maxQueries,
+            tier: req.user.tier,
+            upgradeRequired: true
+          });
+        }
       }
 
       let fileContent = null;
@@ -131,6 +168,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Handle file upload if present
       if (req.file) {
+        const fileSizeInMB = req.file.size / (1024 * 1024);
+        
+        // Check file size limits based on subscription
+        if (!SubscriptionAccessControl.canUploadFileSize(req.user.tier, fileSizeInMB)) {
+          return res.status(413).json({
+            error: `File too large. Your ${req.user.tier} plan allows files up to ${planLimits.maxFileSize}MB. Please upgrade for larger file uploads.`,
+            maxFileSize: planLimits.maxFileSize,
+            actualFileSize: Math.round(fileSizeInMB * 100) / 100,
+            upgradeRequired: true
+          });
+        }
+
+        // Check if file analysis is available for this tier
+        if (!SubscriptionAccessControl.canAccessFeature(req.user.tier, 'fileAnalysis')) {
+          return res.status(403).json({
+            error: `File analysis is not available in your ${req.user.tier} plan. Please upgrade to Premium or Enterprise.`,
+            feature: 'fileAnalysis',
+            upgradeRequired: true
+          });
+        }
+
         fileContent = req.file.buffer.toString();
         const fileType = req.file.originalname.split('.').pop()?.toLowerCase();
         
@@ -147,15 +205,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Process the query with AI
-      const aiResponse = await processQuery(message, fileAnalysis || undefined);
+      // Check if advanced analysis is requested and available
+      const needsAdvancedAnalysis = message.toLowerCase().includes('advanced') || 
+                                   message.toLowerCase().includes('complex') ||
+                                   message.toLowerCase().includes('detailed analysis');
+      
+      if (needsAdvancedAnalysis && !SubscriptionAccessControl.canAccessFeature(req.user.tier, 'advancedAnalysis')) {
+        return res.status(403).json({
+          error: `Advanced analysis features require a Premium or Enterprise subscription. Please upgrade to access detailed bioinformatics analysis.`,
+          feature: 'advancedAnalysis',
+          upgradeRequired: true
+        });
+      }
+
+      // Process the query with AI, passing user tier for provider filtering
+      const aiResponse = await processQuery(message, fileAnalysis || undefined, undefined, undefined, req.user.tier);
       
       // Update user query count
       await storage.updateUser(req.user.id, {
         queryCount: req.user.queryCount + 1
       });
 
-      res.json({ response: aiResponse });
+      // Add subscription info to response
+      const subscriptionInfo = SubscriptionAccessControl.generateAccessSummary(req.user.tier);
+      
+      res.json({ 
+        response: aiResponse,
+        subscriptionInfo,
+        remainingQueries: planLimits.maxQueries === -1 ? 'unlimited' : Math.max(0, planLimits.maxQueries - req.user.queryCount - 1)
+      });
     } catch (error) {
       console.error('Chat error:', error);
       res.status(500).json({ error: 'Failed to process message' });
@@ -180,6 +258,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching files:', error);
       res.status(500).json({ error: 'Failed to fetch files' });
+    }
+  });
+
+  app.post("/api/export/:format", requireAuth, async (req: any, res) => {
+    try {
+      const { format } = req.params;
+      const { data, filename } = req.body;
+
+      // Check if user can export in this format
+      if (!SubscriptionAccessControl.canExportAs(req.user.tier, format)) {
+        const availableFormats = SubscriptionAccessControl.getAvailableExportFormats(req.user.tier);
+        return res.status(403).json({
+          error: `Export to ${format.toUpperCase()} is not available in your ${req.user.tier} plan. Available formats: ${availableFormats.join(', ').toUpperCase()}`,
+          availableFormats,
+          requestedFormat: format,
+          upgradeRequired: true
+        });
+      }
+
+      // Generate export based on format
+      let exportData;
+      let contentType;
+      
+      switch (format.toLowerCase()) {
+        case 'txt':
+          exportData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+          contentType = 'text/plain';
+          break;
+        case 'csv':
+          // Convert data to CSV format
+          exportData = convertToCSV(data);
+          contentType = 'text/csv';
+          break;
+        case 'json':
+          exportData = JSON.stringify(data, null, 2);
+          contentType = 'application/json';
+          break;
+        case 'pdf':
+          // Premium/Enterprise feature - generate PDF
+          exportData = await generatePDF(data);
+          contentType = 'application/pdf';
+          break;
+        default:
+          return res.status(400).json({ error: 'Unsupported export format' });
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename || 'export'}.${format}"`);
+      res.send(exportData);
+
+    } catch (error) {
+      console.error('Export error:', error);
+      res.status(500).json({ error: 'Failed to export data' });
     }
   });
 

@@ -52,7 +52,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            
+
             <div className="relative">
               <svg className="w-8 h-8" viewBox="0 0 512 512">
                 <circle cx="256" cy="256" r="240" fill="#1F2937" stroke="#374151" strokeWidth="4"/>
@@ -94,7 +94,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 {user?.queryCount || 0} queries today
               </span>
             </div>
-            
+
             {/* Dark Mode Toggle */}
             <Button
               variant="ghost"
@@ -134,23 +134,23 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     {user?.tier}
                   </Badge>
                 </DropdownMenuItem>
-                
+
                 {user?.tier === 'enterprise' && (
                   <DropdownMenuItem onClick={() => setLocation('/admin')}>
                     <Shield className="mr-2 h-4 w-4" />
                     <span>Admin Dashboard</span>
                   </DropdownMenuItem>
                 )}
-                
+
                 <DropdownMenuSeparator />
-                
+
                 <DropdownMenuItem onClick={() => setLocation('/chat')}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Chat Interface</span>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
-                
+
                 <DropdownMenuItem onClick={logout} className="text-red-600">
                   <span>Sign out</span>
                 </DropdownMenuItem>
