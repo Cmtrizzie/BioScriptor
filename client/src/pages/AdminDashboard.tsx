@@ -295,7 +295,7 @@ export default function AdminDashboard() {
           : code
       )
     );
-    
+
     toast({
       title: "Success",
       description: "Promo code status updated.",
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
 
   const handleDeletePromo = (promoId: number) => {
     setPromoCodes(codes => codes.filter(code => code.id !== promoId));
-    
+
     toast({
       title: "Success",
       description: "Promo code deleted successfully.",
@@ -528,7 +528,8 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -644,7 +645,7 @@ export default function AdminDashboard() {
                           </CardContent>
                         </Card>
                       </div>
-                      
+
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -686,7 +687,7 @@ export default function AdminDashboard() {
                         <h3 className="text-lg font-semibold">Failed & Cancelled Payments</h3>
                         <Button>Export Failed Payments</Button>
                       </div>
-                      
+
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1398,7 +1399,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Plan Limits</h3>
                     <div className="space-y-2 text-sm">
@@ -1493,8 +1494,7 @@ export default function AdminDashboard() {
                       toast({
                         title: "Success",
                         description: "Plan saved successfully.",
-                      });
-                    }}
+                      });                    }}
                     className="flex-1"
                   >
                     Save Plan
