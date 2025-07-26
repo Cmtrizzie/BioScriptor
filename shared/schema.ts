@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   photoURL: text("photo_url"),
   firebaseUid: text("firebase_uid").notNull().unique(),
   tier: text("tier").notNull().default("free"),
+  role: text("role").default("user"), // Added role field for admin access
   queryCount: integer("query_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

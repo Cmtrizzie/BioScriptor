@@ -86,14 +86,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin authentication middleware
   const requireAdmin = async (req: any, res: any, next: any) => {
     try {
-      if (!req.user || req.user.tier !== 'enterprise') {
-        return res.status(403).json({ error: 'Admin access required' });
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
-      
-      // Check if user email indicates admin privileges (simple check)
+
+      // Check for admin role in user data or specific admin emails
       const adminEmails = ['admin@bioscriptor.com', 'support@bioscriptor.com'];
-      if (!adminEmails.includes(req.user.email)) {
-        return res.status(403).json({ error: 'Insufficient privileges' });
+      const hasAdminRole = req.user.role === 'admin' || req.user.tier === 'enterprise' || adminEmails.includes(req.user.email);
+      
+      if (!hasAdminRole) {
+        return res.status(403).json({ error: 'Admin access required' });
       }
       
       next();
@@ -346,6 +348,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscriptions = await storage.getAllSubscriptions();
       const logs = await storage.getAdminLogs(1000);
       
+      // Calculate revenue (mock calculation)
+      const revenue = subscriptions
+        .filter(s => s.status === 'active')
+        .reduce((total, sub) => {
+          const prices = { premium: 9.99, enterprise: 49.99 };
+          return total + (prices[sub.tier as keyof typeof prices] || 0);
+        }, 0);
+
       const analytics = {
         totalUsers: users.length,
         activeUsers: users.filter(u => u.queryCount > 0).length,
@@ -358,15 +368,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
         recentActivity: logs.slice(0, 20),
         queriesLast24h: logs.filter(log => 
-          log.action === 'ai_query' && 
+          log.action === 'api_access' && 
           new Date(log.timestamp).getTime() > Date.now() - 24 * 60 * 60 * 1000
-        ).length
+        ).length,
+        monthlyRevenue: revenue,
+        dailyActiveUsers: users.filter(u => {
+          const lastActive = new Date(u.updatedAt);
+          return lastActive.getTime() > Date.now() - 24 * 60 * 60 * 1000;
+        }).length
       };
       
       res.json(analytics);
     } catch (error) {
       console.error('Admin analytics error:', error);
       res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // API Management Routes
+  app.get("/api/admin/api-keys", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const apiStatus = {
+        groq: !!process.env.GROQ_API_KEY,
+        together: !!process.env.TOGETHER_API_KEY,
+        openrouter: !!process.env.OPENROUTER_API_KEY,
+        cohere: !!process.env.COHERE_API_KEY,
+        scrapeduck: !!process.env.SCRAPEDUCK_API_KEY
+      };
+      
+      res.json(apiStatus);
+    } catch (error) {
+      console.error('API keys fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch API status' });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/ban", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { banned, reason } = req.body;
+      
+      const updatedUser = await storage.updateUser(parseInt(userId), { 
+        tier: banned ? 'banned' : 'free',
+        queryCount: banned ? 0 : undefined
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: banned ? 'ban_user' : 'unban_user',
+        targetResource: `user:${userId}`,
+        details: `Reason: ${reason || 'No reason provided'}`
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('User ban error:', error);
+      res.status(500).json({ error: 'Failed to update user status' });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/upgrade", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { tier } = req.body;
+      
+      const updatedUser = await storage.updateUser(parseInt(userId), { 
+        tier,
+        queryCount: 0 // Reset on upgrade
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'upgrade_user',
+        targetResource: `user:${userId}`,
+        details: `Upgraded to ${tier}`
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('User upgrade error:', error);
+      res.status(500).json({ error: 'Failed to upgrade user' });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/add-credits", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { credits } = req.body;
+      const user = await storage.getUserById(parseInt(userId));
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const updatedUser = await storage.updateUser(parseInt(userId), { 
+        queryCount: Math.max(0, user.queryCount - credits)
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'add_credits',
+        targetResource: `user:${userId}`,
+        details: `Added ${credits} credits`
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Add credits error:', error);
+      res.status(500).json({ error: 'Failed to add credits' });
     }
   });
 

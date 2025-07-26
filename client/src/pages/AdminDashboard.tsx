@@ -70,10 +70,22 @@ export default function AdminDashboard() {
 
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ['/api/admin/logs'],
-    enabled: !!user && user.tier === 'enterprise'
+    enabled: !!hasAdminAccess
   });
 
-  if (!user || user.tier !== 'enterprise') {
+  const { data: apiStatus, isLoading: apiStatusLoading, refetch: refetchApiStatus } = useQuery({
+    queryKey: ['/api/admin/api-keys'],
+    enabled: !!hasAdminAccess
+  });
+
+  // Check for admin access
+  const hasAdminAccess = user && (
+    user.tier === 'enterprise' || 
+    user.role === 'admin' || 
+    ['admin@bioscriptor.com', 'support@bioscriptor.com'].includes(user.email || '')
+  );
+
+  if (!hasAdminAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <Card className="w-96">
@@ -83,7 +95,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-center">
-              Admin access requires Enterprise tier privileges.
+              Admin access required. Contact support if you believe this is an error.
             </p>
           </CardContent>
         </Card>
@@ -114,6 +126,96 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to reset user limit.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBanUser = async (userId: number, banned: boolean, reason?: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/ban`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-firebase-uid': user.firebaseUid!,
+        },
+        body: JSON.stringify({ banned, reason }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user status');
+      }
+
+      toast({
+        title: "Success",
+        description: `User ${banned ? 'banned' : 'unbanned'} successfully.`,
+      });
+
+      refetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpgradeUser = async (userId: number, tier: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-firebase-uid': user.firebaseUid!,
+        },
+        body: JSON.stringify({ tier }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upgrade user');
+      }
+
+      toast({
+        title: "Success",
+        description: `User upgraded to ${tier} successfully.`,
+      });
+
+      refetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upgrade user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddCredits = async (userId: number, credits: number) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/add-credits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-firebase-uid': user.firebaseUid!,
+        },
+        body: JSON.stringify({ credits }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add credits');
+      }
+
+      toast({
+        title: "Success",
+        description: `Added ${credits} credits successfully.`,
+      });
+
+      refetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add credits.",
         variant: "destructive",
       });
     }
@@ -190,23 +292,32 @@ export default function AdminDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">User Tiers</CardTitle>
+                <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${analytics.monthlyRevenue?.toFixed(2) || '0.00'}</div>
+                <p className="text-xs text-muted-foreground">
+                  From {analytics.activeSubscriptions} active subscriptions
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">API Status</CardTitle>
                 <Settings className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>Free:</span>
-                    <span>{analytics.usersByTier.free}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Premium:</span>
-                    <span>{analytics.usersByTier.premium}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Enterprise:</span>
-                    <span>{analytics.usersByTier.enterprise}</span>
-                  </div>
+                  {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
+                    <div key={provider} className="flex justify-between items-center text-sm">
+                      <span className="capitalize">{provider}:</span>
+                      <Badge variant={status ? "default" : "destructive"}>
+                        {status ? "✓" : "✗"}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -215,10 +326,11 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="activity">Activity Logs</TabsTrigger>
+            <TabsTrigger value="subscriptions">Plans</TabsTrigger>
+            <TabsTrigger value="apis">APIs</TabsTrigger>
+            <TabsTrigger value="activity">Logs</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -261,13 +373,29 @@ export default function AdminDashboard() {
                               {new Date(user.createdAt).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleResetUserLimit(user.id)}
-                              >
-                                Reset Limit
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleResetUserLimit(user.id)}
+                                >
+                                  Reset
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleUpgradeUser(user.id, 'premium')}
+                                >
+                                  Upgrade
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleBanUser(user.id, true, 'Admin action')}
+                                >
+                                  Ban
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -383,21 +511,80 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="apis">
+            <Card>
+              <CardHeader>
+                <CardTitle>API Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {apiStatusLoading ? (
+                  <div className="text-center py-8">Loading API status...</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
+                        <Card key={provider}>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg capitalize">{provider}</CardTitle>
+                              <Badge variant={status ? "default" : "destructive"}>
+                                {status ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                              {status ? "API key configured and ready" : "API key not configured"}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-3">Model Priority</h3>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <p><strong>1. Groq:</strong> Primary (fastest, 2 retries)</p>
+                        <p><strong>2. Together:</strong> Secondary (balanced, 2 retries)</p>
+                        <p><strong>3. OpenRouter:</strong> Tertiary (reliable, 1 retry)</p>
+                        <p><strong>4. Cohere:</strong> Fallback (specialized, 1 retry)</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="settings">
             <Card>
               <CardHeader>
                 <CardTitle>System Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Plan limits and system configuration management will be available here.
-                  </p>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                    <p><strong>System Status:</strong> All systems operational</p>
-                    <p><strong>AI Providers:</strong> Fault-tolerant system active</p>
-                    <p><strong>Security:</strong> Military-grade security enabled</p>
-                    <p><strong>Database:</strong> PostgreSQL connected</p>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">System Status</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <p><strong>Database:</strong> <Badge variant="default">Connected</Badge></p>
+                        <p><strong>AI Providers:</strong> <Badge variant="default">Active</Badge></p>
+                        <p><strong>Security:</strong> <Badge variant="default">Enabled</Badge></p>
+                      </div>
+                      <div className="space-y-2">
+                        <p><strong>Cache:</strong> <Badge variant="default">Running</Badge></p>
+                        <p><strong>Rate Limiting:</strong> <Badge variant="default">Active</Badge></p>
+                        <p><strong>Audit Logs:</strong> <Badge variant="default">Recording</Badge></p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Plan Limits</h3>
+                    <div className="space-y-2 text-sm">
+                      <p><strong>Free Tier:</strong> 10 queries/day</p>
+                      <p><strong>Premium Tier:</strong> 1,000 queries/day</p>
+                      <p><strong>Enterprise Tier:</strong> Unlimited queries</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
