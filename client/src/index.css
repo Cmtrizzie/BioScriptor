@@ -129,6 +129,12 @@
   color: var(--bio-teal);
 }
 
+@layer utilities {
+  .dark\:text-bio-teal {
+    color: var(--bio-teal);
+  }
+}
+
 /* Global Styles */
 * {
   margin: 0;
