@@ -85,6 +85,64 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                             </code>
                           );
                         },
+                        a({ node, href, children, ...props }) {
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-bio-blue hover:text-bio-blue/80 underline"
+                              {...props}
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                        p({ node, children, ...props }) {
+                          // Convert plain text URLs to clickable links
+                          const processText = (text: string) => {
+                            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+                            const parts = text.split(urlRegex);
+                            
+                            return parts.map((part, index) => {
+                              if (urlRegex.test(part)) {
+                                const url = part.startsWith('http') ? part : `https://${part}`;
+                                return (
+                                  <a
+                                    key={index}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-bio-blue hover:text-bio-blue/80 underline"
+                                  >
+                                    {part}
+                                  </a>
+                                );
+                              }
+                              return part;
+                            });
+                          };
+
+                          const processChildren = (children: any): any => {
+                            return React.Children.map(children, (child) => {
+                              if (typeof child === 'string') {
+                                return processText(child);
+                              }
+                              if (React.isValidElement(child) && child.props.children) {
+                                return React.cloneElement(child, {
+                                  children: processChildren(child.props.children)
+                                });
+                              }
+                              return child;
+                            });
+                          };
+
+                          return (
+                            <p {...props}>
+                              {processChildren(children)}
+                            </p>
+                          );
+                        },
                       }}
                     >
                       {message.content}
