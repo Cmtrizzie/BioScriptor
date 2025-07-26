@@ -200,16 +200,22 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              BioScriptor Admin Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Monitor system performance and manage users
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+          <div className="flex items-center gap-4 mb-4 lg:mb-0">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+              <ShieldCheck className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent mb-1">
+                BioScriptor Admin
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 font-medium">
+                System performance & user management center
+              </p>
+            </div>
           </div>
           <Button 
             onClick={() => {
@@ -218,8 +224,7 @@ export default function AdminDashboard() {
               refetchSubscriptions();
               refetchLogs();
             }}
-            variant="outline"
-            className="gap-2"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh Data
@@ -228,70 +233,80 @@ export default function AdminDashboard() {
 
         {/* Analytics Cards */}
         {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+            <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Total Users</CardTitle>
+                <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  {analytics.activeUsers} active
+                <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200">{analytics.totalUsers}</div>
+                <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                  {analytics.activeUsers} active users
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Subscriptions</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">Subscriptions</CardTitle>
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-md">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.activeSubscriptions}</div>
-                <p className="text-xs text-muted-foreground">
-                  {analytics.totalSubscriptions} total
+                <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{analytics.activeSubscriptions}</div>
+                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                  {analytics.totalSubscriptions} total plans
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Queries (24h)</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+            <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-purple-700 dark:text-purple-300">Queries (24h)</CardTitle>
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.queriesLast24h}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">{analytics.queriesLast24h}</div>
+                <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
                   AI queries processed
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-amber-700 dark:text-amber-300">Revenue</CardTitle>
+                <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${analytics.monthlyRevenue?.toFixed(2) || '0.00'}</div>
-                <p className="text-xs text-muted-foreground">
-                  From {analytics.activeSubscriptions} active subscriptions
+                <div className="text-3xl font-bold text-amber-800 dark:text-amber-200">${analytics.monthlyRevenue?.toFixed(2) || '0.00'}</div>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                  Monthly earnings
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">API Status</CardTitle>
-                <Settings className="h-4 w-4 text-muted-foreground" />
+            <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Status</CardTitle>
+                <div className="w-10 h-10 bg-slate-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Settings className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
-                    <div key={provider} className="flex justify-between items-center text-sm">
-                      <span className="capitalize">{provider}:</span>
-                      <Badge variant={status ? "default" : "destructive"}>
+                    <div key={provider} className="flex justify-between items-center">
+                      <span className="text-xs font-medium capitalize text-slate-600 dark:text-slate-400">{provider}</span>
+                      <Badge variant={status ? "default" : "destructive"} className="text-xs">
                         {status ? "✓" : "✗"}
                       </Badge>
                     </div>
@@ -303,51 +318,71 @@ export default function AdminDashboard() {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="subscriptions">Plans</TabsTrigger>
-            <TabsTrigger value="apis">APIs</TabsTrigger>
-            <TabsTrigger value="activity">Logs</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <Tabs defaultValue="users" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-white/20">
+            <TabsTrigger value="users" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              Plans
+            </TabsTrigger>
+            <TabsTrigger value="apis" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              APIs
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              Logs
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Users className="h-6 w-6 text-blue-600" />
+                  User Management
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {usersLoading ? (
-                  <div className="text-center py-8">Loading users...</div>
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-slate-600 dark:text-slate-400 mt-4 font-medium">Loading users...</p>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Display Name</TableHead>
-                          <TableHead>Tier</TableHead>
-                          <TableHead>Query Count</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Actions</TableHead>
+                        <TableRow className="bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Email</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Display Name</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Tier</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Query Count</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Created</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {users?.map((user: User) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.email}</TableCell>
-                            <TableCell>{user.displayName || 'N/A'}</TableCell>
+                          <TableRow key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
+                            <TableCell className="font-medium text-slate-800 dark:text-slate-200">{user.email}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">{user.displayName || 'N/A'}</TableCell>
                             <TableCell>
-                              <Badge variant={
-                                user.tier === 'enterprise' ? 'default' :
-                                user.tier === 'premium' ? 'secondary' : 'outline'
-                              }>
+                              <Badge 
+                                variant={user.tier === 'enterprise' ? 'default' : user.tier === 'premium' ? 'secondary' : 'outline'}
+                                className={`font-semibold ${
+                                  user.tier === 'enterprise' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white' :
+                                  user.tier === 'premium' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                                  'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
+                                }`}
+                              >
                                 {user.tier}
                               </Badge>
                             </TableCell>
-                            <TableCell>{user.queryCount}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-mono text-slate-700 dark:text-slate-300">{user.queryCount}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">
                               {new Date(user.createdAt).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
@@ -356,13 +391,14 @@ export default function AdminDashboard() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleResetUserLimit(user.id)}
+                                  className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
                                 >
                                   Reset
                                 </Button>
                                 <Button
                                   size="sm"
-                                  variant="secondary"
                                   onClick={() => handleUpgradeUser(user.id, 'premium')}
+                                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                                 >
                                   Upgrade
                                 </Button>
@@ -370,6 +406,7 @@ export default function AdminDashboard() {
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => handleBanUser(user.id, true, 'Admin action')}
+                                  className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
                                 >
                                   Ban
                                 </Button>
@@ -386,9 +423,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="subscriptions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Management</CardTitle>
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <CreditCard className="h-6 w-6 text-blue-600" />
+                  Subscription Management
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {subscriptionsLoading ? (
@@ -444,9 +484,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle>Activity Logs</CardTitle>
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Activity className="h-6 w-6 text-blue-600" />
+                  Activity Logs
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {logsLoading ? (
@@ -490,9 +533,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="apis">
-            <Card>
-              <CardHeader>
-                <CardTitle>API Management</CardTitle>
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Settings className="h-6 w-6 text-blue-600" />
+                  API Management
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {apiStatusLoading ? (
@@ -534,9 +580,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Settings className="h-6 w-6 text-blue-600" />
+                  System Settings
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
