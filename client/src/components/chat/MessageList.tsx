@@ -68,30 +68,23 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        code({ node, inline, children, ...props }) {
-                          const match = /language-(\w+)/.exec((props.className as string) || '');
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '');
                           return !inline && match ? (
                             <SyntaxHighlighter
                               style={tomorrow}
                               language={match[1]}
                               PreTag="div"
+                              {...props}
                             >
                               {String(children).replace(/\n$/, '')}
                             </SyntaxHighlighter>
                           ) : (
-                            <code 
-                              style={{
-                                backgroundColor: 'var(--tw-bg-gray-100)',
-                                padding: '0.125rem 0.25rem',
-                                borderRadius: '0.25rem',
-                                fontSize: '0.875rem'
-                              }}
-                              {...props}
-                            >
+                            <code className={className} {...props}>
                               {children}
                             </code>
                           );
-                        }
+                        },
                       }}
                     >
                       {message.content}
