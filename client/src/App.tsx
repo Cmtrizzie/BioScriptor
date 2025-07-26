@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import Chat from "@/pages/chat";
 import Auth from "@/pages/auth";
 import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
-import { useEffect } from "react";
 
 function Router() {
   const { user, loading } = useAuth();
