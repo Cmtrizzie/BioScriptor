@@ -14,7 +14,7 @@ interface MessageListProps {
 
 export default function MessageList({ messages, isLoading, bottomRef }: MessageListProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: '100%', overflowY: 'auto' }}
       {messages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center">
           <div className="max-w-md mx-auto">

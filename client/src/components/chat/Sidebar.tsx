@@ -1,4 +1,3 @@
-
 import React from "react";
 import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown, BarChart3, Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ export default function Sidebar({
   onSwitchSession,
   onSendMessage 
 }: SidebarProps) {
-  
+
   const handleQuickAction = (message: string) => {
     onSendMessage(message);
     onClose();
@@ -37,7 +36,7 @@ export default function Sidebar({
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
       <div className={`
         fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200 
@@ -84,7 +83,7 @@ export default function Sidebar({
                 <div className="text-xs text-gray-500">Guide RNA & off-targets</div>
               </div>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -97,7 +96,7 @@ export default function Sidebar({
                 <div className="text-xs text-gray-500">Virtual gel electrophoresis</div>
               </div>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -110,7 +109,7 @@ export default function Sidebar({
                 <div className="text-xs text-gray-500">DNA/RNA/Protein tools</div>
               </div>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -131,7 +130,7 @@ export default function Sidebar({
           <div className="p-4 pb-2">
             <h3 className="text-sm font-medium text-gray-700">Recent Sessions</h3>
           </div>
-          
+
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-2 pb-4">
               {sessions.length === 0 ? (
