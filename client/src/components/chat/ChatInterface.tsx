@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Header from "./Header";
-import Sidebar from "./Sidebar";
+import { Sidebar } from "./Sidebar";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { useChat } from "@/hooks/use-chat";
@@ -40,10 +39,10 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         onSwitchSession={switchToSession}
         onSendMessage={sendMessage}
       />
-      
+
       <div className="flex-1 flex flex-col min-h-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        
+
         <div className="flex-1 min-h-0">
           <MessageList 
             messages={messages} 
@@ -51,7 +50,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
             bottomRef={bottomRef}
           />
         </div>
-        
+
         <MessageInput 
           onSendMessage={sendMessage} 
           isLoading={isLoading}
