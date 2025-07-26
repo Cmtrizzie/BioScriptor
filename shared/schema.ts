@@ -62,6 +62,18 @@ export const adminLogs = pgTable("admin_logs", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const promoCodes = pgTable("promo_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  type: text("type").notNull(), // 'percentage' or 'fixed'
+  value: integer("value").notNull(), // percentage (1-100) or fixed amount in cents
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  expiresAt: timestamp("expires_at"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users);
 export const insertChatSessionSchema = createInsertSchema(chatSessions);
@@ -69,3 +81,4 @@ export const insertBioFileSchema = createInsertSchema(bioFiles);
 export const insertSubscriptionSchema = createInsertSchema(subscriptions);
 export const insertPlanLimitSchema = createInsertSchema(planLimits);
 export const insertAdminLogSchema = createInsertSchema(adminLogs);
+export const insertPromoCodeSchema = createInsertSchema(promoCodes);

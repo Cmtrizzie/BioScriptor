@@ -469,6 +469,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Plan Management Routes
+  app.get("/api/admin/plans", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const plans = await storage.getAllPlanLimits();
+      res.json(plans);
+    } catch (error) {
+      console.error('Plans fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch plans' });
+    }
+  });
+
+  app.post("/api/admin/plans", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { tier, maxQueries, maxFileSize, features } = req.body;
+      
+      const newPlan = await storage.createPlanLimit({
+        tier,
+        maxQueries,
+        maxFileSize,
+        features
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'create_plan',
+        targetResource: `plan:${tier}`,
+        details: `Created new plan: ${JSON.stringify({ maxQueries, maxFileSize, features })}`
+      });
+      
+      res.json(newPlan);
+    } catch (error) {
+      console.error('Plan creation error:', error);
+      res.status(500).json({ error: 'Failed to create plan' });
+    }
+  });
+
+  app.put("/api/admin/plans/:tier", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { tier } = req.params;
+      const updates = req.body;
+      
+      const updatedPlan = await storage.updatePlanLimit(tier as any, updates);
+      
+      if (!updatedPlan) {
+        return res.status(404).json({ error: 'Plan not found' });
+      }
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'update_plan',
+        targetResource: `plan:${tier}`,
+        details: `Updated plan: ${JSON.stringify(updates)}`
+      });
+      
+      res.json(updatedPlan);
+    } catch (error) {
+      console.error('Plan update error:', error);
+      res.status(500).json({ error: 'Failed to update plan' });
+    }
+  });
+
+  app.delete("/api/admin/plans/:tier", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { tier } = req.params;
+      
+      if (tier === 'free') {
+        return res.status(400).json({ error: 'Cannot delete free plan' });
+      }
+      
+      const deleted = await storage.deletePlanLimit(tier as any);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Plan not found' });
+      }
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'delete_plan',
+        targetResource: `plan:${tier}`,
+        details: `Deleted plan: ${tier}`
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Plan deletion error:', error);
+      res.status(500).json({ error: 'Failed to delete plan' });
+    }
+  });
+
+  // Promo Code Management Routes
+  app.get("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const promoCodes = await storage.getAllPromoCodes();
+      res.json(promoCodes);
+    } catch (error) {
+      console.error('Promo codes fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch promo codes' });
+    }
+  });
+
+  app.post("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { code, type, value, maxUses, expiresAt } = req.body;
+      
+      const promoCode = await storage.createPromoCode({
+        code: code.toUpperCase(),
+        type,
+        value,
+        maxUses,
+        usedCount: 0,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        active: true
+      });
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'create_promo_code',
+        targetResource: `promo:${code}`,
+        details: `Created promo code: ${type} ${value}${type === 'percentage' ? '%' : '$'}`
+      });
+      
+      res.json(promoCode);
+    } catch (error) {
+      console.error('Promo code creation error:', error);
+      res.status(500).json({ error: 'Failed to create promo code' });
+    }
+  });
+
+  app.patch("/api/admin/promo-codes/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updatedPromo = await storage.updatePromoCode(parseInt(id), updates);
+      
+      if (!updatedPromo) {
+        return res.status(404).json({ error: 'Promo code not found' });
+      }
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'update_promo_code',
+        targetResource: `promo:${id}`,
+        details: `Updated promo code: ${JSON.stringify(updates)}`
+      });
+      
+      res.json(updatedPromo);
+    } catch (error) {
+      console.error('Promo code update error:', error);
+      res.status(500).json({ error: 'Failed to update promo code' });
+    }
+  });
+
+  app.delete("/api/admin/promo-codes/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const deleted = await storage.deletePromoCode(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Promo code not found' });
+      }
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'delete_promo_code',
+        targetResource: `promo:${id}`,
+        details: `Deleted promo code`
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Promo code deletion error:', error);
+      res.status(500).json({ error: 'Failed to delete promo code' });
+    }
+  });
+
   // Chat session management
   app.get("/api/chat/sessions/:sessionId", requireAuth, async (req: any, res) => {
     try {

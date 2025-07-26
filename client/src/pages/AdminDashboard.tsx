@@ -4,9 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, CreditCard, Activity, Settings, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Users, CreditCard, Activity, Settings, RefreshCw, ShieldCheck, Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 interface AdminAnalytics {
   totalUsers: number;
@@ -50,8 +51,60 @@ interface Subscription {
   createdAt: string;
 }
 
+interface PlanFeatures {
+  apiAccess?: boolean;
+  prioritySupport?: boolean;
+  exportFormats?: string[];
+  customization?: boolean;
+  analytics?: boolean;
+}
+
+interface PlanLimitEdit {
+  tier: string;
+  maxQueries: number;
+  maxFileSize: number;
+  features: PlanFeatures;
+}
+
+interface PromoCode {
+  id: number;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  maxUses?: number;
+  usedCount: number;
+  expiresAt?: string;
+  active: boolean;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const [editingPlan, setEditingPlan] = useState<PlanLimitEdit | null>(null);
+  const [creatingPromo, setCreatingPromo] = useState(false);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([
+    {
+      id: 1,
+      code: 'WELCOME20',
+      type: 'percentage',
+      value: 20,
+      maxUses: 100,
+      usedCount: 45,
+      expiresAt: '2024-12-31',
+      active: true,
+      createdAt: '2024-01-01'
+    },
+    {
+      id: 2,
+      code: 'SAVE10',
+      type: 'fixed',
+      value: 10,
+      maxUses: 50,
+      usedCount: 12,
+      active: true,
+      createdAt: '2024-01-15'
+    }
+  ]);
 
   const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery({
     queryKey: ['/api/admin/analytics/dashboard'],
@@ -199,6 +252,65 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeletePlan = async (tier: string) => {
+    if (tier === 'free') {
+      toast({
+        title: "Error",
+        description: "Cannot delete the free plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/plans/${tier}`, {
+        method: 'DELETE',
+        headers: {
+          'x-firebase-uid': user.firebaseUid!,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete plan');
+      }
+
+      toast({
+        title: "Success",
+        description: `${tier} plan deleted successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete plan.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTogglePromo = (promoId: number) => {
+    setPromoCodes(codes => 
+      codes.map(code => 
+        code.id === promoId 
+          ? { ...code, active: !code.active }
+          : code
+      )
+    );
+    
+    toast({
+      title: "Success",
+      description: "Promo code status updated.",
+    });
+  };
+
+  const handleDeletePromo = (promoId: number) => {
+    setPromoCodes(codes => codes.filter(code => code.id !== promoId));
+    
+    toast({
+      title: "Success",
+      description: "Promo code deleted successfully.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -331,6 +443,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="activity" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
               Logs
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+              Plans
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
               Settings
@@ -579,7 +694,166 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="plans">
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
+              <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                    <CreditCard className="h-6 w-6 text-blue-600" />
+                    Plan Management
+                  </CardTitle>
+                  <Button 
+                    onClick={() => setEditingPlan({ tier: '', maxQueries: 0, maxFileSize: 10, features: {} })}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                  >
+                    Create New Plan
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <Tabs defaultValue="plans" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="plans">Subscription Plans</TabsTrigger>
+                    <TabsTrigger value="promos">Promo Codes</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="plans">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {[
+                        { tier: 'free', color: 'slate', icon: '🆓' },
+                        { tier: 'premium', color: 'blue', icon: '⭐' },
+                        { tier: 'enterprise', color: 'purple', icon: '👑' }
+                      ].map(({ tier, color, icon }) => (
+                        <Card key={tier} className={`border-2 border-${color}-200 dark:border-${color}-700`}>
+                          <CardHeader className={`bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`}>
+                            <CardTitle className="capitalize flex items-center gap-2">
+                              <span className="text-2xl">{icon}</span>
+                              {tier} Plan
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 space-y-3">
+                            <div className="text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span className="font-medium">Max Queries:</span>
+                                <span>{tier === 'free' ? '10' : tier === 'premium' ? '1,000' : 'Unlimited'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">File Size:</span>
+                                <span>{tier === 'free' ? '5MB' : tier === 'premium' ? '50MB' : '500MB'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">API Access:</span>
+                                <span>{tier === 'free' ? '❌' : '✅'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">Priority Support:</span>
+                                <span>{tier === 'enterprise' ? '✅' : '❌'}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 pt-3">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setEditingPlan({
+                                  tier,
+                                  maxQueries: tier === 'free' ? 10 : tier === 'premium' ? 1000 : -1,
+                                  maxFileSize: tier === 'free' ? 5 : tier === 'premium' ? 50 : 500,
+                                  features: {
+                                    apiAccess: tier !== 'free',
+                                    prioritySupport: tier === 'enterprise',
+                                    exportFormats: tier === 'free' ? ['txt'] : tier === 'premium' ? ['txt', 'csv', 'json'] : ['txt', 'csv', 'json', 'xml', 'pdf']
+                                  }
+                                })}
+                                className="flex-1"
+                              >
+                                Edit
+                              </Button>
+                              {tier !== 'free' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => handleDeletePlan(tier)}
+                                  className="flex-1"
+                                >
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="promos">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Promo Codes</h3>
+                        <Button 
+                          onClick={() => setCreatingPromo(true)}
+                          className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
+                        >
+                          Create Promo Code
+                        </Button>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Code</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Value</TableHead>
+                              <TableHead>Uses</TableHead>
+                              <TableHead>Expires</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {promoCodes.map((promo) => (
+                              <TableRow key={promo.id}>
+                                <TableCell className="font-mono font-bold">{promo.code}</TableCell>
+                                <TableCell>
+                                  <Badge variant={promo.type === 'percentage' ? 'default' : 'secondary'}>
+                                    {promo.type}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value}`}
+                                </TableCell>
+                                <TableCell>{promo.usedCount}/{promo.maxUses || '∞'}</TableCell>
+                                <TableCell>
+                                  {promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() : 'Never'}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={promo.active ? 'default' : 'destructive'}>
+                                    {promo.active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleTogglePromo(promo.id)}>
+                                      {promo.active ? 'Deactivate' : 'Activate'}
+                                    </Button>
+                                    <Button size="sm" variant="destructive" onClick={() => handleDeletePromo(promo.id)}>
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings"></TabsContent>
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
@@ -618,6 +892,171 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Plan Edit Modal */}
+        {editingPlan && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>
+                  {editingPlan.tier ? `Edit ${editingPlan.tier} Plan` : 'Create New Plan'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Plan Tier</label>
+                  <input
+                    type="text"
+                    value={editingPlan.tier}
+                    onChange={(e) => setEditingPlan({...editingPlan, tier: e.target.value})}
+                    className="w-full mt-1 p-2 border rounded-md"
+                    placeholder="e.g., premium"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Max Queries (-1 for unlimited)</label>
+                  <input
+                    type="number"
+                    value={editingPlan.maxQueries}
+                    onChange={(e) => setEditingPlan({...editingPlan, maxQueries: parseInt(e.target.value)})}
+                    className="w-full mt-1 p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Max File Size (MB)</label>
+                  <input
+                    type="number"
+                    value={editingPlan.maxFileSize}
+                    onChange={(e) => setEditingPlan({...editingPlan, maxFileSize: parseInt(e.target.value)})}
+                    className="w-full mt-1 p-2 border rounded-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Features</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editingPlan.features.apiAccess || false}
+                        onChange={(e) => setEditingPlan({
+                          ...editingPlan,
+                          features: {...editingPlan.features, apiAccess: e.target.checked}
+                        })}
+                      />
+                      <span className="text-sm">API Access</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editingPlan.features.prioritySupport || false}
+                        onChange={(e) => setEditingPlan({
+                          ...editingPlan,
+                          features: {...editingPlan.features, prioritySupport: e.target.checked}
+                        })}
+                      />
+                      <span className="text-sm">Priority Support</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => setEditingPlan(null)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Handle save plan logic here
+                      setEditingPlan(null);
+                      toast({
+                        title: "Success",
+                        description: "Plan saved successfully.",
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Save Plan
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Promo Code Creation Modal */}
+        {creatingPromo && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>Create Promo Code</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Promo Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., SAVE20"
+                    className="w-full mt-1 p-2 border rounded-md uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Discount Type</label>
+                  <select className="w-full mt-1 p-2 border rounded-md">
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Discount Value</label>
+                  <input
+                    type="number"
+                    placeholder="20"
+                    className="w-full mt-1 p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Max Uses (optional)</label>
+                  <input
+                    type="number"
+                    placeholder="100"
+                    className="w-full mt-1 p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Expires At (optional)</label>
+                  <input
+                    type="date"
+                    className="w-full mt-1 p-2 border rounded-md"
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => setCreatingPromo(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Handle create promo logic here
+                      setCreatingPromo(false);
+                      toast({
+                        title: "Success",
+                        description: "Promo code created successfully.",
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Create Promo
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

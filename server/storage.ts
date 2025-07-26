@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 // Database connection with fallback for development
@@ -160,24 +160,110 @@ export const storage = {
     }
   },
 
-  async getAdminLogs(limit: number) {
+  async getAllPlanLimits() {
     try {
-      return await db.select().from(schema.adminLogs).limit(limit);
+      return await db.select().from(schema.planLimits);
     } catch (error) {
-      console.error("Database error:", error);
+      console.error('Error fetching all plan limits:', error);
       return [];
     }
-  },
+  }
 
-  async createAdminLog(logData: any) {
+  async createPlanLimit(planData: any) {
     try {
-      const [log] = await db.insert(schema.adminLogs).values(logData).returning();
-      return log;
+      const [result] = await db
+        .insert(schema.planLimits)
+        .values(planData)
+        .returning();
+
+      return result;
     } catch (error) {
-      console.error("Database error:", error);
-      return { id: 1, ...logData };
+      console.error('Error creating plan limit:', error);
+      throw error;
     }
-  },
+  }
+
+  async deletePlanLimit(tier: any) {
+    try {
+      const result = await db
+        .delete(schema.planLimits)
+        .where(eq(schema.planLimits.tier, tier))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting plan limit:', error);
+      return false;
+    }
+  }
+
+  // Promo Code Methods
+  async getAllPromoCodes() {
+    try {
+      return await db.select().from(schema.promoCodes).orderBy(desc(schema.promoCodes.createdAt));
+    } catch (error) {
+      console.error('Error fetching promo codes:', error);
+      return [];
+    }
+  }
+
+  async createPromoCode(promoData: any) {
+    try {
+      const [result] = await db
+        .insert(schema.promoCodes)
+        .values(promoData)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error('Error creating promo code:', error);
+      throw error;
+    }
+  }
+
+  async updatePromoCode(id: number, updates: any) {
+    try {
+      const [result] = await db
+        .update(schema.promoCodes)
+        .set(updates)
+        .where(eq(schema.promoCodes.id, id))
+        .returning();
+
+      return result || null;
+    } catch (error) {
+      console.error('Error updating promo code:', error);
+      return null;
+    }
+  }
+
+  async deletePromoCode(id: number) {
+    try {
+      const result = await db
+        .delete(schema.promoCodes)
+        .where(eq(schema.promoCodes.id, id))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting promo code:', error);
+      return false;
+    }
+  }
+
+  async getPromoCodeByCode(code: string) {
+    try {
+      const result = await db
+        .select()
+        .from(schema.promoCodes)
+        .where(eq(schema.promoCodes.code, code.toUpperCase()))
+        .limit(1);
+
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching promo code:', error);
+      return null;
+    }
+  }
 
   async resetUserDailyLimit(userId: number) {
     try {
