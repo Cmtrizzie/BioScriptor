@@ -130,8 +130,28 @@
 }
 
 @layer utilities {
+  .text-bio-teal {
+    color: var(--bio-teal);
+  }
+  
   .dark\:text-bio-teal {
     color: var(--bio-teal);
+  }
+  
+  .border-bio-teal {
+    border-color: var(--bio-teal);
+  }
+  
+  .bg-bio-teal {
+    background-color: var(--bio-teal);
+  }
+  
+  .text-bio-blue {
+    color: var(--bio-blue);
+  }
+  
+  .bg-bio-blue {
+    background-color: var(--bio-blue);
   }
 }
 
