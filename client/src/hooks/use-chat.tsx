@@ -113,7 +113,7 @@ export function useChat() {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save session after first exchange (when we have exactly 2 messages: user + ai)
+      // Save session after first exchange (when we have exactly 1 message before this response)
       if (messages.length === 1) {
         const currentSession: ChatSession = {
           id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -132,8 +132,21 @@ export function useChat() {
         if (savedSessions.length > 0) {
           const currentMessages = [...messages, userMessage, aiMessage];
           savedSessions[0].messages = currentMessages;
+          savedSessions[0].timestamp = new Date().toLocaleDateString(); // Update timestamp
           localStorage.setItem('bioscriptor-sessions', JSON.stringify(savedSessions));
           setSessions(savedSessions);
+        } else {
+          // Create new session if none exists
+          const currentSession: ChatSession = {
+            id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            title: messages[0]?.content?.substring(0, 50) + (messages[0]?.content?.length > 50 ? '...' : '') || 'New Chat',
+            timestamp: new Date().toLocaleDateString(),
+            messages: [...messages, userMessage, aiMessage],
+          };
+          
+          const updatedSessions = [currentSession];
+          localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+          setSessions(updatedSessions);
         }
       }
 

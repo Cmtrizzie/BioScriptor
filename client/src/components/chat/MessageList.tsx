@@ -148,7 +148,6 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                           fontSize: '0.875rem',
                           margin: '1rem 0',
                         }}
-                        {...props}
                       >
                         {String(children).replace(/\n$/, '')}
                       </SyntaxHighlighter>
@@ -156,7 +155,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                   }
 
                   return (
-                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">
                       {children}
                     </code>
                   );
@@ -275,7 +274,6 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                           fontSize: '0.875rem',
                           margin: '1rem 0',
                         }}
-                        {...props}
                       >
                         {String(children).replace(/\n$/, '')}
                       </SyntaxHighlighter>
@@ -283,7 +281,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
                   }
 
                   return (
-                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">
                       {children}
                     </code>
                   );

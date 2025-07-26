@@ -73,7 +73,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={onClose}
         />
       )}
-      
+
       <aside className={cn(
         "w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 z-40",
         "fixed lg:relative inset-y-0 left-0",
@@ -105,24 +105,47 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Quick Actions */}
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              {quickActions.map((action, index) => (
-                <button 
-                  key={index}
-                  onClick={() => handleQuickAction(action)}
-                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105", action.color)}>
-                      {action.icon}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{action.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{action.subtitle}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={() => {
+                  sendMessage("Help me design CRISPR guide RNAs for gene editing. I need assistance with target site selection, PAM sequences, and off-target analysis.");
+                  onClose();
+                }}
+                className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
+              >
+                <div className="text-sm font-medium text-gray-900 dark:text-white">CRISPR Design</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Guide RNA sequences</div>
+              </button>
+              <button 
+                onClick={() => {
+                  sendMessage("I need help with PCR simulation and primer design. Please guide me through primer design principles, melting temperatures, and virtual gel electrophoresis.");
+                  onClose();
+                }}
+                className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
+              >
+                <div className="text-sm font-medium text-gray-900 dark:text-white">PCR Simulation</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Virtual gel electrophoresis</div>
+              </button>
+              <button 
+                onClick={() => {
+                  sendMessage("I want to analyze DNA, RNA, or protein sequences. Help me with sequence alignment, annotation, motif finding, and functional analysis.");
+                  onClose();
+                }}
+                className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
+              >
+                <div className="text-sm font-medium text-gray-900 dark:text-white">Sequence Analysis</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">DNA/RNA/Protein</div>
+              </button>
+              <button 
+                onClick={() => {
+                  sendMessage("Help me with molecular visualization and 3D protein structure analysis. I need guidance on protein folding, structural predictions, and molecular dynamics.");
+                  onClose();
+                }}
+                className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
+              >
+                <div className="text-sm font-medium text-gray-900 dark:text-white">Molecular Visualization</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">3D protein structures</div>
+              </button>
             </div>
           </div>
 
