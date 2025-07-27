@@ -1,328 +1,128 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(220, 13%, 18%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 48%, 20%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(178, 84%, 29%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
-  --radius: 0.5rem;
-  --bio-blue: hsl(217, 38%, 27%);
-  --bio-teal: hsl(178, 84%, 29%);
-  
-  /* ChatGPT-style theme variables */
-  --chat-bg-light: #f3f4f6;
-  --chat-text-light: #1f2937;
-  --chat-user-bg-light: #ffffff;
-  --chat-user-text-light: #1f2937;
-}
-
-.dark {
-  --background: hsl(220, 13%, 13%);
-  --foreground: hsl(210, 20%, 85%);
-  --muted: hsl(220, 13%, 15%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(220, 13%, 13%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(220, 13%, 15%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(220, 13%, 20%);
-  --input: hsl(220, 13%, 15%);
-  --primary: hsl(217, 38%, 27%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(220, 13%, 15%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(178, 84%, 29%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  
-  /* ChatGPT-style dark theme variables */
-  --chat-bg-dark: #374151;
-  --chat-text-dark: #e5e7eb;
-  --chat-user-bg-dark: #4b5563;
-  --chat-user-text-dark: #f3f4f6;
-}
-
 @layer base {
-  * {
-    @apply border-border;
+  :root {
+    --chat-bg-light: #f7f7f8;
+    --chat-bg-dark: #2b2c2f;
+    --chat-user-bg-light: #d1e3ff;
+    --chat-user-bg-dark: #1e3a5f;
+    --chat-border-light: #e3e3e3;
+    --chat-border-dark: #444;
+    --chat-text-light: #1f2937;
+    --chat-text-dark: #f3f4f6;
+    --accent: #3b82f6;
+    --primary: #10b981;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-white text-gray-800 dark:bg-gray-900 dark:text-white transition-colors duration-300;
   }
+}
+
+/* === Chat Bubble Styles === */
+.chat-message {
+  @apply max-w-2xl w-full rounded-2xl px-5 py-3 mb-3 text-base leading-relaxed relative;
+  @apply shadow-sm transition-all duration-200 ease-in-out;
+}
+
+.chatbot-message {
+  @apply chat-message bg-[var(--chat-bg-light)] dark:bg-[var(--chat-bg-dark)] text-[var(--chat-text-light)] dark:text-[var(--chat-text-dark)];
+}
+
+.user-message {
+  @apply chat-message bg-[var(--chat-user-bg-light)] dark:bg-[var(--chat-user-bg-dark)] ml-auto text-gray-800 dark:text-white border-l-4 border-[var(--accent)];
+}
+
+/* === Typing Indicator === */
+.typing-indicator {
+  @apply flex gap-1 items-center mt-2 ml-2;
+}
+
+.typing-indicator span {
+  @apply w-2 h-2 bg-gray-400 rounded-full animate-bounce;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* === Animations === */
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-message {
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+/* === Message Separator === */
+.chatbot-message + .chatbot-message::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 12px 0;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .chatbot-message + .chatbot-message::before {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* === Message Bubble Tail (optional) === */
+.user-message::after,
+.chatbot-message::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+}
+
+.user-message::after {
+  right: -12px;
+  border-left-color: var(--chat-user-bg-light);
+}
+
+.dark .user-message::after {
+  border-left-color: var(--chat-user-bg-dark);
+}
+
+.chatbot-message::after {
+  left: -12px;
+  border-right-color: var(--chat-bg-light);
+}
+
+.dark .chatbot-message::after {
+  border-right-color: var(--chat-bg-dark);
+}
+
+/* === Scrollbar === */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.message-animation {
-  animation: slideInUp 0.3s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.typing-indicator {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-
-.dna-helix {
-  animation: rotate 20s linear infinite;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.bio-blue {
-  color: var(--bio-blue);
-}
-
-.bg-bio-blue {
-  background-color: var(--bio-blue);
-}
-
-.bio-teal {
-  color: var(--bio-teal);
-}
-
-.bg-bio-teal {
-  background-color: var(--bio-teal);
-}
-
-.border-bio-teal {
-  border-color: var(--bio-teal);
-}
-
-.text-bio-blue {
-  color: var(--bio-blue);
-}
-
-.text-bio-teal {
-  color: var(--bio-teal);
-}
-
-@layer utilities {
-  .text-bio-teal {
-    color: var(--bio-teal);
-  }
-  
-  .dark\:text-bio-teal {
-    color: var(--bio-teal);
-  }
-  
-  .border-bio-teal {
-    border-color: var(--bio-teal);
-  }
-  
-  .bg-bio-teal {
-    background-color: var(--bio-teal);
-  }
-  
-  .text-bio-blue {
-    color: var(--bio-blue);
-  }
-  
-  .bg-bio-blue {
-    background-color: var(--bio-blue);
-  }
-}
-
-/* Global Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Chat Message Styling */
-.message-animation {
-  animation: slideInUp 0.3s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ChatGPT-style theme improvements */
-.chatgpt-message-light {
-  background-color: var(--chat-bg-light, #f7f7f8);
-  color: var(--chat-text-light, #374151);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  font-family: 'Inter', 'Roboto', sans-serif;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.chatgpt-message-dark {
-  background-color: var(--chat-bg-dark, #444654);
-  color: var(--chat-text-dark, #ececf1);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: 'Inter', 'Roboto', sans-serif;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.chatgpt-user-message {
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  font-family: 'Inter', 'Roboto', sans-serif;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  font-weight: 500;
-  background-color: var(--chat-user-bg-light, #ffffff);
-  color: var(--chat-user-text-light, #1f2937);
-}
-
-/* Proper dark theme support */
-.dark .chatgpt-user-message {
-  background-color: var(--chat-user-bg-dark, #4b5563) !important;
-  color: var(--chat-user-text-dark, #f3f4f6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* Universal ChatGPT message styling */
-.chatgpt-message {
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  font-family: 'Inter', 'Roboto', sans-serif;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* Light theme */
-.chatgpt-message:not(.chatgpt-user-message) {
-  background-color: var(--chat-bg-light, #f3f4f6);
-  color: var(--chat-text-light, #1f2937);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-/* Dark theme */
-.dark .chatgpt-message:not(.chatgpt-user-message) {
-  background-color: var(--chat-bg-dark, #374151) !important;
-  color: var(--chat-text-dark, #e5e7eb) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Dark mode global overrides */
-.dark {
-  background-color: hsl(220, 13%, 13%);
-  color: hsl(210, 20%, 85%);
-}
-
-.dark * {
-  border-color: hsl(220, 13%, 20%);
-}
-
-.dark .bg-white {
-  background-color: hsl(220, 13%, 15%) !important;
-}
-
-.dark .bg-gray-50 {
-  background-color: hsl(220, 13%, 13%) !important;
-}
-
-.dark .bg-gray-100 {
-  background-color: hsl(220, 13%, 15%) !important;
-}
-
-.dark .bg-gray-200 {
-  background-color: hsl(220, 13%, 20%) !important;
-}
-
-.dark .text-gray-900 {
-  color: hsl(210, 20%, 85%) !important;
-}
-
-.dark .text-gray-700 {
-  color: hsl(210, 20%, 70%) !important;
-}
-
-.dark .text-gray-500 {
-  color: hsl(210, 20%, 55%) !important;
-}
-
-.dark .border-gray-200 {
-  border-color: hsl(220, 13%, 20%) !important;
-}
-
-/* ChatGPT-style prose improvements */
-.prose h1, .prose h2, .prose h3 {
-  @apply font-semibold mt-8 mb-4;
-  color: inherit;
-}
-
-.prose h1 { @apply text-xl; }
-.prose h2 { @apply text-lg; }
-.prose h3 { @apply text-base; }
-
-.prose p {
-  @apply mb-6 leading-relaxed;
-  color: inherit;
-}
-
-.prose p:last-child {
-  @apply mb-0;
 }
 
 /* Clean structured response formatting */
@@ -341,130 +141,57 @@
 }
 
 .prose ul, .prose ol {
-  @apply mb-6 pl-6 space-y-2;
+  @apply space-y-2;
 }
 
-.prose li {
-  @apply leading-relaxed;
-  color: inherit;
-}
-
-.prose li p {
-  @apply mb-2;
-}
-
-.prose blockquote {
-  @apply border-l-4 border-bio-teal pl-6 italic my-6 py-2;
-  color: inherit;
-  opacity: 0.8;
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-.dark .prose blockquote {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-/* Enhanced text formatting */
-.prose strong {
-  @apply font-semibold;
-  color: inherit;
-}
-
-.prose em {
-  @apply italic;
-  color: inherit;
-  opacity: 0.9;
-}
-
-/* Better spacing for different content types */
-.prose > *:first-child {
-  margin-top: 0 !important;
-}
-
-.prose > *:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* Visual separators between sections */
-.prose hr {
-  @apply my-8 border-t border-gray-200 dark:border-gray-700;
-}
-
-.prose table {
-  @apply w-full border-collapse rounded-lg overflow-hidden my-4;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dark .prose table {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.prose table {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.prose th {
-  @apply px-4 py-2 text-left font-semibold border-b;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: inherit;
-}
-
-.prose td {
-  @apply px-4 py-2 border-b;
-  border-color: rgba(255, 255, 255, 0.05);
-  color: inherit;
-}
-
-.prose strong {
-  @apply font-semibold;
-  color: inherit;
-}
-
-.prose em {
-  @apply italic;
-  color: inherit;
-  opacity: 0.9;
-}
-
-/* Enhanced code styling - ChatGPT style */
 .prose pre {
-  @apply !bg-gray-900 !text-gray-100 rounded-lg overflow-x-auto my-4;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto;
 }
 
 .prose code {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  @apply text-sm;
+  @apply bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm;
 }
 
-.prose :not(pre) > code {
-  @apply px-1.5 py-0.5 rounded;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--bio-teal);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+.prose blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+.prose table {
+  @apply w-full border-collapse;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.prose th, .prose td {
+  @apply border border-gray-300 dark:border-gray-600 px-4 py-2;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+.prose th {
+  @apply bg-gray-100 dark:bg-gray-800 font-semibold;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.prose img {
+  @apply rounded-lg shadow-sm;
 }
 
-/* Hide scrollbar for Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+.prose a {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  @apply font-semibold mb-2 mt-4;
+}
+
+.prose h1 {
+  @apply text-2xl;
+}
+
+.prose h2 {
+  @apply text-xl;
+}
+
+.prose h3 {
+  @apply text-lg;
+}
+
+.prose p {
+  @apply mb-0;
 }
