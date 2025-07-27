@@ -201,6 +201,98 @@ function getTimeBasedGreeting(): string {
     return 'Good evening';
 }
 
+// Analyze conversation context and personality
+function analyzeConversationContext(history: ChatMessage[]) {
+    const recentMessages = history.slice(-10);
+    const userMessages = recentMessages.filter(m => m.role === 'user');
+    
+    // Detect conversation patterns
+    const hasGreetings = userMessages.some(m => 
+        /(hello|hi|hey|good morning|good afternoon|good evening)/i.test(m.content)
+    );
+    
+    const hasTechnicalQueries = userMessages.some(m => 
+        /(sequence|dna|rna|protein|crispr|pcr|gene|genome)/i.test(m.content)
+    );
+    
+    const hasGeneralQueries = userMessages.some(m => 
+        /(trending|news|world|latest|current|what's happening)/i.test(m.content)
+    );
+
+    // Determine personality based on context
+    let personality = {
+        name: "Professional",
+        tone: "professional and helpful",
+        explanation_style: "clear, structured explanations with examples",
+        expertise_level: "intermediate to advanced"
+    };
+
+    if (hasGreetings && !hasTechnicalQueries) {
+        personality = {
+            name: "Friendly",
+            tone: "warm and welcoming",
+            explanation_style: "conversational with easy-to-understand examples",
+            expertise_level: "beginner-friendly"
+        };
+    } else if (hasTechnicalQueries) {
+        personality = {
+            name: "Expert",
+            tone: "confident and precise",
+            explanation_style: "detailed technical explanations with scientific rigor",
+            expertise_level: "advanced"
+        };
+    } else if (hasGeneralQueries) {
+        personality = {
+            name: "Informative",
+            tone: "engaging and informative",
+            explanation_style: "structured with clear sections and follow-ups",
+            expertise_level: "general audience"
+        };
+    }
+
+    return {
+        personality,
+        memory: {
+            userPreferences: {
+                technicalLevel: personality.expertise_level,
+                preferredStyle: personality.explanation_style
+            }
+        }
+    };
+}
+
+// Detect user intent
+function detectUserIntent(query: string): string {
+    const lowerQuery = query.toLowerCase().trim();
+    
+    // Greeting patterns
+    if (/(^(hi|hello|hey|good morning|good afternoon|good evening))|greetings/i.test(lowerQuery)) {
+        return 'greeting';
+    }
+    
+    // Farewell patterns
+    if (/(bye|goodbye|see you|thanks|thank you|that's all)/i.test(lowerQuery)) {
+        return 'farewell';
+    }
+    
+    // General trending/news queries
+    if (/(trending|what's happening|news|current events|latest|worldwide|global)/i.test(lowerQuery)) {
+        return 'general_trending';
+    }
+    
+    // Technical questions
+    if (/(how to|explain|what is|help me|analyze|design|optimize)/i.test(lowerQuery)) {
+        return 'technical_question';
+    }
+    
+    // Request for assistance
+    if (/(can you|would you|please|need help|assist)/i.test(lowerQuery)) {
+        return 'assistance_request';
+    }
+    
+    return 'general_query';
+}
+
 // Main processing function
 export const processQuery = async (
     query: string,
@@ -211,6 +303,7 @@ export const processQuery = async (
         const context = conversationManager.getContext();
         const queryType = detectQueryType(query);
         const tone = detectTone(query);
+        const userIntent = detectUserIntent(query);
 
         // Create user message
         const userMessage: ChatMessage = {
@@ -222,6 +315,7 @@ export const processQuery = async (
             metadata: {
                 fileAnalysis,
                 tone,
+                intent: userIntent,
                 confidence: 1.0
             }
         };
@@ -283,19 +377,26 @@ export const processQuery = async (
             .slice(-6) // Last 3 exchanges (user + assistant)
             .map(m => ({ role: m.role, content: m.content }));
 
-        // Check if web search is needed
+        // Check if web search is needed - especially for trending/general queries
         let webSearchResults: WebSearchResponse | undefined;
         let searchContext = '';
 
         const shouldSearch = webSearchService.detectExplicitSearch(query) || 
-                           webSearchService.detectImplicitTriggers(query);
+                           webSearchService.detectImplicitTriggers(query) ||
+                           userIntent === 'general_trending';
 
         if (shouldSearch) {
             console.log('🔍 Performing web search for:', query);
-            const searchTerms = webSearchService.extractSearchTerms(query);
+            let searchTerms = webSearchService.extractSearchTerms(query);
+            
+            // For general trending queries, expand search terms
+            if (userIntent === 'general_trending') {
+                searchTerms = `${searchTerms} trending news current events worldwide 2024`;
+            }
+            
             webSearchResults = await webSearchService.search(searchTerms, {
                 maxResults: 5,
-                bioinformatics: true
+                bioinformatics: userIntent !== 'general_trending' // Don't limit to bio for general queries
             });
 
             if (webSearchResults.results.length > 0) {
@@ -309,54 +410,61 @@ export const processQuery = async (
         const contextAnalysis = analyzeConversationContext(context.history);
         const personality = contextAnalysis.personality;
         
-        // Generate context-aware system prompt with personality
+        // Generate context-aware system prompt based on intent
         const memory = context.memory;
-        const systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant with a ${personality.name.toLowerCase()} personality.
+        let systemPrompt = '';
+        
+        if (userIntent === 'general_trending') {
+            systemPrompt = `You are BioScriptor, a helpful AI assistant. The user is asking about general trending topics or world news.
+
+User Intent: ${userIntent}
+User's tone: ${tone}
+
+Response Structure Guidelines:
+1. Use structured markdown format
+2. Start with "## ✅ What You Asked" - summarize their intent
+3. Follow with "## 🌐 Current Trends" - provide trending information
+4. Include "## 💡 Suggestions" with follow-up options
+5. End with engaging follow-up questions
+
+Guidelines:
+- Be informative and engaging
+- Use current information from web search results
+- Provide structured, easy-to-read responses
+- Offer relevant follow-up options
+${searchContext}`;
+        } else {
+            systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant with a ${personality.name.toLowerCase()} personality.
 
 Current conversation topics: ${Array.from(memory.topics).join(', ') || 'none'}
 Key entities: ${Array.from(memory.entities).join(', ') || 'none'}
 User's tone: ${tone}
+User Intent: ${userIntent}
+
+Response Structure Guidelines:
+1. Use structured markdown format with clear sections
+2. Start with "## ✅ What You Asked" - brief intent summary  
+3. Follow with "## 🧰 Solution" or "## 🔬 Analysis" - main response
+4. Add "## 💡 Suggestions" with 2-3 helpful follow-up options
+5. Keep responses focused and actionable
 
 Personality Guidelines:
 - Tone: ${personality.tone}
 - Explanation style: ${personality.explanation_style}
 - Expertise level: ${personality.expertise_level}
 
-Conversation Guidelines:
-1. Respond with a ${personality.tone} manner
-2. Use ${personality.explanation_style}
-3. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
-4. ${webSearchResults ? 'Use the provided web search results to enhance your response with current information' : ''}
-5. Reference previous conversation naturally when relevant
-6. End responses with engaging follow-ups
 ${searchContext}`;
-
-        // Update system prompt to focus on intent recognition
-        const updatedSystemPrompt = `You are BioScriptor, an advanced bioinformatics assistant.
-Current conversation topics: ${Array.from(memory.topics).join(', ') || 'none'}
-Key entities: ${Array.from(memory.entities).join(', ') || 'none'}
-User's tone: ${tone}
-
-Guidelines:
-1. Recognize user intent (greeting, question, request, farewell)
-2. For greetings: respond naturally and briefly
-3. For questions: provide helpful answers
-4. For requests: offer assistance
-5. Avoid over-explaining simple interactions
-6. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
-7. ${webSearchResults ? 'Use the provided web search results to enhance your response with current information' : ''}
-8. Provide accurate, actionable advice
-${searchContext}`;
+        }
 
         // Generate AI response with enhanced context
         const enhancedContext = {
-            systemPrompt: updatedSystemPrompt,
+            systemPrompt: systemPrompt,
             messages: [
-                { role: 'system', content: updatedSystemPrompt },
+                { role: 'system', content: systemPrompt },
                 ...recentHistory
             ],
             maxTokens: 2000,
-            temperature: 0.7,
+            temperature: userIntent === 'general_trending' ? 0.8 : 0.7,
             fileAnalysis,
             userMemory: {
                 topics: Array.from(memory.topics),

@@ -158,17 +158,17 @@ export function generateSimpleEmbedding(tokens: string[]): number[] {
     'crispr', 'pcr', 'thank', 'bye', 'question', 'explain', 'how', 'what',
     'bioinformatics', 'gene', 'mutation', 'alignment', 'blast', 'fasta'
   ];
-  
+
   // Create a simple bag-of-words embedding
   const embedding = new Array(vocabulary.length).fill(0);
-  
+
   tokens.forEach(token => {
     const index = vocabulary.indexOf(token);
     if (index !== -1) {
       embedding[index] += 1;
     }
   });
-  
+
   // Normalize the vector
   const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
   return magnitude > 0 ? embedding.map(val => val / magnitude) : embedding;
@@ -179,7 +179,7 @@ export function generateSimpleEmbedding(tokens: string[]): number[] {
  */
 export function calculateSimilarity(embedding1: number[], embedding2: number[]): number {
   if (embedding1.length !== embedding2.length) return 0;
-  
+
   const dotProduct = embedding1.reduce((sum, val, i) => sum + val * embedding2[i], 0);
   return Math.max(0, Math.min(1, dotProduct));
 }
@@ -226,7 +226,7 @@ export function buildConversationMemory(messages: ChatMessage[]): ConversationMe
   messages.forEach((msg, index) => {
     if (msg.role === 'user') {
       const content = msg.content.toLowerCase();
-      
+
       // Track topic mentions
       const topics = ['ai', 'bioinformatics', 'code', 'python', 'javascript', 'dna', 'protein', 'analysis'];
       topics.forEach(topic => {
@@ -238,7 +238,7 @@ export function buildConversationMemory(messages: ChatMessage[]): ConversationMe
       // Extract entities (sequences, tools, methods)
       const sequenceMatches = content.match(/[atcg]{10,}|[a-z]{3,}\d+/gi) || [];
       const toolMatches = content.match(/\b(blast|crispr|pcr|python|javascript|html|css)\b/gi) || [];
-      
+
       [...sequenceMatches, ...toolMatches].forEach(entity => {
         const contexts = memory.keyEntities.get(entity.toLowerCase()) || [];
         contexts.push(content.substring(0, 100));
@@ -302,7 +302,7 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   const recentMessages = messages.slice(-6); // Last 3 exchanges
   const allText = recentMessages.map(m => m.content).join(' ');
   const tokens = tokenizeText(allText);
-  
+
   // Extract topics using keyword analysis
   const bioTopics = tokens.filter(token => 
     ['dna', 'rna', 'protein', 'gene', 'sequence', 'crispr', 'pcr', 'alignment', 'blast'].includes(token)
@@ -310,7 +310,7 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   const codeTopics = tokens.filter(token => 
     ['code', 'html', 'python', 'javascript', 'function', 'variable'].includes(token)
   );
-  
+
   // Determine sentiment
   const positiveWords = tokens.filter(token => 
     ['good', 'great', 'excellent', 'perfect', 'amazing', 'thanks', 'helpful'].includes(token)
@@ -318,20 +318,20 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   const negativeWords = tokens.filter(token => 
     ['bad', 'wrong', 'error', 'problem', 'issue', 'frustrated', 'difficult'].includes(token)
   ).length;
-  
+
   let sentiment = 'neutral';
   if (positiveWords > negativeWords) sentiment = 'positive';
   if (negativeWords > positiveWords) sentiment = 'negative';
-  
+
   // Determine complexity preference
   const complexityIndicators = tokens.filter(token => 
     ['simple', 'basic', 'easy', 'quick', 'brief'].includes(token)
   ).length;
   const complexity = complexityIndicators > 2 ? 'simple' : 'detailed';
-  
+
   // Build conversation memory
   const memory = buildConversationMemory(messages);
-  
+
   // Get appropriate personality
   const currentMessage = messages[messages.length - 1]?.content || '';
   const personality = getPersonalityForContext(currentMessage, messages);
@@ -356,19 +356,19 @@ export function calculateAttentionWeights(
   const currentTokens = tokenizeText(currentQuery);
   const currentEmbedding = generateSimpleEmbedding(currentTokens);
   const weights = new Map<string, number>();
-  
+
   conversationHistory.forEach((message, index) => {
     const messageTokens = tokenizeText(message.content);
     const messageEmbedding = generateSimpleEmbedding(messageTokens);
     const similarity = calculateSimilarity(currentEmbedding, messageEmbedding);
-    
+
     // Weight recent messages higher, but consider semantic similarity
     const recencyWeight = Math.exp(-0.1 * (conversationHistory.length - index - 1));
     const finalWeight = similarity * 0.7 + recencyWeight * 0.3;
-    
+
     weights.set(message.id, finalWeight);
   });
-  
+
   return weights;
 }
 
@@ -384,7 +384,7 @@ export function generateConversationHook(
 ): string {
   const personality = context.personality || PERSONALITY_PROFILES.mentor;
   const memory = context.memory;
-  
+
   // Generate contextual references if available
   let contextualRef = '';
   if (memory && userMessage) {
@@ -415,10 +415,10 @@ export function generateConversationHook(
       neutral: ["Great! Let's analyze this together:", "Interesting! Here's the scientific approach:"]
     }
   };
-  
+
   const intentHooks = hooks[intent as keyof typeof hooks] || hooks.question;
   const sentimentHooks = intentHooks[context.sentiment as keyof typeof intentHooks] || intentHooks.neutral;
-  
+
   return sentimentHooks[Math.floor(Math.random() * sentimentHooks.length)];
 }
 
@@ -430,15 +430,15 @@ export function structureResponseContent(
   context: { complexity: string; topics: string[]; intent?: string; userMessage?: string }
 ): string {
   if (content.length < 100) return content; // Keep short responses simple
-  
+
   // Don't restructure if already formatted
   if (content.includes('### ✅') || content.includes('### 🧰') || content.includes('**Key Insight:**')) {
     return content;
   }
-  
+
   const lines = content.split('\n').filter(line => line.trim());
   const intent = context.intent || 'general';
-  
+
   if (context.complexity === 'simple' || lines.length <= 2) {
     // For simple responses, use clear structure with emojis
     return lines.map((line, i) => {
@@ -447,7 +447,7 @@ export function structureResponseContent(
       return line;
     }).join('\n\n');
   }
-  
+
   // Apply professional modular structure for complex responses
   return applyModularStructure(content, context);
 }
@@ -461,33 +461,33 @@ function applyModularStructure(
 ): string {
   const lines = content.split('\n').filter(line => line.trim());
   const intent = context.intent || 'general';
-  
+
   let structured = '';
-  
+
   // 1. What You Asked - Intent Summary
   if (context.userMessage && shouldIncludeIntentSummary(intent)) {
     const intentSummary = generateIntentSummary(context.userMessage, intent);
     structured += `### ✅ What You Asked\n${intentSummary}\n\n`;
   }
-  
+
   // 2. Solution or Explanation - Main Content
   const mainContent = extractMainContent(lines);
   if (mainContent) {
     structured += `### 🧰 Solution\n${mainContent}\n\n`;
   }
-  
+
   // 3. Example or Demo - Code blocks or demonstrations
   const exampleContent = extractExampleContent(content, context.topics);
   if (exampleContent) {
     structured += `### 🧪 Example\n${exampleContent}\n\n`;
   }
-  
+
   // 4. Notes/Warnings - Important information
   const notesContent = extractNotesContent(lines);
   if (notesContent) {
     structured += `### 📌 Notes\n${notesContent}\n\n`;
   }
-  
+
   return structured.trim();
 }
 
@@ -503,7 +503,7 @@ function shouldIncludeIntentSummary(intent: string): boolean {
  */
 function generateIntentSummary(userMessage: string, intent: string): string {
   const msg = userMessage.toLowerCase();
-  
+
   if (intent === 'code_request') {
     if (msg.includes('html') || msg.includes('webpage') || msg.includes('website')) {
       return 'You want HTML code for a webpage or website.';
@@ -516,18 +516,18 @@ function generateIntentSummary(userMessage: string, intent: string): string {
     }
     return 'You requested code or a programming solution.';
   }
-  
+
   if (intent === 'bioinformatics') {
     if (msg.includes('crispr')) return 'You need CRISPR design and analysis.';
     if (msg.includes('pcr')) return 'You want PCR primer design or simulation.';
     if (msg.includes('sequence')) return 'You need sequence analysis assistance.';
     return 'You asked for bioinformatics analysis help.';
   }
-  
+
   if (intent === 'question') {
     return 'You asked for information or explanation.';
   }
-  
+
   return 'You need assistance with your request.';
 }
 
@@ -543,7 +543,7 @@ function extractMainContent(lines: string[]): string {
     !line.startsWith('📌') &&
     line.length > 10
   ).slice(0, 3);
-  
+
   return mainLines.join('\n\n');
 }
 
@@ -556,7 +556,7 @@ function extractExampleContent(content: string, topics: string[]): string {
   if (codeBlocks && codeBlocks.length > 0) {
     return codeBlocks.join('\n\n');
   }
-  
+
   // Look for example-like content
   const lines = content.split('\n');
   const exampleLines = lines.filter(line => 
@@ -565,11 +565,11 @@ function extractExampleContent(content: string, topics: string[]): string {
     line.includes('→') ||
     line.includes(':')
   );
-  
+
   if (exampleLines.length > 0) {
     return exampleLines.slice(0, 2).join('\n');
   }
-  
+
   return '';
 }
 
@@ -585,18 +585,18 @@ function extractNotesContent(lines: string[]): string {
     line.toLowerCase().includes('warning') ||
     line.toLowerCase().includes('important')
   );
-  
+
   if (noteLines.length > 0) {
     return noteLines.join('\n');
   }
-  
+
   // Generate contextual notes
   const contextualNotes = [
     '💡 This solution is ready to use and can be customized further.',
     '📌 Make sure to test in your specific environment.',
     '⚠️ Always backup your data before making changes.'
   ];
-  
+
   return contextualNotes[Math.floor(Math.random() * contextualNotes.length)];
 }
 
@@ -635,23 +635,23 @@ export function generateSmartFollowUps(
       "Learn about alternatives?"
     ]
   };
-  
+
   const baseFollowUps = followUps[intent] || followUps.general;
-  
+
   // Customize based on detected topics
   const customFollowUps = [];
   if (context.topics.includes('html')) customFollowUps.push("Convert it to React?");
   if (context.topics.includes('dna')) customFollowUps.push("Analyze DNA sequences?");
   if (context.topics.includes('code')) customFollowUps.push("Add styling with TailwindCSS?");
   if (context.topics.includes('protein')) customFollowUps.push("Explore protein analysis tools?");
-  
+
   // Merge and get top 3 suggestions
   const allSuggestions = [...customFollowUps, ...baseFollowUps];
   const topSuggestions = allSuggestions.slice(0, 3);
-  
+
   // Format as structured suggestions section
   const formattedSuggestions = topSuggestions.map(suggestion => `- ${suggestion}`).join('\n');
-  
+
   return `### 💬 Suggestions\nWould you like me to:\n${formattedSuggestions}`;
 }
 
@@ -667,7 +667,7 @@ function getRandomFromArray<T>(array: T[]): T {
  */
 function getContentEmoji(content: string, topics: string[]): string {
   const contentLower = content.toLowerCase();
-  
+
   if (contentLower.includes('dna') || contentLower.includes('sequence')) return '🧬';
   if (contentLower.includes('code') || contentLower.includes('function')) return '💻';
   if (contentLower.includes('analysis') || contentLower.includes('result')) return '📊';
@@ -675,7 +675,7 @@ function getContentEmoji(content: string, topics: string[]): string {
   if (contentLower.includes('tip') || contentLower.includes('note')) return '💡';
   if (contentLower.includes('error') || contentLower.includes('issue')) return '⚠️';
   if (contentLower.includes('success') || contentLower.includes('complete')) return '✅';
-  
+
   return '🔹';
 }
 
@@ -804,7 +804,7 @@ export function detectUserIntent(userMessage: string): string {
  */
 function generateCodeExample(userMessage: string): string {
   const msg = userMessage.toLowerCase();
-  
+
   if (msg.includes('html') || msg.includes('webpage') || msg.includes('website')) {
     return `\`\`\`html
 <!DOCTYPE html>
@@ -856,7 +856,7 @@ function generateCodeExample(userMessage: string): string {
             <p>🎉 Great! The page is working perfectly!</p>
         </div>
     </div>
-    
+
     <script>
         function showMessage() {
             const messageDiv = document.getElementById('message');
@@ -867,7 +867,7 @@ function generateCodeExample(userMessage: string): string {
 </html>
 \`\`\``;
   }
-  
+
   if (msg.includes('python') || msg.includes('script')) {
     return `\`\`\`python
 #!/usr/bin/env python3
@@ -885,15 +885,15 @@ def main():
     print("🐍 Python Script Running!")
     print(f"📅 Current time: {datetime.datetime.now()}")
     print(f"📁 Current directory: {os.getcwd()}")
-    
+
     # Example: File operations
     files = [f for f in os.listdir('.') if f.endswith('.py')]
     print(f"🔍 Found {len(files)} Python files in current directory")
-    
+
     # Example: User interaction
     name = input("👋 What's your name? ")
     print(f"Nice to meet you, {name}! 🎉")
-    
+
     return "Script completed successfully!"
 
 if __name__ == "__main__":
@@ -901,7 +901,7 @@ if __name__ == "__main__":
     print(f"✅ {result}")
 \`\`\``;
   }
-  
+
   if (msg.includes('javascript') || msg.includes('js')) {
     return `\`\`\`javascript
 // Ready-to-run JavaScript example
@@ -940,7 +940,7 @@ console.log(greetUser("Coder"));
 fetchData().then(data => console.log("📊 Result:", data));
 \`\`\``;
   }
-  
+
   // Default generic code example
   return `\`\`\`javascript
 // Ready-to-use code example
@@ -1169,31 +1169,31 @@ export async function enhanceResponse(
   let content = message.content;
 
   // ========== APPLY NEW CONVERSATIONAL FLOW ==========
-  
+
   if (options.userMessage) {
     const intent = detectUserIntent(options.userMessage);
-    
+
     // Analyze conversation context for better understanding
     const conversationContext = analyzeConversationContext(options.context.previousResponses);
-    
+
     // Generate embeddings for semantic understanding
     const userTokens = tokenizeText(options.userMessage);
     const userEmbedding = generateSimpleEmbedding(userTokens);
-    
+
     // Calculate attention weights for relevant context
     const attentionWeights = calculateAttentionWeights(options.userMessage, options.context.previousResponses);
-    
+
     // For specific intents, use enhanced natural responses
     if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics'].includes(intent)) {
       // Generate engaging hook with personality and context
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
-      
+
       if (intent === 'capability_inquiry' || intent === 'bioinformatics') {
         content = generateNaturalResponse(intent, options.userMessage);
       } else {
         content = hook;
       }
-      
+
       // Add contextual follow-ups for non-simple intents
       if (['capability_inquiry', 'bioinformatics'].includes(intent)) {
         const followUps = generateSmartFollowUps(intent, content, conversationContext);
@@ -1201,7 +1201,7 @@ export async function enhanceResponse(
           content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
         }
       }
-      
+
       return { 
         ...message, 
         content,
@@ -1222,16 +1222,16 @@ export async function enhanceResponse(
     // For code requests, ensure proper formatting with structured approach
     if (intent === 'code_request') {
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
-      
+
       let structuredResponse = '';
-      
+
       // Intent Summary
       const intentSummary = generateIntentSummary(options.userMessage, intent);
       structuredResponse += `### ✅ What You Asked\n${intentSummary}\n\n`;
-      
+
       // Solution
       structuredResponse += `### 🧰 Solution\n${hook}\n\n`;
-      
+
       // Example/Demo
       if (!content.includes('```') && !content.includes('<pre>')) {
         // Generate code based on request type
@@ -1240,16 +1240,16 @@ export async function enhanceResponse(
       } else {
         structuredResponse += `### 🧪 Example\n${content}\n\n`;
       }
-      
+
       // Suggestions
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
       structuredResponse += followUps;
-      
+
       // Notes
       structuredResponse += `\n\n### 📌 Notes\n💡 This code is ready to run - just copy and save as an HTML file!\n⚠️ Remember to test in different browsers for compatibility.`;
-      
+
       content = structuredResponse;
-      
+
       return { 
         ...message, 
         content,
@@ -1269,7 +1269,7 @@ export async function enhanceResponse(
       const extendedContext = { ...conversationContext, intent, userMessage: options.userMessage };
       const structuredContent = structureResponseContent(content, extendedContext);
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
-      
+
       // For structured responses, combine hook with modular content
       if (structuredContent.includes('### ✅')) {
         content = `${hook}\n\n${structuredContent}\n\n${followUps}`;
