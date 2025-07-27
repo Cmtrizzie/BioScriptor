@@ -325,30 +325,19 @@
   @apply mb-0;
 }
 
-/* Enhanced emoji and structured response formatting */
+/* Clean structured response formatting */
 .prose p:has(> strong:first-child) {
   @apply font-medium;
 }
 
-.prose p:contains("✅") {
-  @apply bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 pl-4 py-2 rounded-r-lg;
+/* Simple bullet point styling */
+.prose ul li {
+  @apply mb-2;
 }
 
-.prose p:contains("💡") {
-  @apply bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 pl-4 py-2 rounded-r-lg;
-}
-
-.prose p:contains("➡️") {
-  @apply bg-gray-50 dark:bg-gray-800/50 border-l-4 border-gray-400 pl-4 py-2 rounded-r-lg mt-6;
-}
-
-/* Better emoji rendering */
-.prose {
-  font-variant-emoji: emoji;
-}
-
-.prose p:contains("🔹") {
-  @apply pl-2;
+/* Clean emphasis for key sections */
+.prose p:has(strong:contains("Key points")) {
+  @apply font-semibold mt-4 mb-2;
 }
 
 .prose ul, .prose ol {

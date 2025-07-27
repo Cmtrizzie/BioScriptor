@@ -91,45 +91,59 @@ function applyProStructureFormatting(content: string, options: any): string {
     return content;
   }
 
-  // Get appropriate greeting
+  // Get appropriate greeting (less frequent)
   const greeting = getContextualGreeting(options);
   
   // Split content into sections
   const lines = content.split('\n').filter(line => line.trim());
   
   if (lines.length <= 1) {
-    // Single line response - keep simple with greeting
-    return greeting ? `${greeting}\n\n${content}` : content;
+    // Single line response - keep simple, minimal greeting
+    return greeting && shouldUseGreeting(options) ? `${greeting}\n\n${content}` : content;
   }
 
-  // Multi-line response - apply full structure
+  // Check if content needs structured formatting
+  if (!shouldUseStructuredFormatting(content, options)) {
+    return content;
+  }
+
+  // Multi-line response - apply selective structure
   let formattedContent = '';
   
-  // Add greeting if appropriate
-  if (greeting) {
+  // Add greeting only for first interactions or when helpful
+  if (greeting && shouldUseGreeting(options)) {
     formattedContent += `${greeting}\n\n`;
   }
 
-  // Main answer section
+  // Main answer section - use checkmark only for definitive answers
   const mainAnswer = lines[0];
-  formattedContent += `✅ **${mainAnswer}**\n\n`;
+  if (isDefinitiveAnswer(mainAnswer)) {
+    formattedContent += `**${mainAnswer}**\n\n`;
+  } else {
+    formattedContent += `${mainAnswer}\n\n`;
+  }
 
-  // Additional information as bullet points
+  // Additional information - use bullets only for lists
   if (lines.length > 1) {
-    formattedContent += `💡 **Here's what you need to know:**\n\n`;
+    const remainingLines = lines.slice(1, Math.min(lines.length, 4));
     
-    for (let i = 1; i < Math.min(lines.length, 4); i++) {
-      const line = lines[i].trim();
-      if (line) {
-        formattedContent += `🔹 ${line}\n\n`;
+    if (shouldUseBulletPoints(remainingLines)) {
+      formattedContent += `**Key points:**\n\n`;
+      for (const line of remainingLines) {
+        if (line.trim()) {
+          formattedContent += `• ${line}\n\n`;
+        }
+      }
+    } else {
+      for (const line of remainingLines) {
+        if (line.trim()) {
+          formattedContent += `${line}\n\n`;
+        }
       }
     }
   }
 
-  // Add helpful closing
-  formattedContent += `➡️ Need help with anything else? Just let me know!`;
-
-  return formattedContent;
+  return formattedContent.trim();
 }
 
 function getContextualGreeting(options: any): string | null {
@@ -141,13 +155,66 @@ function getContextualGreeting(options: any): string | null {
   }
 
   const greetings = {
-    casual: ['Hey there! 👋', 'Hi! 🧬', 'Hello! 👨‍🔬'],
-    professional: ['Hello! 👋', 'Greetings! 🧬', 'Good to see you! 👨‍🔬'],
-    excited: ['Hey there! 🚀', 'Hi! ⚡', 'Hello! 🎉'],
-    frustrated: ['I\'m here to help! 💪', 'Let\'s solve this! 🔧', 'I\'ve got you covered! ✨'],
-    urgent: ['Right away! ⚡', 'Let\'s get this done! 🚀', 'On it! 💪']
+    casual: ['Hey there!', 'Hi there!', 'Hello!'],
+    professional: ['Hello!', 'Good to see you!', 'Welcome!'],
+    excited: ['Great question!', 'Excellent!', 'Perfect timing!'],
+    frustrated: ['I\'m here to help!', 'Let\'s solve this!', 'I\'ve got you covered!'],
+    urgent: ['Right away!', 'Let\'s get this done!', 'On it!']
   };
 
   const toneGreetings = greetings[tone as keyof typeof greetings] || greetings.professional;
   return toneGreetings[Math.floor(Math.random() * toneGreetings.length)];
+}
+
+function shouldUseGreeting(options: any): boolean {
+  const { context } = options;
+  
+  // Use greeting only for first message or after long gaps
+  return !context?.previousResponses || context.previousResponses.length === 0;
+}
+
+function shouldUseStructuredFormatting(content: string, options: any): boolean {
+  const { context } = options;
+  
+  // Use structured formatting for:
+  // - Complex explanations (multiple paragraphs)
+  // - Technical instructions
+  // - Lists or step-by-step content
+  const lines = content.split('\n').filter(line => line.trim());
+  
+  if (lines.length < 2) return false;
+  
+  // Check for technical or instructional content
+  const technicalKeywords = ['install', 'configure', 'setup', 'step', 'first', 'then', 'next', 'finally'];
+  const hasTechnicalContent = technicalKeywords.some(keyword => 
+    content.toLowerCase().includes(keyword)
+  );
+  
+  return hasTechnicalContent || lines.length > 3;
+}
+
+function isDefinitiveAnswer(text: string): boolean {
+  // Use checkmark for clear, definitive statements
+  const definitivePatterns = [
+    /^(yes|no),/i,
+    /^(here's|this is|that's)/i,
+    /^(you can|you should|you need)/i,
+    /(solution|answer|result)/i
+  ];
+  
+  return definitivePatterns.some(pattern => pattern.test(text));
+}
+
+function shouldUseBulletPoints(lines: string[]): boolean {
+  // Use bullets for actual lists or multiple distinct points
+  if (lines.length < 2) return false;
+  
+  // Check if content looks like a list
+  const listIndicators = lines.filter(line => 
+    /^(step|first|second|third|next|then|also|additionally)/i.test(line.trim()) ||
+    line.includes(':') ||
+    line.length < 100 // Short, concise points
+  );
+  
+  return listIndicators.length >= Math.ceil(lines.length * 0.6);
 }
