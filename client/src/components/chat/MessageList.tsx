@@ -5,6 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Typing effect component
 const TypingEffect = ({ text, speed = 30, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
@@ -24,6 +26,37 @@ const TypingEffect = ({ text, speed = 30, onComplete }: { text: string; speed?: 
   }, [currentIndex, text, speed, onComplete]);
 
   return <span>{displayedText}</span>;
+};
+
+// Copy button component
+const CopyButton = ({ content }: { content: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy message:', err);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleCopy}
+      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+      title={copied ? "Copied!" : "Copy message"}
+    >
+      {copied ? (
+        <Check size={14} className="text-green-600" />
+      ) : (
+        <Copy size={14} className="text-gray-500" />
+      )}
+    </Button>
+  );
 };
 
 interface MessageListProps {
@@ -77,12 +110,16 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] ${
+                className={`max-w-[85%] group relative ${
                   message.type === 'user'
                     ? 'chatgpt-user-message ml-auto'
                     : 'chatgpt-message'
                 }`}
               >
+                {/* Copy button - positioned absolutely in top right */}
+                <div className="absolute top-2 right-2 z-10">
+                  <CopyButton content={message.content} />
+                </div>
                 {message.type === 'ai' ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed">
                     <ReactMarkdown
