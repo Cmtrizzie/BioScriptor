@@ -105,7 +105,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                           );
                         },
                         p({ node, children, ...props }) {
-                          // Convert plain text URLs to clickable links
+                          // Convert plain text URLs to clickable links and format whitespace
                           const processText = (text: string) => {
                             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
                             const parts = text.split(urlRegex);
@@ -144,7 +144,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                           };
 
                           return (
-                            <p {...props}>
+                            <p className="mb-4 leading-relaxed" {...props}>
                               {processChildren(children)}
                             </p>
                           );
@@ -155,7 +155,17 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap font-medium leading-relaxed">{message.content}</div>
+                  <div className="whitespace-pre-wrap font-medium leading-relaxed">
+                    {message.content.split('\n\n').map((paragraph, index) => (
+                      <div key={index} className={index > 0 ? 'mt-4' : ''}>
+                        {paragraph.split('\n').map((line, lineIndex) => (
+                          <div key={lineIndex} className={lineIndex > 0 ? 'mt-2' : ''}>
+                            {line}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 )}
                 <div className={`text-xs mt-3 opacity-70`}>
                   {new Date(message.timestamp).toLocaleTimeString()}

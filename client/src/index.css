@@ -308,7 +308,7 @@
 
 /* ChatGPT-style prose improvements */
 .prose h1, .prose h2, .prose h3 {
-  @apply font-semibold mt-6 mb-3;
+  @apply font-semibold mt-8 mb-4;
   color: inherit;
 }
 
@@ -317,23 +317,62 @@
 .prose h3 { @apply text-base; }
 
 .prose p {
-  @apply mb-4 leading-relaxed;
+  @apply mb-6 leading-relaxed;
   color: inherit;
+}
+
+.prose p:last-child {
+  @apply mb-0;
 }
 
 .prose ul, .prose ol {
-  @apply mb-4 pl-6;
+  @apply mb-6 pl-6 space-y-2;
 }
 
 .prose li {
-  @apply mb-1;
+  @apply leading-relaxed;
   color: inherit;
 }
 
+.prose li p {
+  @apply mb-2;
+}
+
 .prose blockquote {
-  @apply border-l-4 border-bio-teal pl-4 italic my-4;
+  @apply border-l-4 border-bio-teal pl-6 italic my-6 py-2;
   color: inherit;
   opacity: 0.8;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .prose blockquote {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Enhanced text formatting */
+.prose strong {
+  @apply font-semibold;
+  color: inherit;
+}
+
+.prose em {
+  @apply italic;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Better spacing for different content types */
+.prose > *:first-child {
+  margin-top: 0 !important;
+}
+
+.prose > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Visual separators between sections */
+.prose hr {
+  @apply my-8 border-t border-gray-200 dark:border-gray-700;
 }
 
 .prose table {
