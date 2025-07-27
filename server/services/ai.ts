@@ -205,16 +205,16 @@ function getTimeBasedGreeting(): string {
 function analyzeConversationContext(history: ChatMessage[]) {
     const recentMessages = history.slice(-10);
     const userMessages = recentMessages.filter(m => m.role === 'user');
-    
+
     // Detect conversation patterns
     const hasGreetings = userMessages.some(m => 
         /(hello|hi|hey|good morning|good afternoon|good evening)/i.test(m.content)
     );
-    
+
     const hasTechnicalQueries = userMessages.some(m => 
         /(sequence|dna|rna|protein|crispr|pcr|gene|genome)/i.test(m.content)
     );
-    
+
     const hasGeneralQueries = userMessages.some(m => 
         /(trending|news|world|latest|current|what's happening)/i.test(m.content)
     );
@@ -264,32 +264,32 @@ function analyzeConversationContext(history: ChatMessage[]) {
 // Detect user intent
 function detectUserIntent(query: string): string {
     const lowerQuery = query.toLowerCase().trim();
-    
+
     // Greeting patterns
     if (/(^(hi|hello|hey|good morning|good afternoon|good evening))|greetings/i.test(lowerQuery)) {
         return 'greeting';
     }
-    
+
     // Farewell patterns
     if (/(bye|goodbye|see you|thanks|thank you|that's all)/i.test(lowerQuery)) {
         return 'farewell';
     }
-    
+
     // General trending/news queries
     if (/(trending|what's happening|news|current events|latest|worldwide|global)/i.test(lowerQuery)) {
         return 'general_trending';
     }
-    
+
     // Technical questions
     if (/(how to|explain|what is|help me|analyze|design|optimize)/i.test(lowerQuery)) {
         return 'technical_question';
     }
-    
+
     // Request for assistance
     if (/(can you|would you|please|need help|assist)/i.test(lowerQuery)) {
         return 'assistance_request';
     }
-    
+
     return 'general_query';
 }
 
@@ -359,10 +359,34 @@ export const processQuery = async (
                     break;
             }
 
+            // Enhance response using the enhancer service
+            const enhancedResponse = await enhanceResponse(
+                {
+                    id: generateUniqueId(),
+                    role: 'assistant',
+                    content: responseContent,
+                    timestamp: Date.now(),
+                    status: 'complete' as const,
+                    metadata: {
+                        confidence: 0.85,
+                        topic: metadata.intent
+                    }
+                },
+                {
+                    context: {
+                        currentTopic: metadata.intent,
+                        taskType: queryType
+                    },
+                    tone,
+                    userMessage: query,
+                    userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
+                }
+            );
+
             const bioMessage: ChatMessage = {
                 id: generateUniqueId(),
                 role: 'assistant',
-                content: responseContent,
+                content: enhancedResponse,
                 timestamp: Date.now(),
                 status: 'complete',
                 metadata
@@ -388,12 +412,12 @@ export const processQuery = async (
         if (shouldSearch) {
             console.log('🔍 Performing web search for:', query);
             let searchTerms = webSearchService.extractSearchTerms(query);
-            
+
             // For general trending queries, expand search terms
             if (userIntent === 'general_trending') {
                 searchTerms = `${searchTerms} trending news current events worldwide 2024`;
             }
-            
+
             webSearchResults = await webSearchService.search(searchTerms, {
                 maxResults: 5,
                 bioinformatics: userIntent !== 'general_trending' // Don't limit to bio for general queries
@@ -409,11 +433,11 @@ export const processQuery = async (
         // Analyze conversation context with personality
         const contextAnalysis = analyzeConversationContext(context.history);
         const personality = contextAnalysis.personality;
-        
+
         // Generate context-aware system prompt based on intent
         const memory = context.memory;
         let systemPrompt = '';
-        
+
         if (userIntent === 'general_trending') {
             systemPrompt = `You are BioScriptor, a helpful AI assistant. The user is asking about general trending topics or world news.
 
@@ -513,7 +537,9 @@ ${searchContext}`;
                 },
                 tone,
                 userMessage: query,
-                userSkillLevel: contextAnalysis.memory.userPreferences.technicalLevel
+                userSkillLevel: contextAnalysis.memory.userPreferences.technicalLevel,
+                userIntent: userIntent,
+                userQuery: query
             }
         );
 
