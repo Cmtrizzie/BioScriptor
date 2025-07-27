@@ -6,13 +6,13 @@
 @layer base {
   :root {
     --chat-bg-light: #f7f7f8;
-    --chat-bg-dark: #2b2c2f;
+    --chat-bg-dark: #1f2937;
     --chat-user-bg-light: #d1e3ff;
     --chat-user-bg-dark: #1e3a5f;
     --chat-border-light: #e3e3e3;
-    --chat-border-dark: #444;
+    --chat-border-dark: #374151;
     --chat-text-light: #1f2937;
-    --chat-text-dark: #f3f4f6;
+    --chat-text-dark: #f9fafb;
     --accent: #3b82f6;
     --primary: #10b981;
   }
@@ -24,6 +24,21 @@
   body {
     @apply bg-white text-gray-800 dark:bg-gray-900 dark:text-white transition-colors duration-300;
   }
+
+  /* Dark mode chat container */
+  .dark .chat-container {
+    @apply bg-gray-900;
+  }
+
+  /* Dark mode sidebar */
+  .dark .sidebar {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  /* Dark mode main chat area */
+  .dark .chat-main {
+    @apply bg-gray-900;
+  }
 }
 
 /* === Chat Bubble Styles === */
@@ -34,10 +49,12 @@
 
 .chatbot-message {
   @apply chat-message bg-[var(--chat-bg-light)] dark:bg-[var(--chat-bg-dark)] text-[var(--chat-text-light)] dark:text-[var(--chat-text-dark)];
+  @apply border border-gray-200 dark:border-gray-700;
 }
 
 .user-message {
   @apply chat-message bg-[var(--chat-user-bg-light)] dark:bg-[var(--chat-user-bg-dark)] ml-auto text-gray-800 dark:text-white border-l-4 border-[var(--accent)];
+  @apply border border-gray-200 dark:border-gray-600;
 }
 
 /* === Typing Indicator === */
@@ -123,6 +140,23 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Dark mode specific overrides */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
 }
 
 /* Clean structured response formatting */
