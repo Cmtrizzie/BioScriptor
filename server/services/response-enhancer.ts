@@ -746,6 +746,16 @@ export function detectUserIntent(userMessage: string): string {
     return 'greeting';
   }
 
+  // Trending/current events patterns - should be detected before general questions
+  const trendingPatterns = [
+    /\b(trending|what's trending|whats trending|current events|latest news|what's happening|whats happening|news|worldwide|global events)\b/i,
+    /^(whats trending|what's trending|trending)\s*$/i
+  ];
+
+  if (trendingPatterns.some(pattern => pattern.test(msg))) {
+    return 'trending_inquiry';
+  }
+
   // Code request patterns
   const codePatterns = [
     /\b(give me|show me|create|write|generate|make me).*(code|html|css|javascript|python|example)\b/i,
@@ -1061,6 +1071,58 @@ What interests you most?`;
 
 What would you like to start with?`;
 
+    case 'trending_inquiry':
+      const trendingResponses = [
+        `Here's what's trending right now! 🌍
+
+**🔥 Tech & AI:**
+• ChatGPT and Claude are revolutionizing how we work
+• AI coding assistants are becoming mainstream
+• Open-source AI models gaining serious traction
+
+**🧬 Science & Health:**  
+• CRISPR 3.0 advancing toward complex therapies
+• AI drug discovery accelerating pharmaceutical research
+• Personalized medicine using genomic data
+
+**💰 Business & Economy:**
+• AI startups securing record funding
+• Green energy investments hitting new highs
+• Remote work tools evolving rapidly
+
+**🌐 Global Events:**
+• Climate tech innovations addressing sustainability  
+• Space exploration missions advancing
+• International cooperation on pandemic preparedness
+
+Want me to dive deeper into any of these areas?`,
+        
+        `What's hot worldwide right now! 🔥
+
+**Technology is exploding:**
+• AI everywhere - from art to coding to research
+• Quantum computing breakthroughs happening monthly
+• Biotech and AI merging in fascinating ways
+
+**Science frontiers:**
+• Gene editing becoming more precise and accessible
+• AI solving protein folding and drug discovery
+• Space tech advancing faster than ever
+
+**Culture & Society:**
+• Digital nomad lifestyle going mainstream
+• Sustainability becoming a business necessity
+• Web3 and decentralized tech gaining real adoption
+
+**Global movements:**
+• Climate action accelerating worldwide
+• Healthcare digitization post-pandemic
+• Education being reimagined with AI
+
+Which area sounds most interesting to you?`
+      ];
+      return trendingResponses[Math.floor(Math.random() * trendingResponses.length)];
+
     default:
       return '';
   }
@@ -1183,23 +1245,30 @@ export async function enhanceResponse(
     // Calculate attention weights for relevant context
     const attentionWeights = calculateAttentionWeights(options.userMessage, options.context.previousResponses);
 
-    // For specific intents, use enhanced natural responses
-    if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics'].includes(intent)) {
-      // Generate engaging hook with personality and context
+    // For specific intents, use enhanced natural responses - including trending inquiries
+    if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics', 'trending_inquiry'].includes(intent)) {
+      // For trending inquiries, use the natural response directly without extra structure
+      if (intent === 'trending_inquiry') {
+        content = generateNaturalResponse(intent, options.userMessage);
+        return { 
+          ...message, 
+          content,
+          metadata: {
+            ...message.metadata,
+            intent,
+            conversationContext,
+            naturalResponse: true
+          }
+        };
+      }
+
+      // Generate engaging hook with personality and context for other intents
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
 
       if (intent === 'capability_inquiry' || intent === 'bioinformatics') {
         content = generateNaturalResponse(intent, options.userMessage);
       } else {
         content = hook;
-      }
-
-      // Add contextual follow-ups for non-simple intents
-      if (['capability_inquiry', 'bioinformatics'].includes(intent)) {
-        const followUps = generateSmartFollowUps(intent, content, conversationContext);
-        if (followUps.length > 0) {
-          content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
-        }
       }
 
       return { 
@@ -1263,8 +1332,8 @@ export async function enhanceResponse(
       };
     }
 
-    // For questions and general responses, apply enhanced structure
-    if (!isSimpleResponse(content)) {
+    // For questions and general responses, avoid over-structuring simple queries
+    if (!isSimpleResponse(content) && !isSimpleQuery(options.userMessage)) {
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
       const extendedContext = { ...conversationContext, intent, userMessage: options.userMessage };
       const structuredContent = structureResponseContent(content, extendedContext);
@@ -1276,6 +1345,10 @@ export async function enhanceResponse(
       } else {
         content = `${hook}\n\n${structuredContent}\n\n${followUps}`;
       }
+    } else if (isSimpleQuery(options.userMessage)) {
+      // For simple queries like "what's trending", just provide a conversational response
+      const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+      content = content.length > 200 ? content : `${hook}\n\n${content}`;
     }
   }
 
@@ -1352,6 +1425,23 @@ function simplifyResponse(content: string, userMessage?: string): string {
  */
 function isSimpleResponse(content: string): boolean {
   return content.length < 150 && !content.includes('\n') && !content.includes('**');
+}
+
+/**
+ * Checks if the user query is simple and shouldn't get heavy structure
+ */
+function isSimpleQuery(userMessage?: string): boolean {
+  if (!userMessage) return false;
+  
+  const msg = userMessage.toLowerCase().trim();
+  const simplePatterns = [
+    /^(whats trending|what's trending|trending|news|whats happening|what's happening)$/i,
+    /^(hello|hi|hey|sup|yo)$/i,
+    /^(thanks|thank you|bye|goodbye)$/i,
+    /^(whats up|what's up|how are you)$/i
+  ];
+  
+  return simplePatterns.some(pattern => pattern.test(msg)) || msg.length < 20;
 }
 
 /**
