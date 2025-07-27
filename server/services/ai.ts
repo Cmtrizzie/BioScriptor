@@ -2,6 +2,7 @@
 import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
 import { webSearchService, WebSearchResponse } from './web-search';
+import { enhanceResponse } from './response-enhancer';
 
 // ========== Type Definitions ==========
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'error';
@@ -319,11 +320,28 @@ Guidelines:
 5. Provide accurate, actionable advice
 ${searchContext}`;
 
+        // Update system prompt to focus on intent recognition
+        const updatedSystemPrompt = `You are BioScriptor, an advanced bioinformatics assistant.
+Current conversation topics: ${Array.from(memory.topics).join(', ') || 'none'}
+Key entities: ${Array.from(memory.entities).join(', ') || 'none'}
+User's tone: ${tone}
+
+Guidelines:
+1. Recognize user intent (greeting, question, request, farewell)
+2. For greetings: respond naturally and briefly
+3. For questions: provide helpful answers
+4. For requests: offer assistance
+5. Avoid over-explaining simple interactions
+6. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
+7. ${webSearchResults ? 'Use the provided web search results to enhance your response with current information' : ''}
+8. Provide accurate, actionable advice
+${searchContext}`;
+
         // Generate AI response with enhanced context
         const enhancedContext = {
-            systemPrompt,
+            systemPrompt: updatedSystemPrompt,
             messages: [
-                { role: 'system', content: systemPrompt },
+                { role: 'system', content: updatedSystemPrompt },
                 ...recentHistory
             ],
             maxTokens: 2000,
@@ -343,15 +361,35 @@ ${searchContext}`;
             userTier
         );
 
+        // Enhance the response with intent detection
+        const enhancedResponse = await enhanceResponse(
+            {
+                id: generateUniqueId(),
+                role: 'assistant',
+                content: response.content,
+                timestamp: Date.now(),
+                status: 'complete' as const,
+                metadata: {
+                    confidence: response.confidence || 0.85
+                }
+            },
+            {
+                context: {
+                    previousResponses: context.history.filter(m => m.role === 'assistant'),
+                    currentTopic: Array.from(memory.topics)[0],
+                    taskType: queryType
+                },
+                tone,
+                userMessage: query
+            }
+        );
+
         // Create assistant message
         const assistantMessage: ChatMessage = {
+            ...enhancedResponse,
             id: generateUniqueId(),
-            role: 'assistant',
-            content: response.content,
-            timestamp: Date.now(),
-            status: 'complete',
             metadata: {
-                ...response.metadata,
+                ...enhancedResponse.metadata,
                 confidence: response.confidence || 0.85,
                 processingTime: response.processingTime,
                 queryType,
