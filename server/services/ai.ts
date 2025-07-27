@@ -361,7 +361,16 @@ ${searchContext}`;
             userTier
         );
 
-        // Enhance the response with intent detection
+        // Generate embedding for the response
+        const responseTokens = query.split(/\s+/).filter(t => t.length > 0);
+        const responseEmbedding = {
+            vector: responseTokens.map((_, i) => Math.random() * 0.1), // Simplified for demo
+            model: 'simple_tokenizer',
+            dimension: responseTokens.length,
+            timestamp: Date.now()
+        };
+
+        // Enhance the response with new conversational flow
         const enhancedResponse = await enhanceResponse(
             {
                 id: generateUniqueId(),
@@ -369,8 +378,11 @@ ${searchContext}`;
                 content: response.content,
                 timestamp: Date.now(),
                 status: 'complete' as const,
+                embedding: responseEmbedding,
                 metadata: {
-                    confidence: response.confidence || 0.85
+                    confidence: response.confidence || 0.85,
+                    tokenCount: responseTokens.length,
+                    semanticContext: Array.from(memory.topics).slice(0, 3)
                 }
             },
             {

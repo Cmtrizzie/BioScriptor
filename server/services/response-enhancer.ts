@@ -1,4 +1,263 @@
-import { ChatMessage, ProcessedInput } from './types';
+import { ChatMessage, ProcessedInput, MessageEmbedding } from './types';
+
+// ========== 1. TOKENIZATION & EMBEDDING ==========
+
+/**
+ * Simple tokenization - breaks text into meaningful units
+ */
+export function tokenizeText(text: string): string[] {
+  // Remove extra whitespace and split on word boundaries
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(token => token.length > 0);
+}
+
+/**
+ * Generate simple embedding vectors (in production, use proper embedding models)
+ */
+export function generateSimpleEmbedding(tokens: string[]): number[] {
+  const vocabulary = [
+    'hello', 'hi', 'help', 'code', 'dna', 'sequence', 'analysis', 'protein',
+    'crispr', 'pcr', 'thank', 'bye', 'question', 'explain', 'how', 'what',
+    'bioinformatics', 'gene', 'mutation', 'alignment', 'blast', 'fasta'
+  ];
+  
+  // Create a simple bag-of-words embedding
+  const embedding = new Array(vocabulary.length).fill(0);
+  
+  tokens.forEach(token => {
+    const index = vocabulary.indexOf(token);
+    if (index !== -1) {
+      embedding[index] += 1;
+    }
+  });
+  
+  // Normalize the vector
+  const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+  return magnitude > 0 ? embedding.map(val => val / magnitude) : embedding;
+}
+
+/**
+ * Calculate semantic similarity between two embedding vectors
+ */
+export function calculateSimilarity(embedding1: number[], embedding2: number[]): number {
+  if (embedding1.length !== embedding2.length) return 0;
+  
+  const dotProduct = embedding1.reduce((sum, val, i) => sum + val * embedding2[i], 0);
+  return Math.max(0, Math.min(1, dotProduct));
+}
+
+// ========== 2. CONTEXT AWARENESS ==========
+
+/**
+ * Analyzes conversation history to extract relevant context
+ */
+export function analyzeConversationContext(messages: ChatMessage[]): {
+  topics: string[];
+  sentiment: string;
+  complexity: string;
+  recentContext: string;
+} {
+  const recentMessages = messages.slice(-6); // Last 3 exchanges
+  const allText = recentMessages.map(m => m.content).join(' ');
+  const tokens = tokenizeText(allText);
+  
+  // Extract topics using keyword analysis
+  const bioTopics = tokens.filter(token => 
+    ['dna', 'rna', 'protein', 'gene', 'sequence', 'crispr', 'pcr', 'alignment', 'blast'].includes(token)
+  );
+  const codeTopics = tokens.filter(token => 
+    ['code', 'html', 'python', 'javascript', 'function', 'variable'].includes(token)
+  );
+  
+  // Determine sentiment
+  const positiveWords = tokens.filter(token => 
+    ['good', 'great', 'excellent', 'perfect', 'amazing', 'thanks', 'helpful'].includes(token)
+  ).length;
+  const negativeWords = tokens.filter(token => 
+    ['bad', 'wrong', 'error', 'problem', 'issue', 'frustrated', 'difficult'].includes(token)
+  ).length;
+  
+  let sentiment = 'neutral';
+  if (positiveWords > negativeWords) sentiment = 'positive';
+  if (negativeWords > positiveWords) sentiment = 'negative';
+  
+  // Determine complexity preference
+  const complexityIndicators = tokens.filter(token => 
+    ['simple', 'basic', 'easy', 'quick', 'brief'].includes(token)
+  ).length;
+  const complexity = complexityIndicators > 2 ? 'simple' : 'detailed';
+  
+  return {
+    topics: [...new Set([...bioTopics, ...codeTopics])],
+    sentiment,
+    complexity,
+    recentContext: recentMessages.map(m => `${m.role}: ${m.content.slice(0, 100)}`).join('\n')
+  };
+}
+
+/**
+ * Weighs the relevance of different conversation parts using attention-like mechanism
+ */
+export function calculateAttentionWeights(
+  currentQuery: string, 
+  conversationHistory: ChatMessage[]
+): Map<string, number> {
+  const currentTokens = tokenizeText(currentQuery);
+  const currentEmbedding = generateSimpleEmbedding(currentTokens);
+  const weights = new Map<string, number>();
+  
+  conversationHistory.forEach((message, index) => {
+    const messageTokens = tokenizeText(message.content);
+    const messageEmbedding = generateSimpleEmbedding(messageTokens);
+    const similarity = calculateSimilarity(currentEmbedding, messageEmbedding);
+    
+    // Weight recent messages higher, but consider semantic similarity
+    const recencyWeight = Math.exp(-0.1 * (conversationHistory.length - index - 1));
+    const finalWeight = similarity * 0.7 + recencyWeight * 0.3;
+    
+    weights.set(message.id, finalWeight);
+  });
+  
+  return weights;
+}
+
+// ========== 3. RESPONSE GENERATION ==========
+
+/**
+ * Generates engaging conversation hooks based on context
+ */
+export function generateConversationHook(
+  intent: string, 
+  context: { topics: string[]; sentiment: string; complexity: string }
+): string {
+  const hooks = {
+    greeting: {
+      positive: ["Great to see you again! 🌟", "Hello! Ready for another exciting session? 🚀", "Hey there! 😊"],
+      negative: ["Hi there! Let's turn things around today! 💪", "Hello! I'm here to help make things easier. 🤝"],
+      neutral: ["Hello! What can we explore together today? 🔬", "Hi! What's on your research agenda? 📋"]
+    },
+    question: {
+      positive: ["Excellent question! 🎯", "Great thinking! Let me break this down:", "Love the curiosity! Here's what I know:"],
+      negative: ["I understand this can be confusing. Let's clarify:", "No worries! This is actually simpler than it seems:"],
+      neutral: ["Good question! Let's dive into this:", "Interesting topic! Here's the breakdown:"]
+    },
+    code_request: {
+      positive: ["Perfect! I love coding challenges! 💻", "Awesome! Let's build something great:", "Excellent choice! Here's your solution:"],
+      negative: ["Don't worry, coding gets easier with practice! Here's help:", "No problem! Let's solve this step by step:"],
+      neutral: ["Absolutely! Here's a clean solution for you:", "Sure thing! Let me code that up:"]
+    },
+    bioinformatics: {
+      positive: ["Fantastic! Bioinformatics is my favorite topic! 🧬", "Excellent! Let's dive into the science:", "Perfect timing! Here's what we can do:"],
+      negative: ["I know bioinformatics can seem overwhelming. Let's simplify:", "No worries! Let's break this down clearly:"],
+      neutral: ["Great! Let's analyze this together:", "Interesting! Here's the scientific approach:"]
+    }
+  };
+  
+  const intentHooks = hooks[intent as keyof typeof hooks] || hooks.question;
+  const sentimentHooks = intentHooks[context.sentiment as keyof typeof intentHooks] || intentHooks.neutral;
+  
+  return sentimentHooks[Math.floor(Math.random() * sentimentHooks.length)];
+}
+
+/**
+ * Structures content for optimal readability and engagement
+ */
+export function structureResponseContent(
+  content: string, 
+  context: { complexity: string; topics: string[] }
+): string {
+  if (content.length < 100) return content; // Keep short responses simple
+  
+  const lines = content.split('\n').filter(line => line.trim());
+  
+  if (context.complexity === 'simple') {
+    // For simple responses, use clear structure with emojis
+    return lines.map((line, i) => {
+      if (i === 0) return `**${line}**`;
+      if (line.includes(':')) return `🔹 ${line}`;
+      return line;
+    }).join('\n\n');
+  }
+  
+  // For detailed responses, use comprehensive structure
+  let structured = '';
+  
+  // Add main point
+  if (lines.length > 0) {
+    structured += `**Key Insight:** ${lines[0]}\n\n`;
+  }
+  
+  // Add details with visual separation
+  if (lines.length > 1) {
+    structured += `**Details:**\n\n`;
+    lines.slice(1, 4).forEach((line, i) => {
+      const emoji = getContentEmoji(line, context.topics);
+      structured += `${emoji} ${line}\n\n`;
+    });
+  }
+  
+  return structured.trim();
+}
+
+/**
+ * Generates contextual follow-up suggestions
+ */
+export function generateSmartFollowUps(
+  intent: string, 
+  content: string, 
+  context: { topics: string[] }
+): string[] {
+  const followUps: Record<string, string[]> = {
+    code_request: [
+      "Want me to add CSS styling to this?",
+      "Need help with JavaScript functionality?",
+      "Should I explain how this code works?",
+      "Want to see a more advanced version?"
+    ],
+    bioinformatics: [
+      "Ready to analyze your sequence data?",
+      "Want to explore related analysis tools?",
+      "Need help with data visualization?",
+      "Should we dive deeper into the methodology?"
+    ],
+    question: [
+      "Want a practical example?",
+      "Need more detailed explanation?",
+      "Should I show you the code implementation?",
+      "Interested in related topics?"
+    ]
+  };
+  
+  const baseFollowUps = followUps[intent] || followUps.question;
+  
+  // Customize based on detected topics
+  const customFollowUps = [];
+  if (context.topics.includes('dna')) customFollowUps.push("Want to analyze DNA sequences?");
+  if (context.topics.includes('code')) customFollowUps.push("Need the complete code implementation?");
+  if (context.topics.includes('protein')) customFollowUps.push("Should we explore protein analysis tools?");
+  
+  return [...customFollowUps, ...baseFollowUps.slice(0, 2)].slice(0, 3);
+}
+
+/**
+ * Gets appropriate emoji for content based on context
+ */
+function getContentEmoji(content: string, topics: string[]): string {
+  const contentLower = content.toLowerCase();
+  
+  if (contentLower.includes('dna') || contentLower.includes('sequence')) return '🧬';
+  if (contentLower.includes('code') || contentLower.includes('function')) return '💻';
+  if (contentLower.includes('analysis') || contentLower.includes('result')) return '📊';
+  if (contentLower.includes('step') || contentLower.includes('process')) return '🔄';
+  if (contentLower.includes('tip') || contentLower.includes('note')) return '💡';
+  if (contentLower.includes('error') || contentLower.includes('issue')) return '⚠️';
+  if (contentLower.includes('success') || contentLower.includes('complete')) return '✅';
+  
+  return '🔹';
+}
 
 /**
  * Detects if a message appears to be templated or generic.
@@ -365,29 +624,94 @@ export async function enhanceResponse(
 ): Promise<ChatMessage> {
   let content = message.content;
 
-  // Detect user intent if we have the original user message
+  // ========== APPLY NEW CONVERSATIONAL FLOW ==========
+  
   if (options.userMessage) {
     const intent = detectUserIntent(options.userMessage);
-
-    // For specific intents, use natural responses instead of AI-generated content
+    
+    // Analyze conversation context for better understanding
+    const conversationContext = analyzeConversationContext(options.context.previousResponses);
+    
+    // Generate embeddings for semantic understanding
+    const userTokens = tokenizeText(options.userMessage);
+    const userEmbedding = generateSimpleEmbedding(userTokens);
+    
+    // Calculate attention weights for relevant context
+    const attentionWeights = calculateAttentionWeights(options.userMessage, options.context.previousResponses);
+    
+    // For specific intents, use enhanced natural responses
     if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics'].includes(intent)) {
-      content = generateNaturalResponse(intent, options.userMessage);
-      return { ...message, content };
-    }
-
-    // For code requests, ensure proper formatting
-    if (intent === 'code_request') {
-      const naturalResponse = generateNaturalResponse(intent, options.userMessage);
-      if (!content.includes('```') && !content.includes('<pre>')) {
-        // If AI didn't provide code, generate a basic HTML example
-        content = `${naturalResponse}\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>My Page</title>\n</head>\n<body>\n    <h1>Hello World!</h1>\n    <p>This is a basic HTML page.</p>\n</body>\n</html>\n\`\`\``;
+      // Generate engaging hook
+      const hook = generateConversationHook(intent, conversationContext);
+      
+      if (intent === 'capability_inquiry' || intent === 'bioinformatics') {
+        content = generateNaturalResponse(intent, options.userMessage);
       } else {
-        content = `${naturalResponse}\n\n${content}`;
+        content = hook;
       }
       
-      // Add follow-up suggestions
-      content += generateFollowUpSuggestions(intent, options.userMessage, options.context);
-      return { ...message, content };
+      // Add contextual follow-ups for non-simple intents
+      if (['capability_inquiry', 'bioinformatics'].includes(intent)) {
+        const followUps = generateSmartFollowUps(intent, content, conversationContext);
+        if (followUps.length > 0) {
+          content += `\n\n💡 **What interests you most?**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+        }
+      }
+      
+      return { 
+        ...message, 
+        content,
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext,
+          embedding: {
+            vector: userEmbedding,
+            model: 'simple_bow',
+            dimension: userEmbedding.length,
+            timestamp: Date.now()
+          }
+        }
+      };
+    }
+
+    // For code requests, ensure proper formatting with hooks
+    if (intent === 'code_request') {
+      const hook = generateConversationHook(intent, conversationContext);
+      
+      if (!content.includes('```') && !content.includes('<pre>')) {
+        // Generate code based on request type
+        content = `${hook}\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Ready to Run Example</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }\n        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }\n        .btn:hover { background: #0056b3; }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <h1>🚀 Ready to Run HTML Page</h1>\n        <p>This is a complete, ready-to-use HTML page with styling!</p>\n        <button class="btn" onclick="alert('Hello World!')">Click Me!</button>\n    </div>\n</body>\n</html>\n\`\`\``;
+      } else {
+        content = `${hook}\n\n${content}`;
+      }
+      
+      // Add smart follow-ups
+      const followUps = generateSmartFollowUps(intent, content, conversationContext);
+      content += `\n\n💡 **Next steps:**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+      
+      return { 
+        ...message, 
+        content,
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext
+        }
+      };
+    }
+
+    // For questions and general responses, apply enhanced structure
+    if (!isSimpleResponse(content)) {
+      const hook = generateConversationHook(intent, conversationContext);
+      const structuredContent = structureResponseContent(content, conversationContext);
+      const followUps = generateSmartFollowUps(intent, content, conversationContext);
+      
+      content = `${hook}\n\n${structuredContent}`;
+      
+      if (followUps.length > 0) {
+        content += `\n\n💡 **Want to explore more?**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+      }
     }
   }
 
@@ -396,35 +720,34 @@ export async function enhanceResponse(
     content = simplifyResponse(content, options.userMessage);
   }
 
-  // Casual tone adjustments
+  // Enhanced tone adjustments
   if (options.tone === 'casual') {
     content = content
       .replace(/\b(I will|I shall)\b/g, "I'll")
       .replace(/\b(you will|you shall)\b/g, "you'll")
       .replace(/\b(that is)\b/g, "that's")
-      .replace(/\b(it is)\b/g, "it's");
+      .replace(/\b(it is)\b/g, "it's")
+      .replace(/However,/g, "But,")
+      .replace(/Therefore,/g, "So,");
   }
 
-  // Add empathy or urgency markers
+  // Add empathy or urgency markers with better context awareness
   if (options.tone === 'frustrated') {
-    content = `I understand this can be frustrating. ${content}`;
+    content = `I understand this can be challenging. Let's work through it together! 💪\n\n${content}`;
   }
   if (options.tone === 'urgent') {
-    content = `Let's address this right away. ${content}`;
+    content = `⚡ Let's get this sorted right away!\n\n${content}`;
   }
 
-  // Add follow-up suggestions for complex responses
-  if (options.userMessage && !isSimpleResponse(content)) {
-    const intent = detectUserIntent(options.userMessage);
-    content += generateFollowUpSuggestions(intent, options.userMessage, options.context);
-  }
-
-  // Apply structure & formatting only for complex responses
-  if (!isSimpleResponse(content)) {
-    content = applyProStructureFormatting(content, options);
-  }
-
-  return { ...message, content };
+  return { 
+    ...message, 
+    content,
+    metadata: {
+      ...message.metadata,
+      enhanced: true,
+      enhancementTimestamp: Date.now()
+    }
+  };
 }
 
 /**
