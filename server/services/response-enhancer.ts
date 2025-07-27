@@ -49,22 +49,43 @@ export function selectBestResponse(primary: ChatMessage, alternate: ChatMessage)
 }
 
 /**
- * Detects user intent from their message
+ * Detects user intent from their message with improved pattern matching
  */
 export function detectUserIntent(userMessage: string): string {
   const msg = userMessage.toLowerCase().trim();
 
-  // Expanded greeting patterns (including variations, typos, and casual forms)
+  // Enhanced greeting patterns (including more variations and casual forms)
   const greetingPatterns = [
     /^(hello|hi|hey|greetings|good morning|good afternoon|good evening|sup|yo|hiya|howdy|waddup|wassup)\b/i,
     /^(hello thy|hi thy|hey thy|greetings thy|hai thy|helo thy)\b/i,
     /^(helo|hai|ey|eyo|yoo|heya|heyy|hii|hiiii)\b/i,
-    /^(wazup|whats up|what's up|gud morning|good mornin|gm)\b/i,
-    /^(salutations|bonjour|hola|ciao|aloha)\b/i
+    /^(wazup|whats up|what's up|gud morning|good mornin|gm|hello wazup)\b/i,
+    /^(salutations|bonjour|hola|ciao|aloha|greetings|morning|afternoon|evening)\b/i
   ];
 
   if (greetingPatterns.some(pattern => pattern.test(msg))) {
     return 'greeting';
+  }
+
+  // Code request patterns
+  const codePatterns = [
+    /\b(give me|show me|create|write|generate|make me).*(code|html|css|javascript|python|example)\b/i,
+    /\b(html|css|javascript|python|code).*(example|template|sample)\b/i,
+    /^(ready to run|give me an? .* example)\b/i
+  ];
+
+  if (codePatterns.some(pattern => pattern.test(msg))) {
+    return 'code_request';
+  }
+
+  // Capability inquiry patterns
+  const capabilityPatterns = [
+    /\b(what are you|what can you|what do you|what are you good at|what are you after|capabilities|skills)\b/i,
+    /\b(help me with|assist me with|what can you help)\b/i
+  ];
+
+  if (capabilityPatterns.some(pattern => pattern.test(msg))) {
+    return 'capability_inquiry';
   }
 
   // Thanks patterns
@@ -88,6 +109,16 @@ export function detectUserIntent(userMessage: string): string {
     return 'request';
   }
 
+  // Bioinformatics specific patterns
+  const bioPatterns = [
+    /\b(sequence|dna|rna|protein|blast|alignment|crispr|pcr|analysis)\b/i,
+    /\b(biological|bioinformatics|molecular|genetics|genome)\b/i
+  ];
+
+  if (bioPatterns.some(pattern => pattern.test(msg))) {
+    return 'bioinformatics';
+  }
+
   // Farewell patterns
   const farewellPatterns = [
     /^(bye|goodbye|see you|see ya|talk later|catch you later|peace|adios|au revoir)\b/i,
@@ -102,7 +133,7 @@ export function detectUserIntent(userMessage: string): string {
 }
 
 /**
- * Generates natural responses based on intent
+ * Generates natural responses based on intent with enhanced personality
  */
 export function generateNaturalResponse(intent: string, userMessage: string): string {
   switch (intent) {
@@ -110,15 +141,44 @@ export function generateNaturalResponse(intent: string, userMessage: string): st
       const greetingResponses = [
         "Hello! What can I assist you with?",
         "Hi! Ready to dive into some bioinformatics work?",
-        "Greetings! What would you like to explore today?",
-        "Hello! How can I help with your research today?",
-        "Hey! 👋 What's on your mind?",
-        "Hi there! What can I do for you?",
-        "Hello! 🧬 Ready to tackle some science?",
-        "Hey! What bioinformatics challenge can I help with?",
-        "Hi! Great to see you back! 😊"
+        "Hey there! 👋 What's on your mind?",
+        "Hi! Great to see you back! 😊",
+        "Hello! 🧬 What can I help you with today?",
+        "Hey! What would you like to explore?",
+        "Hi there! How can I assist you?",
+        "Hello! Ready to tackle some science? 🔬",
+        "Hey! What's up? 😊"
       ];
       return greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
+
+    case 'code_request':
+      const codeResponses = [
+        "Sure! Here's a code example for you:",
+        "Absolutely! Let me create that for you:",
+        "Coming right up! Here's the code:",
+        "Perfect! Here's what you need:",
+        "Got it! Here's a working example:",
+        "No problem! Here's the code you requested:"
+      ];
+      return codeResponses[Math.floor(Math.random() * codeResponses.length)];
+
+    case 'capability_inquiry':
+      return `I'm BioScriptor, your AI bioinformatics assistant! 🧬
+
+**Here's what I excel at:**
+
+🔹 **Bioinformatics Analysis** — DNA/RNA/protein sequences, BLAST searches, alignments
+🔹 **Code Generation** — Python, R, HTML, CSS, JavaScript with working examples
+🔹 **CRISPR Design** — Guide RNA sequences and off-target analysis
+🔹 **PCR Simulation** — Primer design and virtual gel electrophoresis
+🔹 **File Processing** — FASTA, FASTQ, VCF, and other bioinformatics formats
+
+💡 **Try asking:**
+• "Design CRISPR guides for my gene"
+• "Give me HTML code example"
+• "Analyze this protein sequence"
+
+What interests you most?`;
 
     case 'thanks':
       const thanksResponses = [
@@ -145,6 +205,23 @@ export function generateNaturalResponse(intent: string, userMessage: string): st
         "Peace out! Hope your research goes well! ✨"
       ];
       return farewellResponses[Math.floor(Math.random() * farewellResponses.length)];
+
+    case 'bioinformatics':
+      return `Great! I can help with bioinformatics analysis. 🧬
+
+**What type of analysis do you need?**
+
+🔹 **Sequence Analysis** — DNA, RNA, or protein sequences
+🔹 **CRISPR Design** — Guide RNA design and off-target checking
+🔹 **PCR Simulation** — Primer design and optimization
+🔹 **File Processing** — FASTA, FASTQ, VCF format handling
+
+💡 **Quick suggestions:**
+1️⃣ Upload a sequence file for analysis
+2️⃣ Ask about specific tools or methods
+3️⃣ Request code for data processing
+
+What would you like to start with?`;
 
     default:
       return '';
@@ -234,7 +311,44 @@ What's your current project or challenge?`;
 }
 
 /**
- * Adds tone, formatting, and structure to a message.
+ * Generates smart follow-up suggestions based on context
+ */
+function generateFollowUpSuggestions(intent: string, userMessage: string, context: any): string {
+  const suggestions: Record<string, string[]> = {
+    'code_request': [
+      "Need CSS styling for this?",
+      "Want me to explain how it works?",
+      "Should I add JavaScript functionality?"
+    ],
+    'bioinformatics': [
+      "Upload a sequence file for analysis",
+      "Learn about specific analysis tools",
+      "Generate processing scripts"
+    ],
+    'question': [
+      "Need a working example?",
+      "Want step-by-step instructions?",
+      "Should I provide more details?"
+    ],
+    'general': [
+      "Ask about bioinformatics analysis",
+      "Request code examples",
+      "Upload files for processing"
+    ]
+  };
+
+  const intentSuggestions = suggestions[intent] || suggestions.general;
+  const randomSuggestions = intentSuggestions.slice(0, 2);
+  
+  if (randomSuggestions.length > 0) {
+    return `\n\n💡 **Quick suggestions:**\n${randomSuggestions.map((s, i) => `${i + 1}️⃣ ${s}`).join('\n')}`;
+  }
+  
+  return '';
+}
+
+/**
+ * Adds tone, formatting, and structure to a message with enhanced intent handling
  */
 export async function enhanceResponse(
   message: ChatMessage,
@@ -255,9 +369,24 @@ export async function enhanceResponse(
   if (options.userMessage) {
     const intent = detectUserIntent(options.userMessage);
 
-    // For greetings and farewells, use natural responses instead of explanations
-    if (intent === 'greeting' || intent === 'farewell') {
-      content = generateNaturalResponse(intent, content);
+    // For specific intents, use natural responses instead of AI-generated content
+    if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics'].includes(intent)) {
+      content = generateNaturalResponse(intent, options.userMessage);
+      return { ...message, content };
+    }
+
+    // For code requests, ensure proper formatting
+    if (intent === 'code_request') {
+      const naturalResponse = generateNaturalResponse(intent, options.userMessage);
+      if (!content.includes('```') && !content.includes('<pre>')) {
+        // If AI didn't provide code, generate a basic HTML example
+        content = `${naturalResponse}\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>My Page</title>\n</head>\n<body>\n    <h1>Hello World!</h1>\n    <p>This is a basic HTML page.</p>\n</body>\n</html>\n\`\`\``;
+      } else {
+        content = `${naturalResponse}\n\n${content}`;
+      }
+      
+      // Add follow-up suggestions
+      content += generateFollowUpSuggestions(intent, options.userMessage, options.context);
       return { ...message, content };
     }
   }
@@ -284,9 +413,10 @@ export async function enhanceResponse(
     content = `Let's address this right away. ${content}`;
   }
 
-  // Beginner support message
-  if (options.userSkillLevel === 'beginner' && !content.includes('For example')) {
-    content += '\n\nWould you like an example or a simpler explanation?';
+  // Add follow-up suggestions for complex responses
+  if (options.userMessage && !isSimpleResponse(content)) {
+    const intent = detectUserIntent(options.userMessage);
+    content += generateFollowUpSuggestions(intent, options.userMessage, options.context);
   }
 
   // Apply structure & formatting only for complex responses
