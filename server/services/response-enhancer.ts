@@ -53,7 +53,7 @@ export function selectBestResponse(primary: ChatMessage, alternate: ChatMessage)
  */
 export function detectUserIntent(userMessage: string): string {
   const msg = userMessage.toLowerCase().trim();
-  
+
   // Expanded greeting patterns (including variations, typos, and casual forms)
   const greetingPatterns = [
     /^(hello|hi|hey|greetings|good morning|good afternoon|good evening|sup|yo|hiya|howdy|waddup|wassup)\b/i,
@@ -62,53 +62,52 @@ export function detectUserIntent(userMessage: string): string {
     /^(wazup|whats up|what's up|gud morning|good mornin|gm)\b/i,
     /^(salutations|bonjour|hola|ciao|aloha)\b/i
   ];
-  
+
   if (greetingPatterns.some(pattern => pattern.test(msg))) {
     return 'greeting';
   }
-  
+
   // Thanks patterns
   const thanksPatterns = [
     /^(thanks|thank you|thx|ty|appreciate|cheers|much appreciated)\b/i,
     /\b(thanks|thank you|thx|ty|appreciate it|cheers)\b/i
   ];
-  
+
   if (thanksPatterns.some(pattern => pattern.test(msg))) {
     return 'thanks';
   }
-  
+
   // Question patterns
   if (/^(what|how|where|when|why|can you|could you|would you|is it|are there|do you|will you)\b/i.test(msg) ||
       msg.includes('?')) {
     return 'question';
   }
-  
+
   // Request patterns
   if (/^(please|can you help|i need|help me|assist me|show me|could you|would you mind)\b/i.test(msg)) {
     return 'request';
   }
-  
+
   // Farewell patterns
   const farewellPatterns = [
     /^(bye|goodbye|see you|see ya|talk later|catch you later|peace|adios|au revoir)\b/i,
     /^(gotta go|gtg|cya|take care|until next time|farewell)\b/i
   ];
-  
+
   if (farewellPatterns.some(pattern => pattern.test(msg))) {
     return 'farewell';
   }
-  
+
   return 'general';
 }
 
 /**
  * Generates natural responses based on intent
  */
-export function generateNaturalResponse(intent: string, originalContent: string): string {
+export function generateNaturalResponse(intent: string, userMessage: string): string {
   switch (intent) {
     case 'greeting':
       const greetingResponses = [
-        "Hey there! 😊 How can I help you today?",
         "Hello! What can I assist you with?",
         "Hi! Ready to dive into some bioinformatics work?",
         "Greetings! What would you like to explore today?",
@@ -120,7 +119,7 @@ export function generateNaturalResponse(intent: string, originalContent: string)
         "Hi! Great to see you back! 😊"
       ];
       return greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
-      
+
     case 'thanks':
       const thanksResponses = [
         "You're welcome! 😊",
@@ -133,7 +132,7 @@ export function generateNaturalResponse(intent: string, originalContent: string)
         "Of course! That's what I'm here for! 🧬"
       ];
       return thanksResponses[Math.floor(Math.random() * thanksResponses.length)];
-      
+
     case 'farewell':
       const farewellResponses = [
         "Goodbye! Feel free to come back anytime.",
@@ -146,10 +145,92 @@ export function generateNaturalResponse(intent: string, originalContent: string)
         "Peace out! Hope your research goes well! ✨"
       ];
       return farewellResponses[Math.floor(Math.random() * farewellResponses.length)];
-      
+
     default:
-      return originalContent; // Keep original for questions and requests
+      return '';
   }
+}
+
+export function generateStructuredResponse(topic: string, userMessage: string): string {
+  const msg = userMessage.toLowerCase();
+
+  // Protein sequence analysis
+  if (msg.includes('protein') && (msg.includes('sequence') || msg.includes('analysis'))) {
+    return `Got it! Protein sequence analysis can involve several steps depending on what you're looking for.
+
+Here's what I can assist you with:
+
+🔹 **Sequence Alignment** — Compare your sequence with others using tools like BLAST or Clustal Omega.
+🔹 **Functional Prediction** — Identify domains, motifs, and possible biological roles.
+🔹 **Structure Analysis** — Predict 3D structure or analyze existing models.
+🔹 **Annotation** — Tag regions like signal peptides, binding sites, etc.
+
+💡 Would you like to:
+1️⃣ Align this sequence with known proteins?
+2️⃣ Predict its function or structure?
+3️⃣ Upload a sequence file for analysis?
+
+Let me know how you'd like to proceed!`;
+  }
+
+  // DNA/RNA sequence analysis
+  if ((msg.includes('dna') || msg.includes('rna')) && (msg.includes('sequence') || msg.includes('analysis'))) {
+    return `Perfect! DNA/RNA sequence analysis offers many possibilities depending on your research goals.
+
+Here's what I can help you with:
+
+🔹 **Sequence Alignment** — BLAST search against databases or align multiple sequences.
+🔹 **Gene Annotation** — Identify coding regions, promoters, and regulatory elements.
+🔹 **Variant Analysis** — Find SNPs, indels, and structural variations.
+🔹 **Quality Control** — Assess sequence quality and trim low-quality regions.
+
+💡 Would you like to:
+1️⃣ Run a BLAST search on your sequence?
+2️⃣ Annotate genes and features?
+3️⃣ Analyze sequence variants?
+
+What type of analysis interests you most?`;
+  }
+
+  // File upload assistance
+  if (msg.includes('file') || msg.includes('upload') || msg.includes('fasta') || msg.includes('fastq')) {
+    return `Great! I can help you analyze various bioinformatics file formats.
+
+Here's what I support:
+
+🔹 **FASTA Files** — Protein/DNA/RNA sequences for alignment and analysis.
+🔹 **FASTQ Files** — Raw sequencing data with quality scores.
+🔹 **VCF Files** — Variant calling format for genomic variations.
+🔹 **BED/GFF Files** — Genomic feature annotations.
+
+💡 Would you like to:
+1️⃣ Upload a file for immediate analysis?
+2️⃣ Learn about file format requirements?
+3️⃣ Get help preparing your data?
+
+What type of file are you working with?`;
+  }
+
+  // General bioinformatics help
+  if (msg.includes('bioinformatics') || msg.includes('analysis') || msg.includes('help')) {
+    return `Excellent! I'm here to help with all aspects of bioinformatics analysis.
+
+Here are my main capabilities:
+
+🔹 **Sequence Analysis** — DNA, RNA, and protein sequence processing.
+🔹 **File Processing** — Handle FASTA, FASTQ, VCF, and other formats.
+🔹 **Tool Guidance** — Help with popular tools like BLAST, BWA, GATK, etc.
+🔹 **Code Generation** — Create scripts for data processing pipelines.
+
+💡 Would you like to:
+1️⃣ Start with sequence analysis?
+2️⃣ Get help with a specific tool?
+3️⃣ Create a data processing pipeline?
+
+What's your current project or challenge?`;
+  }
+
+  return '';
 }
 
 /**
@@ -173,7 +254,7 @@ export async function enhanceResponse(
   // Detect user intent if we have the original user message
   if (options.userMessage) {
     const intent = detectUserIntent(options.userMessage);
-    
+
     // For greetings and farewells, use natural responses instead of explanations
     if (intent === 'greeting' || intent === 'farewell') {
       content = generateNaturalResponse(intent, content);
@@ -221,21 +302,21 @@ export async function enhanceResponse(
  */
 function isOverExplanation(content: string, userMessage?: string): boolean {
   if (!userMessage) return false;
-  
+
   const userMsg = userMessage.toLowerCase();
   const responseLength = content.length;
-  
+
   // If user said a simple greeting and response is long, it's over-explaining
   if (responseLength > 100 && /^(hello|hi|hey|greetings|sup|yo)\b/i.test(userMsg)) {
     return true;
   }
-  
+
   // If response contains academic explanations for simple intents
   if (content.includes('archaic') || content.includes('etymology') || 
       content.includes('linguistic') || content.includes('second-person singular')) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -244,7 +325,7 @@ function isOverExplanation(content: string, userMessage?: string): boolean {
  */
 function simplifyResponse(content: string, userMessage?: string): string {
   if (!userMessage) return content;
-  
+
   const intent = detectUserIntent(userMessage);
   return generateNaturalResponse(intent, content);
 }
