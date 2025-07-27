@@ -818,7 +818,7 @@ export function detectUserIntent(userMessage: string): string {
  */
 function generateNaturalResponse(intent: string, userMessage: string): string {
   const msg = userMessage.toLowerCase();
-  
+
   switch (intent) {
     case 'trending_inquiry':
       return `Good question! Let's dive into this:
@@ -960,7 +960,7 @@ function generateCodeExample(userMessage: string): string {
         <button class="btn" onclick="showMessage()">Click Me!</button>
         <div id="message" style="margin-top: 20px;"></div>
     </div>
-    
+
     <script>
         function showMessage() {
             document.getElementById('message').innerHTML = 
@@ -982,22 +982,22 @@ from datetime import datetime
 def main():
     """Main function demonstrating Python capabilities"""
     print("🐍 Python Script Ready!")
-    
+
     # Data processing example
     data = {
         'name': ['Alice', 'Bob', 'Charlie'],
         'score': [95, 87, 92],
         'date': [datetime.now().strftime('%Y-%m-%d')] * 3
     }
-    
+
     df = pd.DataFrame(data)
     print("\\n📊 Data Summary:")
     print(df)
-    
+
     # Analysis
     avg_score = df['score'].mean()
     print(f"\\n📈 Average Score: {avg_score:.1f}")
-    
+
     return df
 
 if __name__ == "__main__":
@@ -1010,26 +1010,26 @@ if __name__ == "__main__":
 // Ready-to-run JavaScript Example
 function createInteractiveApp() {
     console.log('🚀 JavaScript App Starting...');
-    
+
     // Create dynamic content
     const app = {
         data: ['Item 1', 'Item 2', 'Item 3'],
-        
+
         render() {
             const container = document.createElement('div');
             container.style.cssText = 'padding: 20px; font-family: Arial;';
-            
+
             this.data.forEach(item => {
                 const element = document.createElement('div');
                 element.textContent = item;
                 element.style.cssText = 'margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;';
                 container.appendChild(element);
             });
-            
+
             document.body.appendChild(container);
         }
     };
-    
+
     app.render();
     console.log('✅ App ready!');
 }
@@ -1151,4 +1151,90 @@ export async function enhanceResponse(
       structuredResponse += `### 🧰 Solution\n${hook}\n\n`;
 
       // Example/Demo
-      if (!content.includes('
+      if (!content.includes('```')) {
+        const codeExample = generateCodeExample(options.userMessage);
+        structuredResponse += `### 🧪 Example\n${codeExample}\n\n`;
+      }
+
+      // Notes
+      structuredResponse += `### 📌 Notes\n⚠️ Always backup your data before making changes.\n\n`;
+
+      // Follow-ups
+      const followUps = generateSmartFollowUps(intent, content, conversationContext);
+      structuredResponse += followUps;
+
+      return { 
+        ...message, 
+        content: structuredResponse,
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext,
+          structured: true
+        }
+      };
+    }
+
+    // For other intents, apply standard enhancement
+    const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+
+    // Structure the response content
+    const structuredContent = structureResponseContent(content, {
+      complexity: conversationContext.complexity,
+      topics: conversationContext.topics,
+      intent,
+      userMessage: options.userMessage
+    });
+
+    let enhancedContent = '';
+
+    // Add hook if it adds value
+    if (hook && !content.toLowerCase().includes(hook.toLowerCase().slice(0, 20))) {
+      enhancedContent = `${hook}\n\n${structuredContent}`;
+    } else {
+      enhancedContent = structuredContent;
+    }
+
+    // Add follow-up suggestions for interactive intents
+    if (['question', 'request', 'code_request'].includes(intent)) {
+      const followUps = generateSmartFollowUps(intent, content, conversationContext);
+      enhancedContent += `\n\n${followUps}`;
+    }
+
+    return { 
+      ...message, 
+      content: enhancedContent,
+      metadata: {
+        ...message.metadata,
+        intent,
+        conversationContext,
+        embedding: {
+          vector: userEmbedding,
+          model: 'simple_bow',
+          dimension: userEmbedding.length,
+          timestamp: Date.now()
+        }
+      }
+    };
+  }
+
+  // ========== FALLBACK TO ORIGINAL ENHANCEMENT ==========
+
+  // Apply contextual notes
+  content = addContextualNotes(content);
+
+  // Add subtle personality touches based on tone
+  if (options.tone) {
+    content = addSubtlePersonality(content, options.tone);
+  }
+
+  return { 
+    ...message, 
+    content,
+    metadata: {
+      ...message.metadata,
+      enhanced: true,
+      enhancementApplied: Date.now()
+    }
+  };
+}
