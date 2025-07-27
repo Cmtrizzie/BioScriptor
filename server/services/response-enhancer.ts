@@ -862,7 +862,93 @@ function generateCodeExample(userMessage: string): string {
         <h1>🚀 Welcome to Your New Website</h1>
         <p>This is a complete, responsive HTML page with modern styling and interactive elements!</p>
         <button class="btn" onclick="showMessage()">Click Me!</button>
-        <div id="message" style="margin') && (response.includes('DNA') || response.includes('RNA') || response.includes('sequence'))) {
+        <div id="message" style="margin-top: 20px;"></div>
+    </div>
+    
+    <script>
+        function showMessage() {
+            document.getElementById('message').innerHTML = 
+                '<p style="color: #28a745; font-weight: bold; margin-top: 15px;">🎉 Hello! Your website is working perfectly!</p>';
+        }
+    </script>
+</body>
+</html>
+\`\`\``;
+  }
+
+  if (msg.includes('python') || msg.includes('script')) {
+    return `\`\`\`python
+# Complete Python Script Example
+import pandas as pd
+import numpy as np
+from datetime import datetime
+
+def main():
+    """Main function demonstrating Python capabilities"""
+    print("🐍 Python Script Ready!")
+    
+    # Data processing example
+    data = {
+        'name': ['Alice', 'Bob', 'Charlie'],
+        'score': [95, 87, 92],
+        'date': [datetime.now().strftime('%Y-%m-%d')] * 3
+    }
+    
+    df = pd.DataFrame(data)
+    print("\\n📊 Data Summary:")
+    print(df)
+    
+    # Analysis
+    avg_score = df['score'].mean()
+    print(f"\\n📈 Average Score: {avg_score:.1f}")
+    
+    return df
+
+if __name__ == "__main__":
+    result = main()
+    print("\\n✅ Script completed successfully!")
+\`\`\``;
+  }
+
+  return `\`\`\`javascript
+// Ready-to-run JavaScript Example
+function createInteractiveApp() {
+    console.log('🚀 JavaScript App Starting...');
+    
+    // Create dynamic content
+    const app = {
+        data: ['Item 1', 'Item 2', 'Item 3'],
+        
+        render() {
+            const container = document.createElement('div');
+            container.style.cssText = 'padding: 20px; font-family: Arial;';
+            
+            this.data.forEach(item => {
+                const element = document.createElement('div');
+                element.textContent = item;
+                element.style.cssText = 'margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;';
+                container.appendChild(element);
+            });
+            
+            document.body.appendChild(container);
+        }
+    };
+    
+    app.render();
+    console.log('✅ App ready!');
+}
+
+// Run the app
+createInteractiveApp();
+\`\`\``;
+}
+
+/**
+ * Add contextual notes based on content type
+ */
+function addContextualNotes(response: string): string {
+  // Add notes for bioinformatics content
+  if ((response.includes('sequence') || response.includes('CRISPR') || response.includes('PCR')) && (response.includes('DNA') || response.includes('RNA') || response.includes('sequence'))) {
     return `${response}
 
 *Note: Always validate bioinformatics results with experimental data when possible.*`;
