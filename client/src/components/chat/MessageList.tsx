@@ -6,6 +6,26 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+// Typing effect component
+const TypingEffect = ({ text, speed = 30, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, speed);
+      return () => clearTimeout(timer);
+    } else if (onComplete && currentIndex === text.length) {
+      onComplete();
+    }
+  }, [currentIndex, text, speed, onComplete]);
+
+  return <span>{displayedText}</span>;
+};
+
 interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
@@ -183,7 +203,18 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-bio-teal rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm font-medium opacity-80">🧬 BioScriptor is analyzing...</span>
+                  <span className="text-sm font-medium opacity-80">
+                    <TypingEffect 
+                      text="🧬 BioScriptor is analyzing your query..."
+                      speed={80}
+                    />
+                  </span>
+                </div>
+                <div className="mt-2 text-xs opacity-60">
+                  <TypingEffect 
+                    text="Processing molecular data and generating insights..."
+                    speed={50}
+                  />
                 </div>
               </div>
             </div>
