@@ -423,17 +423,23 @@ export function generateConversationHook(
 }
 
 /**
- * Structures content for optimal readability and engagement
+ * Structures content using professional modular sections
  */
 export function structureResponseContent(
   content: string, 
-  context: { complexity: string; topics: string[] }
+  context: { complexity: string; topics: string[]; intent?: string; userMessage?: string }
 ): string {
   if (content.length < 100) return content; // Keep short responses simple
   
-  const lines = content.split('\n').filter(line => line.trim());
+  // Don't restructure if already formatted
+  if (content.includes('### ✅') || content.includes('### 🧰') || content.includes('**Key Insight:**')) {
+    return content;
+  }
   
-  if (context.complexity === 'simple') {
+  const lines = content.split('\n').filter(line => line.trim());
+  const intent = context.intent || 'general';
+  
+  if (context.complexity === 'simple' || lines.length <= 2) {
     // For simple responses, use clear structure with emojis
     return lines.map((line, i) => {
       if (i === 0) return `**${line}**`;
@@ -442,34 +448,166 @@ export function structureResponseContent(
     }).join('\n\n');
   }
   
-  // For detailed responses, use comprehensive structure
+  // Apply professional modular structure for complex responses
+  return applyModularStructure(content, context);
+}
+
+/**
+ * Applies professional modular structure to responses
+ */
+function applyModularStructure(
+  content: string, 
+  context: { intent?: string; topics: string[]; userMessage?: string }
+): string {
+  const lines = content.split('\n').filter(line => line.trim());
+  const intent = context.intent || 'general';
+  
   let structured = '';
   
-  // Add main point
-  if (lines.length > 0) {
-    structured += `**Key Insight:** ${lines[0]}\n\n`;
+  // 1. What You Asked - Intent Summary
+  if (context.userMessage && shouldIncludeIntentSummary(intent)) {
+    const intentSummary = generateIntentSummary(context.userMessage, intent);
+    structured += `### ✅ What You Asked\n${intentSummary}\n\n`;
   }
   
-  // Add details with visual separation
-  if (lines.length > 1) {
-    structured += `**Details:**\n\n`;
-    lines.slice(1, 4).forEach((line, i) => {
-      const emoji = getContentEmoji(line, context.topics);
-      structured += `${emoji} ${line}\n\n`;
-    });
+  // 2. Solution or Explanation - Main Content
+  const mainContent = extractMainContent(lines);
+  if (mainContent) {
+    structured += `### 🧰 Solution\n${mainContent}\n\n`;
+  }
+  
+  // 3. Example or Demo - Code blocks or demonstrations
+  const exampleContent = extractExampleContent(content, context.topics);
+  if (exampleContent) {
+    structured += `### 🧪 Example\n${exampleContent}\n\n`;
+  }
+  
+  // 4. Notes/Warnings - Important information
+  const notesContent = extractNotesContent(lines);
+  if (notesContent) {
+    structured += `### 📌 Notes\n${notesContent}\n\n`;
   }
   
   return structured.trim();
 }
 
 /**
- * Generates contextual follow-up suggestions with personality-driven conversation closers
+ * Determines if intent summary should be included
+ */
+function shouldIncludeIntentSummary(intent: string): boolean {
+  return !['greeting', 'thanks', 'farewell'].includes(intent);
+}
+
+/**
+ * Generates intent summary from user message
+ */
+function generateIntentSummary(userMessage: string, intent: string): string {
+  const msg = userMessage.toLowerCase();
+  
+  if (intent === 'code_request') {
+    if (msg.includes('html') || msg.includes('webpage') || msg.includes('website')) {
+      return 'You want HTML code for a webpage or website.';
+    }
+    if (msg.includes('python') || msg.includes('script')) {
+      return 'You need a Python script or automation.';
+    }
+    if (msg.includes('javascript') || msg.includes('js')) {
+      return 'You want JavaScript code or functionality.';
+    }
+    return 'You requested code or a programming solution.';
+  }
+  
+  if (intent === 'bioinformatics') {
+    if (msg.includes('crispr')) return 'You need CRISPR design and analysis.';
+    if (msg.includes('pcr')) return 'You want PCR primer design or simulation.';
+    if (msg.includes('sequence')) return 'You need sequence analysis assistance.';
+    return 'You asked for bioinformatics analysis help.';
+  }
+  
+  if (intent === 'question') {
+    return 'You asked for information or explanation.';
+  }
+  
+  return 'You need assistance with your request.';
+}
+
+/**
+ * Extracts main content from response lines
+ */
+function extractMainContent(lines: string[]): string {
+  // Find the main explanatory content (usually first few non-code lines)
+  const mainLines = lines.filter(line => 
+    !line.startsWith('```') && 
+    !line.startsWith('💡') && 
+    !line.startsWith('⚠️') &&
+    !line.startsWith('📌') &&
+    line.length > 10
+  ).slice(0, 3);
+  
+  return mainLines.join('\n\n');
+}
+
+/**
+ * Extracts example content (code blocks, demonstrations)
+ */
+function extractExampleContent(content: string, topics: string[]): string {
+  // Extract code blocks
+  const codeBlocks = content.match(/```[\s\S]*?```/g);
+  if (codeBlocks && codeBlocks.length > 0) {
+    return codeBlocks.join('\n\n');
+  }
+  
+  // Look for example-like content
+  const lines = content.split('\n');
+  const exampleLines = lines.filter(line => 
+    line.toLowerCase().includes('example') ||
+    line.toLowerCase().includes('demo') ||
+    line.includes('→') ||
+    line.includes(':')
+  );
+  
+  if (exampleLines.length > 0) {
+    return exampleLines.slice(0, 2).join('\n');
+  }
+  
+  return '';
+}
+
+/**
+ * Extracts notes and warnings content
+ */
+function extractNotesContent(lines: string[]): string {
+  const noteLines = lines.filter(line => 
+    line.includes('💡') || 
+    line.includes('⚠️') || 
+    line.includes('📌') ||
+    line.toLowerCase().includes('note') ||
+    line.toLowerCase().includes('warning') ||
+    line.toLowerCase().includes('important')
+  );
+  
+  if (noteLines.length > 0) {
+    return noteLines.join('\n');
+  }
+  
+  // Generate contextual notes
+  const contextualNotes = [
+    '💡 This solution is ready to use and can be customized further.',
+    '📌 Make sure to test in your specific environment.',
+    '⚠️ Always backup your data before making changes.'
+  ];
+  
+  return contextualNotes[Math.floor(Math.random() * contextualNotes.length)];
+}
+
+/**
+ * Generates smart follow-up suggestions in structured format
  */
 export function generateSmartFollowUps(
   intent: string, 
   content: string, 
   context: { topics: string[]; personality?: PersonalityConfig; memory?: ConversationMemory }
-): string[] {
+): string {
   const personality = context.personality || PERSONALITY_PROFILES.mentor;
   const followUps: Record<string, string[]> = {
     code_request: [
@@ -507,9 +645,14 @@ export function generateSmartFollowUps(
   if (context.topics.includes('code')) customFollowUps.push("Add styling with TailwindCSS?");
   if (context.topics.includes('protein')) customFollowUps.push("Explore protein analysis tools?");
   
-  // Merge and return top 3 suggestions
+  // Merge and get top 3 suggestions
   const allSuggestions = [...customFollowUps, ...baseFollowUps];
-  return allSuggestions.slice(0, 3);
+  const topSuggestions = allSuggestions.slice(0, 3);
+  
+  // Format as structured suggestions section
+  const formattedSuggestions = topSuggestions.map(suggestion => `- ${suggestion}`).join('\n');
+  
+  return `### 💬 Suggestions\nWould you like me to:\n${formattedSuggestions}`;
 }
 
 /**
@@ -654,6 +797,165 @@ export function detectUserIntent(userMessage: string): string {
   if (bioPatterns.some(pattern => pattern.test(msg))) {
     return 'bioinformatics';
   }
+
+
+/**
+ * Generates appropriate code examples based on user request
+ */
+function generateCodeExample(userMessage: string): string {
+  const msg = userMessage.toLowerCase();
+  
+  if (msg.includes('html') || msg.includes('webpage') || msg.includes('website')) {
+    return `\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ready to Run Example</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+        }
+        .btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { 
+            background: #0056b3; 
+            transform: translateY(-2px);
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        p { color: #666; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Welcome to Your New Website</h1>
+        <p>This is a complete, responsive HTML page with modern styling and interactive elements!</p>
+        <button class="btn" onclick="showMessage()">Click Me!</button>
+        <div id="message" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <p>🎉 Great! The page is working perfectly!</p>
+        </div>
+    </div>
+    
+    <script>
+        function showMessage() {
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = messageDiv.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
+\`\`\``;
+  }
+  
+  if (msg.includes('python') || msg.includes('script')) {
+    return `\`\`\`python
+#!/usr/bin/env python3
+"""
+Ready-to-run Python script example
+Save as: example_script.py
+Run with: python example_script.py
+"""
+
+import os
+import datetime
+
+def main():
+    """Main function demonstrating common Python operations"""
+    print("🐍 Python Script Running!")
+    print(f"📅 Current time: {datetime.datetime.now()}")
+    print(f"📁 Current directory: {os.getcwd()}")
+    
+    # Example: File operations
+    files = [f for f in os.listdir('.') if f.endswith('.py')]
+    print(f"🔍 Found {len(files)} Python files in current directory")
+    
+    # Example: User interaction
+    name = input("👋 What's your name? ")
+    print(f"Nice to meet you, {name}! 🎉")
+    
+    return "Script completed successfully!"
+
+if __name__ == "__main__":
+    result = main()
+    print(f"✅ {result}")
+\`\`\``;
+  }
+  
+  if (msg.includes('javascript') || msg.includes('js')) {
+    return `\`\`\`javascript
+// Ready-to-run JavaScript example
+// Can be used in browser console or Node.js
+
+console.log("🚀 JavaScript is running!");
+
+// Example: Modern JavaScript features
+const greetUser = (name = "Developer") => {
+    return \`Hello, \${name}! Welcome to JavaScript! 🎉\`;
+};
+
+// Example: Async/await
+const fetchData = async () => {
+    try {
+        console.log("📡 Fetching data...");
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("✅ Data fetched successfully!");
+        return { message: "Data loaded", timestamp: new Date() };
+    } catch (error) {
+        console.error("❌ Error:", error);
+    }
+};
+
+// Example: DOM manipulation (if in browser)
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("🌐 DOM is ready!");
+        document.body.style.background = "linear-gradient(135deg, #667eea, #764ba2)";
+    });
+}
+
+// Run examples
+console.log(greetUser("Coder"));
+fetchData().then(data => console.log("📊 Result:", data));
+\`\`\``;
+  }
+  
+  // Default generic code example
+  return `\`\`\`javascript
+// Ready-to-use code example
+console.log("🎯 Your code is ready!");
+
+const example = {
+    message: "This is a working example",
+    timestamp: new Date(),
+    ready: true
+};
+
+console.log("📊 Example data:", example);
+\`\`\``;
+}
+
 
   // Farewell patterns
   const farewellPatterns = [
@@ -917,22 +1219,36 @@ export async function enhanceResponse(
       };
     }
 
-    // For code requests, ensure proper formatting with hooks
+    // For code requests, ensure proper formatting with structured approach
     if (intent === 'code_request') {
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
       
+      let structuredResponse = '';
+      
+      // Intent Summary
+      const intentSummary = generateIntentSummary(options.userMessage, intent);
+      structuredResponse += `### ✅ What You Asked\n${intentSummary}\n\n`;
+      
+      // Solution
+      structuredResponse += `### 🧰 Solution\n${hook}\n\n`;
+      
+      // Example/Demo
       if (!content.includes('```') && !content.includes('<pre>')) {
         // Generate code based on request type
-        content = `${hook}\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Ready to Run Example</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }\n        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }\n        .btn:hover { background: #0056b3; }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <h1>🚀 Ready to Run HTML Page</h1>\n        <p>This is a complete, ready-to-use HTML page with styling!</p>\n        <button class="btn" onclick="alert('Hello World!')">Click Me!</button>\n    </div>\n</body>\n</html>\n\`\`\``;
+        const codeExample = generateCodeExample(options.userMessage);
+        structuredResponse += `### 🧪 Example\n${codeExample}\n\n`;
       } else {
-        content = `${hook}\n\n${content}`;
+        structuredResponse += `### 🧪 Example\n${content}\n\n`;
       }
       
-      // Add smart follow-ups in clean markdown format
+      // Suggestions
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
-      if (followUps.length > 0) {
-        content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
-      }
+      structuredResponse += followUps;
+      
+      // Notes
+      structuredResponse += `\n\n### 📌 Notes\n💡 This code is ready to run - just copy and save as an HTML file!\n⚠️ Remember to test in different browsers for compatibility.`;
+      
+      content = structuredResponse;
       
       return { 
         ...message, 
@@ -941,7 +1257,8 @@ export async function enhanceResponse(
           ...message.metadata,
           intent,
           conversationContext,
-          personality: conversationContext.personality?.name
+          personality: conversationContext.personality?.name,
+          structured: true
         }
       };
     }
@@ -949,13 +1266,15 @@ export async function enhanceResponse(
     // For questions and general responses, apply enhanced structure
     if (!isSimpleResponse(content)) {
       const hook = generateConversationHook(intent, conversationContext, options.userMessage);
-      const structuredContent = structureResponseContent(content, conversationContext);
+      const extendedContext = { ...conversationContext, intent, userMessage: options.userMessage };
+      const structuredContent = structureResponseContent(content, extendedContext);
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
       
-      content = `${hook}\n\n${structuredContent}`;
-      
-      if (followUps.length > 0) {
-        content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
+      // For structured responses, combine hook with modular content
+      if (structuredContent.includes('### ✅')) {
+        content = `${hook}\n\n${structuredContent}\n\n${followUps}`;
+      } else {
+        content = `${hook}\n\n${structuredContent}\n\n${followUps}`;
       }
     }
   }
