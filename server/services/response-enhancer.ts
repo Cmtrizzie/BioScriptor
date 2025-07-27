@@ -54,26 +54,47 @@ export function selectBestResponse(primary: ChatMessage, alternate: ChatMessage)
 export function detectUserIntent(userMessage: string): string {
   const msg = userMessage.toLowerCase().trim();
   
-  // Greeting patterns (including variations and typos)
-  if (/^(hello|hi|hey|greetings|good morning|good afternoon|good evening|sup|yo|hiya|howdy)\b/i.test(msg) ||
-      /^(hello thy|hi thy|hey thy|greetings thy)\b/i.test(msg) ||
-      /^(helo|helo thy|hai|hai thy)\b/i.test(msg)) {
+  // Expanded greeting patterns (including variations, typos, and casual forms)
+  const greetingPatterns = [
+    /^(hello|hi|hey|greetings|good morning|good afternoon|good evening|sup|yo|hiya|howdy|waddup|wassup)\b/i,
+    /^(hello thy|hi thy|hey thy|greetings thy|hai thy|helo thy)\b/i,
+    /^(helo|hai|ey|eyo|yoo|heya|heyy|hii|hiiii)\b/i,
+    /^(wazup|whats up|what's up|gud morning|good mornin|gm)\b/i,
+    /^(salutations|bonjour|hola|ciao|aloha)\b/i
+  ];
+  
+  if (greetingPatterns.some(pattern => pattern.test(msg))) {
     return 'greeting';
   }
   
+  // Thanks patterns
+  const thanksPatterns = [
+    /^(thanks|thank you|thx|ty|appreciate|cheers|much appreciated)\b/i,
+    /\b(thanks|thank you|thx|ty|appreciate it|cheers)\b/i
+  ];
+  
+  if (thanksPatterns.some(pattern => pattern.test(msg))) {
+    return 'thanks';
+  }
+  
   // Question patterns
-  if (/^(what|how|where|when|why|can you|could you|would you|is it|are there)\b/i.test(msg) ||
+  if (/^(what|how|where|when|why|can you|could you|would you|is it|are there|do you|will you)\b/i.test(msg) ||
       msg.includes('?')) {
     return 'question';
   }
   
   // Request patterns
-  if (/^(please|can you help|i need|help me|assist me|show me)\b/i.test(msg)) {
+  if (/^(please|can you help|i need|help me|assist me|show me|could you|would you mind)\b/i.test(msg)) {
     return 'request';
   }
   
   // Farewell patterns
-  if (/^(bye|goodbye|see you|talk later|thanks|thank you)\b/i.test(msg)) {
+  const farewellPatterns = [
+    /^(bye|goodbye|see you|see ya|talk later|catch you later|peace|adios|au revoir)\b/i,
+    /^(gotta go|gtg|cya|take care|until next time|farewell)\b/i
+  ];
+  
+  if (farewellPatterns.some(pattern => pattern.test(msg))) {
     return 'farewell';
   }
   
@@ -91,16 +112,38 @@ export function generateNaturalResponse(intent: string, originalContent: string)
         "Hello! What can I assist you with?",
         "Hi! Ready to dive into some bioinformatics work?",
         "Greetings! What would you like to explore today?",
-        "Hello! How can I help with your research today?"
+        "Hello! How can I help with your research today?",
+        "Hey! 👋 What's on your mind?",
+        "Hi there! What can I do for you?",
+        "Hello! 🧬 Ready to tackle some science?",
+        "Hey! What bioinformatics challenge can I help with?",
+        "Hi! Great to see you back! 😊"
       ];
       return greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
+      
+    case 'thanks':
+      const thanksResponses = [
+        "You're welcome! 😊",
+        "Happy to help! 👍",
+        "No problem at all!",
+        "Glad I could assist! 🙂",
+        "Anytime! Feel free to ask more questions.",
+        "You got it! 😊",
+        "My pleasure! Let me know if you need anything else.",
+        "Of course! That's what I'm here for! 🧬"
+      ];
+      return thanksResponses[Math.floor(Math.random() * thanksResponses.length)];
       
     case 'farewell':
       const farewellResponses = [
         "Goodbye! Feel free to come back anytime.",
         "See you later! Happy researching!",
         "Thanks for using BioScriptor! Have a great day!",
-        "Bye! Don't hesitate to return if you need more help."
+        "Bye! Don't hesitate to return if you need more help.",
+        "Take care! 👋",
+        "See you soon! Good luck with your work! 🧬",
+        "Catch you later! Feel free to return anytime.",
+        "Peace out! Hope your research goes well! ✨"
       ];
       return farewellResponses[Math.floor(Math.random() * farewellResponses.length)];
       
