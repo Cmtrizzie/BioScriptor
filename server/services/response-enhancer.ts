@@ -53,6 +53,9 @@ export async function enhanceResponse(message: ChatMessage, options: {
 }): Promise<ChatMessage> {
   let content = message.content;
   
+  // Apply professional structure formatting
+  content = applyProStructureFormatting(content, options);
+  
   // Add personality markers based on tone
   if (options.tone === 'casual') {
     content = content.replace(/\b(I will|I shall)\b/g, "I'll")
@@ -80,4 +83,71 @@ export async function enhanceResponse(message: ChatMessage, options: {
     ...message,
     content: content
   };
+}
+
+function applyProStructureFormatting(content: string, options: any): string {
+  // Don't format if already well-structured
+  if (content.includes('✅') || content.includes('🔹') || content.includes('💡')) {
+    return content;
+  }
+
+  // Get appropriate greeting
+  const greeting = getContextualGreeting(options);
+  
+  // Split content into sections
+  const lines = content.split('\n').filter(line => line.trim());
+  
+  if (lines.length <= 1) {
+    // Single line response - keep simple with greeting
+    return greeting ? `${greeting}\n\n${content}` : content;
+  }
+
+  // Multi-line response - apply full structure
+  let formattedContent = '';
+  
+  // Add greeting if appropriate
+  if (greeting) {
+    formattedContent += `${greeting}\n\n`;
+  }
+
+  // Main answer section
+  const mainAnswer = lines[0];
+  formattedContent += `✅ **${mainAnswer}**\n\n`;
+
+  // Additional information as bullet points
+  if (lines.length > 1) {
+    formattedContent += `💡 **Here's what you need to know:**\n\n`;
+    
+    for (let i = 1; i < Math.min(lines.length, 4); i++) {
+      const line = lines[i].trim();
+      if (line) {
+        formattedContent += `🔹 ${line}\n\n`;
+      }
+    }
+  }
+
+  // Add helpful closing
+  formattedContent += `➡️ Need help with anything else? Just let me know!`;
+
+  return formattedContent;
+}
+
+function getContextualGreeting(options: any): string | null {
+  const { tone, context } = options;
+  
+  // Skip greeting for follow-up questions or code responses
+  if (context?.taskType === 'code' || context?.previousResponses?.length > 2) {
+    return null;
+  }
+
+  const greetings = {
+    casual: ['Hey there! 👋', 'Hi! 🧬', 'Hello! 👨‍🔬'],
+    professional: ['Hello! 👋', 'Greetings! 🧬', 'Good to see you! 👨‍🔬'],
+    excited: ['Hey there! 🚀', 'Hi! ⚡', 'Hello! 🎉'],
+    frustrated: ['I\'m here to help! 💪', 'Let\'s solve this! 🔧', 'I\'ve got you covered! ✨'],
+    urgent: ['Right away! ⚡', 'Let\'s get this done! 🚀', 'On it! 💪']
+  };
+
+  const toneGreetings = greetings[tone as keyof typeof greetings] || greetings.professional;
+  return toneGreetings[Math.floor(Math.random() * toneGreetings.length)];
 }
