@@ -34,19 +34,19 @@
 }
 
 .dark {
-  --background: hsl(220, 13%, 18%);
+  --background: hsl(220, 13%, 13%);
   --foreground: hsl(210, 20%, 85%);
-  --muted: hsl(240, 3.7%, 15.9%);
+  --muted: hsl(220, 13%, 15%);
   --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
+  --popover: hsl(220, 13%, 13%);
   --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
+  --card: hsl(220, 13%, 15%);
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
+  --border: hsl(220, 13%, 20%);
+  --input: hsl(220, 13%, 15%);
   --primary: hsl(217, 38%, 27%);
   --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary: hsl(220, 13%, 15%);
   --secondary-foreground: hsl(0, 0%, 98%);
   --accent: hsl(178, 84%, 29%);
   --accent-foreground: hsl(0, 0%, 98%);
@@ -55,10 +55,10 @@
   --ring: hsl(240, 4.9%, 83.9%);
   
   /* ChatGPT-style dark theme variables */
-  --chat-bg-dark: #3f3f46;
+  --chat-bg-dark: #374151;
   --chat-text-dark: #e5e7eb;
-  --chat-user-bg-dark: #374151;
-  --chat-user-text-dark: #d1d5db;
+  --chat-user-bg-dark: #4b5563;
+  --chat-user-text-dark: #f3f4f6;
 }
 
 @layer base {
@@ -233,9 +233,9 @@
 
 /* Proper dark theme support */
 .dark .chatgpt-user-message {
-  background-color: var(--chat-user-bg-dark, #374151);
-  color: var(--chat-user-text-dark, #d1d5db);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--chat-user-bg-dark, #4b5563) !important;
+  color: var(--chat-user-text-dark, #f3f4f6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Universal ChatGPT message styling */
@@ -258,10 +258,52 @@
 
 /* Dark theme */
 .dark .chatgpt-message:not(.chatgpt-user-message) {
-  background-color: var(--chat-bg-dark, #3f3f46);
-  color: var(--chat-text-dark, #e5e7eb);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--chat-bg-dark, #374151) !important;
+  color: var(--chat-text-dark, #e5e7eb) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode global overrides */
+.dark {
+  background-color: hsl(220, 13%, 13%);
+  color: hsl(210, 20%, 85%);
+}
+
+.dark * {
+  border-color: hsl(220, 13%, 20%);
+}
+
+.dark .bg-white {
+  background-color: hsl(220, 13%, 15%) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: hsl(220, 13%, 13%) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: hsl(220, 13%, 15%) !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: hsl(220, 13%, 20%) !important;
+}
+
+.dark .text-gray-900 {
+  color: hsl(210, 20%, 85%) !important;
+}
+
+.dark .text-gray-700 {
+  color: hsl(210, 20%, 70%) !important;
+}
+
+.dark .text-gray-500 {
+  color: hsl(210, 20%, 55%) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: hsl(220, 13%, 20%) !important;
 }
 
 /* ChatGPT-style prose improvements */
