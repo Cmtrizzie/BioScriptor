@@ -34,8 +34,8 @@
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
+  --background: hsl(220, 13%, 18%);
+  --foreground: hsl(210, 20%, 85%);
   --muted: hsl(240, 3.7%, 15.9%);
   --muted-foreground: hsl(240, 5%, 64.9%);
   --popover: hsl(240, 10%, 3.9%);
@@ -55,10 +55,10 @@
   --ring: hsl(240, 4.9%, 83.9%);
   
   /* ChatGPT-style dark theme variables */
-  --chat-bg-dark: #444654;
-  --chat-text-dark: #ececf1;
-  --chat-user-bg-dark: #6366f1;
-  --chat-user-text-dark: #ffffff;
+  --chat-bg-dark: #3f3f46;
+  --chat-text-dark: #e5e7eb;
+  --chat-user-bg-dark: #374151;
+  --chat-user-text-dark: #d1d5db;
 }
 
 @layer base {
@@ -233,8 +233,9 @@
 
 /* Proper dark theme support */
 .dark .chatgpt-user-message {
-  background-color: var(--chat-user-bg-dark, #6366f1);
-  color: var(--chat-user-text-dark, #ffffff);
+  background-color: var(--chat-user-bg-dark, #374151);
+  color: var(--chat-user-text-dark, #d1d5db);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Universal ChatGPT message styling */
@@ -257,10 +258,10 @@
 
 /* Dark theme */
 .dark .chatgpt-message:not(.chatgpt-user-message) {
-  background-color: var(--chat-bg-dark, #444654);
-  color: var(--chat-text-dark, #ececf1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--chat-bg-dark, #3f3f46);
+  color: var(--chat-text-dark, #e5e7eb);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ChatGPT-style prose improvements */
