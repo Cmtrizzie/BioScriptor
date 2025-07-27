@@ -808,6 +808,102 @@ export function detectUserIntent(userMessage: string): string {
     return 'bioinformatics';
   }
 
+  // Default to general if no pattern matches
+  return 'general';
+}
+
+
+/**
+ * Generates natural responses for specific intents
+ */
+function generateNaturalResponse(intent: string, userMessage: string): string {
+  const msg = userMessage.toLowerCase();
+  
+  switch (intent) {
+    case 'trending_inquiry':
+      return `Good question! Let's dive into this:
+
+**Current Trends Worth Exploring:**
+
+**Technology & AI:**
+- AI-generated content and creative tools are revolutionizing design and development
+- Real-time collaboration tools are becoming more sophisticated
+- Edge computing is making applications faster and more responsive
+
+**Bioinformatics & Science:**
+- CRISPR gene editing continues advancing with new precision techniques
+- Personalized medicine using genomic data is expanding rapidly
+- AI-driven drug discovery is accelerating pharmaceutical research
+
+**Development:**
+- WebAssembly is enabling high-performance web applications
+- Serverless architecture is simplifying deployment and scaling
+- Real-time features are becoming standard in modern apps
+
+What specific area interests you most? I can dive deeper into any of these trends!`;
+
+    case 'capability_inquiry':
+      return `Great question! I'm designed to be your versatile AI assistant with several key strengths:
+
+**🧬 Bioinformatics Expertise:**
+- Sequence analysis and alignment
+- CRISPR design and PCR primer generation  
+- Protein structure analysis
+- Genomic data interpretation
+
+**💻 Development Support:**
+- Full-stack web development (React, Node.js, Python)
+- Code generation and debugging
+- Database design and optimization
+- API development and integration
+
+**🔬 Research & Analysis:**
+- Scientific literature review
+- Data analysis and visualization  
+- Research methodology guidance
+- Technical writing assistance
+
+**🎯 What I Do Best:**
+- Provide working code examples you can run immediately
+- Explain complex concepts in clear, actionable steps
+- Adapt my responses to your skill level and needs
+- Offer multiple approaches to solve problems
+
+What would you like to explore together?`;
+
+    case 'bioinformatics':
+      return `Excellent! Bioinformatics is my specialty. Here's how I can assist you:
+
+**🧬 Sequence Analysis:**
+- DNA/RNA sequence processing and analysis
+- Multiple sequence alignments
+- Phylogenetic analysis
+- Motif discovery
+
+**🔬 Molecular Biology Tools:**
+- CRISPR guide RNA design
+- PCR primer design and optimization
+- Restriction enzyme analysis
+- Cloning strategy planning
+
+**📊 Data Analysis:**
+- NGS data processing pipelines
+- Gene expression analysis
+- Variant calling and annotation
+- Functional enrichment analysis
+
+**🧪 Practical Applications:**
+- Protocol optimization
+- Experimental design guidance
+- Literature review and synthesis
+- Results interpretation
+
+What specific bioinformatics challenge are you working on? I can provide tailored solutions and working code examples!`;
+
+    default:
+      return `Hello! I'm here to help with whatever you need. Whether it's coding, bioinformatics, research, or just brainstorming ideas, I'm ready to assist!`;
+  }
+}
 
 /**
  * Generates appropriate code examples based on user request
