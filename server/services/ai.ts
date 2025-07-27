@@ -305,19 +305,30 @@ export const processQuery = async (
             }
         }
 
-        // Generate context-aware system prompt
+        // Analyze conversation context with personality
+        const contextAnalysis = analyzeConversationContext(context.history);
+        const personality = contextAnalysis.personality;
+        
+        // Generate context-aware system prompt with personality
         const memory = context.memory;
-        const systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant. 
+        const systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant with a ${personality.name.toLowerCase()} personality.
+
 Current conversation topics: ${Array.from(memory.topics).join(', ') || 'none'}
 Key entities: ${Array.from(memory.entities).join(', ') || 'none'}
 User's tone: ${tone}
 
-Guidelines:
-1. Respond in a ${tone} manner
-2. Explain concepts clearly
+Personality Guidelines:
+- Tone: ${personality.tone}
+- Explanation style: ${personality.explanation_style}
+- Expertise level: ${personality.expertise_level}
+
+Conversation Guidelines:
+1. Respond with a ${personality.tone} manner
+2. Use ${personality.explanation_style}
 3. ${fileAnalysis ? 'Incorporate file analysis results' : ''}
 4. ${webSearchResults ? 'Use the provided web search results to enhance your response with current information' : ''}
-5. Provide accurate, actionable advice
+5. Reference previous conversation naturally when relevant
+6. End responses with engaging follow-ups
 ${searchContext}`;
 
         // Update system prompt to focus on intent recognition
@@ -370,7 +381,7 @@ ${searchContext}`;
             timestamp: Date.now()
         };
 
-        // Enhance the response with new conversational flow
+        // Enhance the response with new conversational flow including personality
         const enhancedResponse = await enhanceResponse(
             {
                 id: generateUniqueId(),
@@ -382,7 +393,8 @@ ${searchContext}`;
                 metadata: {
                     confidence: response.confidence || 0.85,
                     tokenCount: responseTokens.length,
-                    semanticContext: Array.from(memory.topics).slice(0, 3)
+                    semanticContext: Array.from(memory.topics).slice(0, 3),
+                    personality: contextAnalysis.personality.name
                 }
             },
             {
@@ -392,7 +404,8 @@ ${searchContext}`;
                     taskType: queryType
                 },
                 tone,
-                userMessage: query
+                userMessage: query,
+                userSkillLevel: contextAnalysis.memory.userPreferences.technicalLevel
             }
         );
 

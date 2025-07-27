@@ -1,5 +1,140 @@
 import { ChatMessage, ProcessedInput, MessageEmbedding } from './types';
 
+// ========== PERSONALITY SYSTEM ==========
+
+/**
+ * Predefined personality configurations for consistent bot behavior
+ */
+export interface PersonalityConfig {
+  name: string;
+  tone: string;
+  greeting_style: string;
+  explanation_style: string;
+  conversation_closers: string[];
+  expertise_level: string;
+  response_patterns: {
+    acknowledgments: string[];
+    transitions: string[];
+    encouragements: string[];
+  };
+}
+
+export const PERSONALITY_PROFILES: Record<string, PersonalityConfig> = {
+  mentor: {
+    name: "Mentor",
+    tone: "supportive and encouraging",
+    greeting_style: "warm and welcoming",
+    explanation_style: "step-by-step with examples",
+    conversation_closers: [
+      "Want to explore that further?",
+      "Should we dive deeper into this?",
+      "Ready to level up your skills?",
+      "What would you like to master next?"
+    ],
+    expertise_level: "expert with teaching focus",
+    response_patterns: {
+      acknowledgments: ["Great question!", "I see where you're going with this!", "Excellent thinking!"],
+      transitions: ["Let's build on that...", "Here's how we can approach this...", "The next step is..."],
+      encouragements: ["You're on the right track!", "Keep going!", "That's exactly right!"]
+    }
+  },
+  expert: {
+    name: "Expert",
+    tone: "professional and precise",
+    greeting_style: "direct and focused",
+    explanation_style: "technical with detailed examples",
+    conversation_closers: [
+      "Need more technical details?",
+      "Should we examine the implementation?",
+      "Want to see advanced applications?",
+      "Shall we optimize this further?"
+    ],
+    expertise_level: "deep technical knowledge",
+    response_patterns: {
+      acknowledgments: ["Precisely!", "That's correct.", "Exactly right."],
+      transitions: ["Building on this concept...", "The technical implementation involves...", "Consider this approach..."],
+      encouragements: ["Well reasoned!", "Sound analysis!", "Good technical insight!"]
+    }
+  },
+  playful: {
+    name: "Playful",
+    tone: "fun and energetic",
+    greeting_style: "enthusiastic and casual",
+    explanation_style: "creative with analogies and humor",
+    conversation_closers: [
+      "Want to play around with this more?",
+      "Should we spice things up? 🌶️",
+      "Ready for the next adventure?",
+      "Feeling like experimenting further? 🧪"
+    ],
+    expertise_level: "knowledgeable but approachable",
+    response_patterns: {
+      acknowledgments: ["Awesome sauce! 🎉", "Now we're cooking! 🔥", "Love it! 💫"],
+      transitions: ["Plot twist...", "Here's where it gets fun...", "Time for some magic..."],
+      encouragements: ["You're crushing it! 💪", "Boom! Nailed it! 🎯", "That's the spirit! ✨"]
+    }
+  },
+  bioinformatics_guru: {
+    name: "Bioinformatics Guru",
+    tone: "scientifically rigorous yet approachable",
+    greeting_style: "professional with scientific enthusiasm",
+    explanation_style: "method-focused with real-world applications",
+    conversation_closers: [
+      "Want to analyze this further? 🧬",
+      "Should we explore related pathways?",
+      "Ready to dive into the data?",
+      "Shall we run some simulations?"
+    ],
+    expertise_level: "specialized bioinformatics expertise",
+    response_patterns: {
+      acknowledgments: ["Fascinating approach!", "Solid methodology!", "Great research question!"],
+      transitions: ["From a bioinformatics perspective...", "The analysis reveals...", "Let's examine the data..."],
+      encouragements: ["Excellent scientific thinking!", "That's good hypothesis formation!", "Nice analytical approach!"]
+    }
+  }
+};
+
+/**
+ * Get personality configuration based on context and user preferences
+ */
+export function getPersonalityForContext(
+  userMessage: string,
+  conversationHistory: ChatMessage[],
+  userPreferences?: { preferredPersonality?: string }
+): PersonalityConfig {
+  // Use user preference if specified
+  if (userPreferences?.preferredPersonality && PERSONALITY_PROFILES[userPreferences.preferredPersonality]) {
+    return PERSONALITY_PROFILES[userPreferences.preferredPersonality];
+  }
+
+  // Auto-detect personality based on context
+  const msg = userMessage.toLowerCase();
+  const topics = conversationHistory.map(m => m.content.toLowerCase()).join(' ');
+
+  // Bioinformatics context
+  if (/(dna|rna|protein|sequence|crispr|pcr|blast|alignment|gene|genome|analysis)/.test(msg + topics)) {
+    return PERSONALITY_PROFILES.bioinformatics_guru;
+  }
+
+  // Learning/teaching context
+  if (/(how to|teach me|explain|learn|understand|tutorial|guide)/.test(msg)) {
+    return PERSONALITY_PROFILES.mentor;
+  }
+
+  // Technical/expert context
+  if (/(implement|algorithm|optimization|performance|architecture|advanced)/.test(msg)) {
+    return PERSONALITY_PROFILES.expert;
+  }
+
+  // Fun/casual context
+  if (/(fun|play|cool|awesome|emoji|casual|hey|yo|wazup)/.test(msg)) {
+    return PERSONALITY_PROFILES.playful;
+  }
+
+  // Default to mentor for general interactions
+  return PERSONALITY_PROFILES.mentor;
+}
+
 // ========== 1. TOKENIZATION & EMBEDDING ==========
 
 /**
@@ -52,6 +187,108 @@ export function calculateSimilarity(embedding1: number[], embedding2: number[]):
 // ========== 2. CONTEXT AWARENESS ==========
 
 /**
+ * Enhanced conversation memory for natural referencing
+ */
+export interface ConversationMemory {
+  userMentions: Map<string, number>; // topic -> last mentioned turn
+  keyEntities: Map<string, string[]>; // entity -> related contexts
+  userPreferences: {
+    preferredTopics: string[];
+    responseLength: 'brief' | 'detailed';
+    technicalLevel: 'beginner' | 'intermediate' | 'expert';
+  };
+  conversationFlow: {
+    lastTopic: string;
+    topicTransitions: string[];
+    questionPatterns: string[];
+  };
+}
+
+/**
+ * Build conversation memory from message history
+ */
+export function buildConversationMemory(messages: ChatMessage[]): ConversationMemory {
+  const memory: ConversationMemory = {
+    userMentions: new Map(),
+    keyEntities: new Map(),
+    userPreferences: {
+      preferredTopics: [],
+      responseLength: 'detailed',
+      technicalLevel: 'intermediate'
+    },
+    conversationFlow: {
+      lastTopic: '',
+      topicTransitions: [],
+      questionPatterns: []
+    }
+  };
+
+  messages.forEach((msg, index) => {
+    if (msg.role === 'user') {
+      const content = msg.content.toLowerCase();
+      
+      // Track topic mentions
+      const topics = ['ai', 'bioinformatics', 'code', 'python', 'javascript', 'dna', 'protein', 'analysis'];
+      topics.forEach(topic => {
+        if (content.includes(topic)) {
+          memory.userMentions.set(topic, index);
+        }
+      });
+
+      // Extract entities (sequences, tools, methods)
+      const sequenceMatches = content.match(/[atcg]{10,}|[a-z]{3,}\d+/gi) || [];
+      const toolMatches = content.match(/\b(blast|crispr|pcr|python|javascript|html|css)\b/gi) || [];
+      
+      [...sequenceMatches, ...toolMatches].forEach(entity => {
+        const contexts = memory.keyEntities.get(entity.toLowerCase()) || [];
+        contexts.push(content.substring(0, 100));
+        memory.keyEntities.set(entity.toLowerCase(), contexts);
+      });
+
+      // Analyze user preferences
+      if (content.includes('brief') || content.includes('short')) {
+        memory.userPreferences.responseLength = 'brief';
+      }
+      if (content.includes('detail') || content.includes('explain')) {
+        memory.userPreferences.responseLength = 'detailed';
+      }
+    }
+  });
+
+  return memory;
+}
+
+/**
+ * Generate natural references to previous conversation
+ */
+export function generateContextualReferences(
+  currentMessage: string, 
+  memory: ConversationMemory
+): string[] {
+  const references: string[] = [];
+  const currentTopics = tokenizeText(currentMessage);
+
+  // Reference previous mentions
+  memory.userMentions.forEach((turn, topic) => {
+    if (currentTopics.some(token => token.includes(topic))) {
+      const timeSince = memory.userMentions.size - turn;
+      if (timeSince < 5) {
+        references.push(`You mentioned ${topic} earlier—let's build on that!`);
+      }
+    }
+  });
+
+  // Reference related entities
+  memory.keyEntities.forEach((contexts, entity) => {
+    if (currentMessage.toLowerCase().includes(entity)) {
+      references.push(`I see you're working with ${entity} again—great choice!`);
+    }
+  });
+
+  return references.slice(0, 1); // Keep it natural with just one reference
+}
+
+/**
  * Analyzes conversation history to extract relevant context
  */
 export function analyzeConversationContext(messages: ChatMessage[]): {
@@ -59,6 +296,8 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   sentiment: string;
   complexity: string;
   recentContext: string;
+  memory: ConversationMemory;
+  personality: PersonalityConfig;
 } {
   const recentMessages = messages.slice(-6); // Last 3 exchanges
   const allText = recentMessages.map(m => m.content).join(' ');
@@ -90,11 +329,20 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   ).length;
   const complexity = complexityIndicators > 2 ? 'simple' : 'detailed';
   
+  // Build conversation memory
+  const memory = buildConversationMemory(messages);
+  
+  // Get appropriate personality
+  const currentMessage = messages[messages.length - 1]?.content || '';
+  const personality = getPersonalityForContext(currentMessage, messages);
+
   return {
     topics: [...new Set([...bioTopics, ...codeTopics])],
     sentiment,
     complexity,
-    recentContext: recentMessages.map(m => `${m.role}: ${m.content.slice(0, 100)}`).join('\n')
+    recentContext: recentMessages.map(m => `${m.role}: ${m.content.slice(0, 100)}`).join('\n'),
+    memory,
+    personality
   };
 }
 
@@ -127,17 +375,29 @@ export function calculateAttentionWeights(
 // ========== 3. RESPONSE GENERATION ==========
 
 /**
- * Generates engaging conversation hooks based on context
+ * Generates engaging conversation hooks based on context and personality
  */
 export function generateConversationHook(
   intent: string, 
-  context: { topics: string[]; sentiment: string; complexity: string }
+  context: { topics: string[]; sentiment: string; complexity: string; memory?: ConversationMemory; personality?: PersonalityConfig },
+  userMessage?: string
 ): string {
+  const personality = context.personality || PERSONALITY_PROFILES.mentor;
+  const memory = context.memory;
+  
+  // Generate contextual references if available
+  let contextualRef = '';
+  if (memory && userMessage) {
+    const references = generateContextualReferences(userMessage, memory);
+    if (references.length > 0) {
+      contextualRef = references[0] + ' ';
+    }
+  }
   const hooks = {
     greeting: {
-      positive: ["Great to see you again! 🌟", "Hello! Ready for another exciting session? 🚀", "Hey there! 😊"],
-      negative: ["Hi there! Let's turn things around today! 💪", "Hello! I'm here to help make things easier. 🤝"],
-      neutral: ["Hello! What can we explore together today? 🔬", "Hi! What's on your research agenda? 📋"]
+      positive: [...personality.response_patterns.acknowledgments, `${contextualRef}${getRandomFromArray(personality.response_patterns.acknowledgments)}`],
+      negative: [`${contextualRef}Don't worry, I'm here to help!`, `${contextualRef}Let's tackle this together!`],
+      neutral: [`${contextualRef}Hello! What can we explore today?`, `${contextualRef}Hi! What's on your agenda?`]
     },
     question: {
       positive: ["Excellent question! 🎯", "Great thinking! Let me break this down:", "Love the curiosity! Here's what I know:"],
@@ -203,13 +463,14 @@ export function structureResponseContent(
 }
 
 /**
- * Generates contextual follow-up suggestions
+ * Generates contextual follow-up suggestions with personality-driven conversation closers
  */
 export function generateSmartFollowUps(
   intent: string, 
   content: string, 
-  context: { topics: string[] }
+  context: { topics: string[]; personality?: PersonalityConfig; memory?: ConversationMemory }
 ): string[] {
+  const personality = context.personality || PERSONALITY_PROFILES.mentor;
   const followUps: Record<string, string[]> = {
     code_request: [
       "Want me to add CSS styling to this?",
@@ -239,7 +500,17 @@ export function generateSmartFollowUps(
   if (context.topics.includes('code')) customFollowUps.push("Need the complete code implementation?");
   if (context.topics.includes('protein')) customFollowUps.push("Should we explore protein analysis tools?");
   
-  return [...customFollowUps, ...baseFollowUps.slice(0, 2)].slice(0, 3);
+  // Add personality-specific conversation closers
+  const personalityClosers = personality.conversation_closers.slice(0, 2);
+  
+  return [...customFollowUps, ...baseFollowUps.slice(0, 1), ...personalityClosers].slice(0, 3);
+}
+
+/**
+ * Utility function to get random item from array
+ */
+function getRandomFromArray<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 /**
@@ -641,8 +912,8 @@ export async function enhanceResponse(
     
     // For specific intents, use enhanced natural responses
     if (['greeting', 'farewell', 'thanks', 'capability_inquiry', 'bioinformatics'].includes(intent)) {
-      // Generate engaging hook
-      const hook = generateConversationHook(intent, conversationContext);
+      // Generate engaging hook with personality and context
+      const hook = generateConversationHook(intent, conversationContext, options.userMessage);
       
       if (intent === 'capability_inquiry' || intent === 'bioinformatics') {
         content = generateNaturalResponse(intent, options.userMessage);
@@ -654,7 +925,8 @@ export async function enhanceResponse(
       if (['capability_inquiry', 'bioinformatics'].includes(intent)) {
         const followUps = generateSmartFollowUps(intent, content, conversationContext);
         if (followUps.length > 0) {
-          content += `\n\n💡 **What interests you most?**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+          const personality = conversationContext.personality || PERSONALITY_PROFILES.mentor;
+          content += `\n\n💡 **${getRandomFromArray(['What interests you most?', 'Ready for more?', 'Want to explore further?'])}**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
         }
       }
       
@@ -677,7 +949,7 @@ export async function enhanceResponse(
 
     // For code requests, ensure proper formatting with hooks
     if (intent === 'code_request') {
-      const hook = generateConversationHook(intent, conversationContext);
+      const hook = generateConversationHook(intent, conversationContext, options.userMessage);
       
       if (!content.includes('```') && !content.includes('<pre>')) {
         // Generate code based on request type
@@ -686,7 +958,7 @@ export async function enhanceResponse(
         content = `${hook}\n\n${content}`;
       }
       
-      // Add smart follow-ups
+      // Add smart follow-ups with personality closers
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
       content += `\n\n💡 **Next steps:**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
       
@@ -696,21 +968,24 @@ export async function enhanceResponse(
         metadata: {
           ...message.metadata,
           intent,
-          conversationContext
+          conversationContext,
+          personality: conversationContext.personality?.name
         }
       };
     }
 
     // For questions and general responses, apply enhanced structure
     if (!isSimpleResponse(content)) {
-      const hook = generateConversationHook(intent, conversationContext);
+      const hook = generateConversationHook(intent, conversationContext, options.userMessage);
       const structuredContent = structureResponseContent(content, conversationContext);
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
       
       content = `${hook}\n\n${structuredContent}`;
       
       if (followUps.length > 0) {
-        content += `\n\n💡 **Want to explore more?**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+        const personality = conversationContext.personality || PERSONALITY_PROFILES.mentor;
+        const closerPhrase = getRandomFromArray(['Want to explore more?', 'Ready for the next step?', 'Should we dive deeper?']);
+        content += `\n\n💡 **${closerPhrase}**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
       }
     }
   }
