@@ -473,37 +473,43 @@ export function generateSmartFollowUps(
   const personality = context.personality || PERSONALITY_PROFILES.mentor;
   const followUps: Record<string, string[]> = {
     code_request: [
-      "Want me to add CSS styling to this?",
-      "Need help with JavaScript functionality?",
-      "Should I explain how this code works?",
-      "Want to see a more advanced version?"
+      "Add CSS styling to this?",
+      "Convert it to React?",
+      "Make it mobile responsive?",
+      "Add JavaScript functionality?"
     ],
     bioinformatics: [
-      "Ready to analyze your sequence data?",
-      "Want to explore related analysis tools?",
-      "Need help with data visualization?",
-      "Should we dive deeper into the methodology?"
+      "Analyze your sequence data?",
+      "Explore related analysis tools?",
+      "Visualize the results?",
+      "Run additional analyses?"
     ],
     question: [
-      "Want a practical example?",
-      "Need more detailed explanation?",
-      "Should I show you the code implementation?",
-      "Interested in related topics?"
+      "Show a practical example?",
+      "Provide more detailed explanation?",
+      "Generate code implementation?",
+      "Explore related topics?"
+    ],
+    general: [
+      "Create a working example?",
+      "Add more features?",
+      "Optimize the solution?",
+      "Learn about alternatives?"
     ]
   };
   
-  const baseFollowUps = followUps[intent] || followUps.question;
+  const baseFollowUps = followUps[intent] || followUps.general;
   
   // Customize based on detected topics
   const customFollowUps = [];
-  if (context.topics.includes('dna')) customFollowUps.push("Want to analyze DNA sequences?");
-  if (context.topics.includes('code')) customFollowUps.push("Need the complete code implementation?");
-  if (context.topics.includes('protein')) customFollowUps.push("Should we explore protein analysis tools?");
+  if (context.topics.includes('html')) customFollowUps.push("Convert it to React?");
+  if (context.topics.includes('dna')) customFollowUps.push("Analyze DNA sequences?");
+  if (context.topics.includes('code')) customFollowUps.push("Add styling with TailwindCSS?");
+  if (context.topics.includes('protein')) customFollowUps.push("Explore protein analysis tools?");
   
-  // Add personality-specific conversation closers
-  const personalityClosers = personality.conversation_closers.slice(0, 2);
-  
-  return [...customFollowUps, ...baseFollowUps.slice(0, 1), ...personalityClosers].slice(0, 3);
+  // Merge and return top 3 suggestions
+  const allSuggestions = [...customFollowUps, ...baseFollowUps];
+  return allSuggestions.slice(0, 3);
 }
 
 /**
@@ -840,42 +846,7 @@ What's your current project or challenge?`;
   return '';
 }
 
-/**
- * Generates smart follow-up suggestions based on context
- */
-function generateFollowUpSuggestions(intent: string, userMessage: string, context: any): string {
-  const suggestions: Record<string, string[]> = {
-    'code_request': [
-      "Need CSS styling for this?",
-      "Want me to explain how it works?",
-      "Should I add JavaScript functionality?"
-    ],
-    'bioinformatics': [
-      "Upload a sequence file for analysis",
-      "Learn about specific analysis tools",
-      "Generate processing scripts"
-    ],
-    'question': [
-      "Need a working example?",
-      "Want step-by-step instructions?",
-      "Should I provide more details?"
-    ],
-    'general': [
-      "Ask about bioinformatics analysis",
-      "Request code examples",
-      "Upload files for processing"
-    ]
-  };
 
-  const intentSuggestions = suggestions[intent] || suggestions.general;
-  const randomSuggestions = intentSuggestions.slice(0, 2);
-  
-  if (randomSuggestions.length > 0) {
-    return `\n\n💡 **Quick suggestions:**\n${randomSuggestions.map((s, i) => `${i + 1}️⃣ ${s}`).join('\n')}`;
-  }
-  
-  return '';
-}
 
 /**
  * Adds tone, formatting, and structure to a message with enhanced intent handling
@@ -925,8 +896,7 @@ export async function enhanceResponse(
       if (['capability_inquiry', 'bioinformatics'].includes(intent)) {
         const followUps = generateSmartFollowUps(intent, content, conversationContext);
         if (followUps.length > 0) {
-          const personality = conversationContext.personality || PERSONALITY_PROFILES.mentor;
-          content += `\n\n💡 **${getRandomFromArray(['What interests you most?', 'Ready for more?', 'Want to explore further?'])}**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+          content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
         }
       }
       
@@ -958,9 +928,11 @@ export async function enhanceResponse(
         content = `${hook}\n\n${content}`;
       }
       
-      // Add smart follow-ups with personality closers
+      // Add smart follow-ups in clean markdown format
       const followUps = generateSmartFollowUps(intent, content, conversationContext);
-      content += `\n\n💡 **Next steps:**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+      if (followUps.length > 0) {
+        content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
+      }
       
       return { 
         ...message, 
@@ -983,9 +955,7 @@ export async function enhanceResponse(
       content = `${hook}\n\n${structuredContent}`;
       
       if (followUps.length > 0) {
-        const personality = conversationContext.personality || PERSONALITY_PROFILES.mentor;
-        const closerPhrase = getRandomFromArray(['Want to explore more?', 'Ready for the next step?', 'Should we dive deeper?']);
-        content += `\n\n💡 **${closerPhrase}**\n${followUps.map((f, i) => `${i + 1}️⃣ ${f}`).join('\n')}`;
+        content += `\n\nWould you like me to:\n${followUps.map(f => `- ${f}`).join('\n')}`;
       }
     }
   }
