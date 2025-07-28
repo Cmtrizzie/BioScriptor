@@ -103,3 +103,35 @@ async function checkDatabaseStatus() {
 }
 
 checkDatabaseStatus();
+
+// Database connection check
+async function checkDatabaseConnection() {
+  try {
+    console.log('🔍 Checking database configuration...');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+
+    if (!process.env.DATABASE_URL) {
+      console.warn('⚠️ DATABASE_URL not found, database features disabled');
+      return false;
+    }
+
+    console.log('🔌 Attempting to connect to Neon PostgreSQL...');
+
+    // Test with a simple query
+    const testQuery = await db.select().from(users).limit(1);
+    console.log('✅ Database connection established and endpoint active');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+
+    // Check for specific Neon endpoint disabled error
+    if (error.message?.includes('endpoint has been disabled')) {
+      console.log('🔄 Database endpoint is disabled - enable it in Neon console');
+      console.log('⚠️ Running in fallback mode with demo data');
+    } else {
+      console.log('⚠️ Database connection issues detected, fallback mode enabled');
+    }
+
+    return false;
+  }
+}

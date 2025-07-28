@@ -849,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('API errors fetch error:', error);
       res.status(500).json({ error: 'Failed to fetch API errors' });
-    }
+        }
   });
 
   // Payment Webhook Routes
