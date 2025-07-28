@@ -239,6 +239,315 @@ const RESPONSE_STRUCTURE = {
   suggestions: "Would you like me to help with:\n",
 };
 
+// ========== STRUCTURED RESPONSE TYPES ==========
+export interface ResponseSection {
+  type: 'heading' | 'text' | 'code' | 'diagram' | 'list' | 'table';
+  level?: number;
+  content: string;
+  language?: string;
+  copyable?: boolean;
+  format?: 'mermaid' | 'graphviz' | 'plantuml';
+}
+
+export interface StructuredResponse {
+  sections: ResponseSection[];
+  metadata?: {
+    intent: string;
+    complexity: string;
+    hasCode: boolean;
+    hasDiagram: boolean;
+  };
+}
+
+export function generateStructuredResponse(
+  content: string,
+  context: {
+    complexity: string;
+    topics: string[];
+    intent?: string;
+    userMessage?: string;
+  },
+): StructuredResponse {
+  const sections: ResponseSection[] = [];
+  const intent = context.intent || "general";
+  
+  // Handle special response types
+  if (intent === "code_request") {
+    return generateCodeStructuredResponse(content, context);
+  }
+  
+  if (context.topics.includes('bioinformatics') || context.topics.includes('analysis')) {
+    return generateBioinformaticsStructuredResponse(content, context);
+  }
+
+  // Parse existing content into sections
+  const lines = content.split("\n").filter(line => line.trim());
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Headings
+    if (line.startsWith("##")) {
+      sections.push({
+        type: 'heading',
+        level: 2,
+        content: line.replace(/^##\s*/, '')
+      });
+    } else if (line.startsWith("###")) {
+      sections.push({
+        type: 'heading',
+        level: 3,
+        content: line.replace(/^###\s*/, '')
+      });
+    }
+    // Code blocks
+    else if (line.startsWith("```")) {
+      const language = line.replace("```", "").trim();
+      const codeLines = [];
+      i++; // Skip opening ```
+      
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      
+      sections.push({
+        type: 'code',
+        content: codeLines.join('\n'),
+        language: language || 'text',
+        copyable: true
+      });
+    }
+    // Regular text
+    else if (line.length > 0) {
+      sections.push({
+        type: 'text',
+        content: line
+      });
+    }
+  }
+  
+  // Add diagram if workflow or process is mentioned
+  if (content.includes('workflow') || content.includes('process') || content.includes('steps')) {
+    const diagram = generateWorkflowDiagram(context.userMessage || '');
+    if (diagram) {
+      sections.splice(1, 0, {
+        type: 'diagram',
+        format: 'mermaid',
+        content: diagram
+      });
+    }
+  }
+
+  return {
+    sections,
+    metadata: {
+      intent,
+      complexity: context.complexity,
+      hasCode: sections.some(s => s.type === 'code'),
+      hasDiagram: sections.some(s => s.type === 'diagram')
+    }
+  };
+}
+
+export function generateCodeStructuredResponse(
+  content: string,
+  context: any
+): StructuredResponse {
+  const sections: ResponseSection[] = [];
+  
+  // Add main heading
+  sections.push({
+    type: 'heading',
+    level: 2,
+    content: '🚀 Code Solution'
+  });
+  
+  // Add understanding section
+  if (context.userMessage) {
+    sections.push({
+      type: 'text',
+      content: `Here's the solution for: ${context.userMessage.slice(0, 100)}${context.userMessage.length > 100 ? '...' : ''}`
+    });
+  }
+  
+  // Extract and add code blocks
+  const codeBlocks = content.match(/```[\s\S]*?```/g) || [];
+  if (codeBlocks.length > 0) {
+    codeBlocks.forEach(block => {
+      const lines = block.split('\n');
+      const language = lines[0].replace('```', '').trim() || 'text';
+      const code = lines.slice(1, -1).join('\n');
+      
+      sections.push({
+        type: 'code',
+        content: code,
+        language,
+        copyable: true
+      });
+    });
+  } else {
+    // Generate sample code if none exists
+    const language = detectLanguageFromQuery(context.userMessage || '');
+    sections.push({
+      type: 'code',
+      content: generateSampleCode(language, context.userMessage || ''),
+      language,
+      copyable: true
+    });
+  }
+  
+  // Add explanation
+  const explanation = extractExplanationContent(content.split('\n'));
+  if (explanation) {
+    sections.push({
+      type: 'heading',
+      level: 3,
+      content: 'How It Works'
+    });
+    sections.push({
+      type: 'text',
+      content: explanation
+    });
+  }
+  
+  return {
+    sections,
+    metadata: {
+      intent: 'code_request',
+      complexity: context.complexity,
+      hasCode: true,
+      hasDiagram: false
+    }
+  };
+}
+
+export function generateBioinformaticsStructuredResponse(
+  content: string,
+  context: any
+): StructuredResponse {
+  const sections: ResponseSection[] = [];
+  
+  sections.push({
+    type: 'heading',
+    level: 2,
+    content: '🧬 Bioinformatics Solution'
+  });
+  
+  // Add workflow diagram for complex analyses
+  if (context.userMessage?.includes('analysis') || context.userMessage?.includes('pipeline')) {
+    sections.push({
+      type: 'diagram',
+      format: 'mermaid',
+      content: generateBioinformaticsDiagram(context.userMessage)
+    });
+  }
+  
+  // Add main content
+  const mainContent = extractMainContent(content.split('\n'));
+  if (mainContent) {
+    sections.push({
+      type: 'text',
+      content: mainContent
+    });
+  }
+  
+  // Add code if present
+  const codeContent = extractCodeContent(content);
+  if (codeContent) {
+    sections.push({
+      type: 'heading',
+      level: 3,
+      content: 'Implementation'
+    });
+    sections.push({
+      type: 'code',
+      content: codeContent.replace(/```\w*\n?/g, '').replace(/```/g, ''),
+      language: 'python',
+      copyable: true
+    });
+  }
+  
+  return {
+    sections,
+    metadata: {
+      intent: context.intent,
+      complexity: context.complexity,
+      hasCode: !!codeContent,
+      hasDiagram: true
+    }
+  };
+}
+
+// Helper functions for structured responses
+function detectLanguageFromQuery(query: string): string {
+  const lowerQuery = query.toLowerCase();
+  if (lowerQuery.includes('python') || lowerQuery.includes('bioinformatics')) return 'python';
+  if (lowerQuery.includes('javascript') || lowerQuery.includes('react')) return 'javascript';
+  if (lowerQuery.includes('bash') || lowerQuery.includes('shell')) return 'bash';
+  if (lowerQuery.includes('sql')) return 'sql';
+  return 'python'; // Default for bioinformatics
+}
+
+function generateSampleCode(language: string, query: string): string {
+  switch (language) {
+    case 'python':
+      return `# ${query.slice(0, 50)}${query.length > 50 ? '...' : ''}\ndef solution():\n    # Your implementation here\n    pass\n\n# Example usage\nresult = solution()\nprint(result)`;
+    case 'javascript':
+      return `// ${query.slice(0, 50)}${query.length > 50 ? '...' : ''}\nfunction solution() {\n    // Your implementation here\n    return result;\n}\n\n// Example usage\nconst result = solution();\nconsole.log(result);`;
+    case 'bash':
+      return `#!/bin/bash\n# ${query.slice(0, 50)}${query.length > 50 ? '...' : ''}\n\necho "Running solution..."\n# Your commands here`;
+    default:
+      return `// Implementation for: ${query.slice(0, 50)}${query.length > 50 ? '...' : ''}\n// Add your code here`;
+  }
+}
+
+function generateWorkflowDiagram(query: string): string {
+  if (query.includes('analysis') || query.includes('pipeline')) {
+    return `graph TD
+    A[Input Data] --> B[Preprocessing]
+    B --> C[Analysis]
+    C --> D[Visualization]
+    D --> E[Results]`;
+  }
+  
+  if (query.includes('development') || query.includes('build')) {
+    return `graph LR
+    A[Plan] --> B[Design]
+    B --> C[Develop]
+    C --> D[Test]
+    D --> E[Deploy]`;
+  }
+  
+  return `graph TD
+    A[Start] --> B[Process]
+    B --> C[Result]`;
+}
+
+function generateBioinformaticsDiagram(query: string): string {
+  if (query.includes('sequencing') || query.includes('dna')) {
+    return `graph TD
+    A[Raw Reads] --> B[Quality Control]
+    B --> C[Alignment]
+    C --> D[Variant Calling]
+    D --> E[Annotation]
+    E --> F[Results]`;
+  }
+  
+  if (query.includes('protein') || query.includes('structure')) {
+    return `graph TD
+    A[Sequence] --> B[Homology Search]
+    B --> C[Structure Prediction]
+    C --> D[Validation]
+    D --> E[Analysis]`;
+  }
+  
+  return `graph TD
+    A[Data Input] --> B[Processing]
+    B --> C[Analysis]
+    C --> D[Visualization]`;
+}
+
 export function structureResponseContent(
   content: string,
   context: {
@@ -248,59 +557,23 @@ export function structureResponseContent(
     userMessage?: string;
   },
 ): string {
-  if (content.length < 100) return content;
-  if (content.includes("## Understanding") || content.includes("## Solution")) return content;
-
-  const lines = content.split("\n").filter((line) => line.trim());
-  const intent = context.intent || "general";
-
-  // For simple responses, just clean formatting
-  if (context.complexity === "simple" || lines.length <= 2) {
-    return lines
-      .map((line, i) => (i === 0 ? `**${line}**` : line))
-      .join("\n\n");
-  }
-
-  let structured = "";
-
-  // Add greeting for certain intents
-  if (intent === "greeting") {
-    return content; // Keep greetings simple
-  }
-
-  // Add understanding section for complex queries
-  if (context.userMessage && intent !== "farewell") {
-    const summary = generateIntentSummary(context.userMessage, intent);
-    if (summary) {
-      structured += `${RESPONSE_STRUCTURE.summary}${summary}\n\n`;
+  // Generate structured response and convert back to markdown
+  const structured = generateStructuredResponse(content, context);
+  
+  return structured.sections.map(section => {
+    switch (section.type) {
+      case 'heading':
+        const hashes = '#'.repeat(section.level || 2);
+        return `${hashes} ${section.content}`;
+      case 'code':
+        return `\`\`\`${section.language || 'text'}\n${section.content}\n\`\`\``;
+      case 'diagram':
+        return `\`\`\`${section.format || 'mermaid'}\n${section.content}\n\`\`\``;
+      case 'text':
+      default:
+        return section.content;
     }
-  }
-
-  // Main solution content
-  const mainContent = extractMainContent(lines);
-  if (mainContent) {
-    structured += `${RESPONSE_STRUCTURE.solution}${mainContent}\n\n`;
-  }
-
-  // Code examples with proper formatting
-  const codeContent = extractCodeContent(content);
-  if (codeContent) {
-    structured += `${RESPONSE_STRUCTURE.example}${codeContent}\n\n`;
-  }
-
-  // Explanations
-  const explanationContent = extractExplanationContent(lines);
-  if (explanationContent) {
-    structured += `${RESPONSE_STRUCTURE.explanation}${explanationContent}\n\n`;
-  }
-
-  // Key points/notes
-  const notesContent = extractKeyPoints(lines);
-  if (notesContent) {
-    structured += `${RESPONSE_STRUCTURE.notes}${notesContent}\n\n`;
-  }
-
-  return structured.trim();
+  }).join('\n\n');
 }
 
 // ========== UTILITIES ==========
@@ -585,16 +858,32 @@ export async function enhanceResponse(
     };
   }
 
-  // Generate conversational hook
-  const hook = generateConversationHook(intent, conversationContext, options.userMessage);
-
-  // Structure the main content
-  const structuredContent = structureResponseContent(message.content, {
+  // Generate structured response
+  const structuredResponse = generateStructuredResponse(message.content, {
     complexity: conversationContext.complexity,
     topics: conversationContext.topics,
     intent,
     userMessage: options.userMessage,
   });
+
+  // Generate conversational hook
+  const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+
+  // Convert structured response back to markdown for compatibility
+  const structuredContent = structuredResponse.sections.map(section => {
+    switch (section.type) {
+      case 'heading':
+        const hashes = '#'.repeat(section.level || 2);
+        return `${hashes} ${section.content}`;
+      case 'code':
+        return `\`\`\`${section.language || 'text'}\n${section.content}\n\`\`\``;
+      case 'diagram':
+        return `\`\`\`${section.format || 'mermaid'}\n${section.content}\n\`\`\``;
+      case 'text':
+      default:
+        return section.content;
+    }
+  }).join('\n\n');
 
   // Combine hook and content naturally
   let enhancedContent = "";
@@ -625,6 +914,7 @@ export async function enhanceResponse(
       intent,
       conversationContext,
       responseStyle: "chatgpt",
+      structuredResponse: structuredResponse, // Include structured data for frontend
       embedding: {
         vector: generateSimpleEmbedding(tokenizeText(options.userMessage)),
         model: "simple_bow",

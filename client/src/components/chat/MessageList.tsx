@@ -166,7 +166,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                           const processText = (text: string) => {
                             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
                             const parts = text.split(urlRegex);
-                            
+
                             return parts.map((part, index) => {
                               if (urlRegex.test(part)) {
                                 const url = part.startsWith('http') ? part : `https://${part}`;
