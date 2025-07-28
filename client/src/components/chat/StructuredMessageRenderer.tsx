@@ -1,10 +1,22 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Copy, Check } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Copy, Check } from 'lucide-react';
-import { Button } from '../ui/button';
-import { useState } from 'react';
+import mermaid from 'mermaid';
+
+// Initialize Mermaid
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'default',
+  securityLevel: 'loose',
+  htmlLabels: true,
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true
+  }
+});
 
 interface ResponseSection {
   type: 'heading' | 'text' | 'code' | 'diagram' | 'list' | 'table';
@@ -13,6 +25,8 @@ interface ResponseSection {
   language?: string;
   copyable?: boolean;
   format?: 'mermaid' | 'graphviz' | 'plantuml';
+  headers?: string[];
+  rows?: string[][];
 }
 
 interface StructuredResponse {
@@ -30,7 +44,11 @@ interface StructuredMessageRendererProps {
   structuredData?: StructuredResponse;
 }
 
-const CopyButton: React.FC<{ text: string; className?: string }> = ({ text, className = "" }) => {
+const CopyButton: React.FC<{ text: string; className?: string; label?: string }> = ({ 
+  text, 
+  className = "", 
+  label = "Copy to clipboard" 
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -38,6 +56,14 @@ const CopyButton: React.FC<{ text: string; className?: string }> = ({ text, clas
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      
+      // Analytics tracking
+      if (typeof window !== 'undefined' && (window as any).analytics) {
+        (window as any).analytics.log('copied_code', { 
+          type: text.startsWith('graph') || text.startsWith('flowchart') ? 'diagram' : 'code',
+          length: text.length
+        });
+      }
     } catch (err) {
       console.error('Failed to copy text:', err);
     }
@@ -49,7 +75,8 @@ const CopyButton: React.FC<{ text: string; className?: string }> = ({ text, clas
       size="sm"
       onClick={handleCopy}
       className={`absolute top-2 right-2 h-8 w-8 p-0 opacity-70 hover:opacity-100 transition-opacity ${className}`}
-      title={copied ? "Copied!" : "Copy to clipboard"}
+      title={copied ? "Copied!" : label}
+      aria-label={copied ? "Copied!" : label}
     >
       {copied ? (
         <Check className="h-4 w-4 text-green-500" />
@@ -60,66 +87,19 @@ const CopyButton: React.FC<{ text: string; className?: string }> = ({ text, clas
   );
 };
 
-const MermaidDiagram: React.FC<{ code: string; id: string }> = ({ code, id }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const renderDiagram = async () => {
-      if (!containerRef.current) return;
-      
-      try {
-        // Import mermaid dynamically
-        const mermaid = (await import('mermaid')).default;
-        
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          themeVariables: {
-            primaryColor: '#3b82f6',
-            primaryTextColor: '#1f2937',
-            primaryBorderColor: '#e5e7eb',
-            lineColor: '#6b7280',
-            secondaryColor: '#f3f4f6',
-            tertiaryColor: '#ffffff'
-          }
-        });
-
-        const { svg } = await mermaid.render(id, code);
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg;
-        }
-      } catch (error) {
-        console.error('Error rendering Mermaid diagram:', error);
-        if (containerRef.current) {
-          containerRef.current.innerHTML = `
-            <div class="p-4 border border-red-200 rounded-md bg-red-50">
-              <p class="text-red-600 text-sm">Error rendering diagram</p>
-              <pre class="text-xs mt-2 text-gray-600">${code}</pre>
-            </div>
-          `;
-        }
-      }
-    };
-
-    renderDiagram();
-  }, [code, id]);
-
+const CodeBlock: React.FC<{ code: string; language: string; copyable?: boolean }> = ({ 
+  code, 
+  language, 
+  copyable = true 
+}) => {
   return (
-    <div className="relative my-4 p-4 bg-white border rounded-lg">
-      <CopyButton text={code} />
-      <div ref={containerRef} className="mermaid-container" />
-    </div>
-  );
-};
-
-const CodeBlock: React.FC<{ 
-  code: string; 
-  language: string; 
-  copyable?: boolean 
-}> = ({ code, language, copyable = true }) => {
-  return (
-    <div className="relative my-4">
-      {copyable && <CopyButton text={code} />}
+    <div className="relative mb-4 group">
+      {copyable && (
+        <CopyButton 
+          text={code} 
+          label="Copy code"
+        />
+      )}
       <SyntaxHighlighter
         language={language}
         style={tomorrow}
@@ -127,11 +107,171 @@ const CodeBlock: React.FC<{
           margin: 0,
           borderRadius: '0.5rem',
           fontSize: '0.875rem',
+          lineHeight: '1.5'
         }}
-        showLineNumbers={code.split('\n').length > 5}
+        wrapLongLines={true}
+        showLineNumbers={code.split('\n').length > 10}
       >
         {code}
       </SyntaxHighlighter>
+    </div>
+  );
+};
+
+const MermaidDiagram: React.FC<{ code: string; copyable?: boolean }> = ({ code, copyable = true }) => {
+  const [diagramId] = useState(`mermaid-${Math.random().toString(36).substr(2, 9)}`);
+  const [isRendered, setIsRendered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const renderDiagram = async () => {
+      try {
+        const element = document.getElementById(diagramId);
+        if (element) {
+          // Clear any existing content
+          element.innerHTML = '';
+          
+          // Render the diagram
+          const { svg } = await mermaid.render(`${diagramId}-svg`, code);
+          element.innerHTML = svg;
+          setIsRendered(true);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Mermaid rendering error:', err);
+        setError('Failed to render diagram');
+        setIsRendered(false);
+      }
+    };
+
+    renderDiagram();
+  }, [code, diagramId]);
+
+  if (error) {
+    return (
+      <div className="mb-4 p-4 border border-red-200 rounded-lg bg-red-50">
+        <p className="text-red-600 text-sm">⚠️ {error}</p>
+        <details className="mt-2">
+          <summary className="text-red-500 cursor-pointer text-xs">Show diagram code</summary>
+          <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-x-auto">
+            {code}
+          </pre>
+        </details>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative mb-4 group">
+      {copyable && isRendered && (
+        <CopyButton 
+          text={code} 
+          label="Copy diagram code"
+          className="bg-white/90 border shadow-sm"
+        />
+      )}
+      <div 
+        className="diagram-container overflow-x-auto max-w-full bg-white p-4 rounded-lg border"
+        style={{ minHeight: '100px' }}
+      >
+        <div 
+          id={diagramId} 
+          className="mermaid"
+          aria-label="Workflow diagram"
+        />
+        {!isRendered && !error && (
+          <div className="flex items-center justify-center h-20 text-gray-500">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <span className="ml-2">Rendering diagram...</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Table: React.FC<{ headers?: string[]; rows?: string[][]; content?: string }> = ({ 
+  headers, 
+  rows, 
+  content 
+}) => {
+  // Parse markdown table if content is provided
+  if (content && !headers && !rows) {
+    const lines = content.trim().split('\n');
+    const parsedHeaders = lines[0]?.split('|').map(h => h.trim()).filter(h => h);
+    const parsedRows = lines.slice(2)?.map(line => 
+      line.split('|').map(cell => cell.trim()).filter(cell => cell)
+    );
+    
+    return (
+      <div className="mb-4 overflow-x-auto">
+        <table className="min-w-full border-collapse border border-gray-300 rounded-lg">
+          {parsedHeaders && (
+            <thead className="bg-gray-50">
+              <tr>
+                {parsedHeaders.map((header, index) => (
+                  <th 
+                    key={index} 
+                    className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          )}
+          <tbody>
+            {parsedRows?.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-gray-50">
+                {row.map((cell, cellIndex) => (
+                  <td 
+                    key={cellIndex} 
+                    className="border border-gray-300 px-4 py-2 text-gray-600"
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // Use provided headers and rows
+  return (
+    <div className="mb-4 overflow-x-auto">
+      <table className="min-w-full border-collapse border border-gray-300 rounded-lg">
+        {headers && (
+          <thead className="bg-gray-50">
+            <tr>
+              {headers.map((header, index) => (
+                <th 
+                  key={index} 
+                  className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700"
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {rows?.map((row, rowIndex) => (
+            <tr key={rowIndex} className="hover:bg-gray-50">
+              {row.map((cell, cellIndex) => (
+                <td 
+                  key={cellIndex} 
+                  className="border border-gray-300 px-4 py-2 text-gray-600"
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -154,7 +294,7 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
                 <HeadingTag 
                   key={key} 
                   className={`font-semibold mb-3 ${
-                    section.level === 2 ? 'text-xl' : 'text-lg'
+                    section.level === 2 ? 'text-xl text-gray-800' : 'text-lg text-gray-700'
                   }`}
                 >
                   {section.content}
@@ -165,12 +305,13 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
               return (
                 <div 
                   key={key} 
-                  className="mb-4 whitespace-pre-wrap leading-relaxed"
+                  className="mb-4 whitespace-pre-wrap leading-relaxed text-gray-700"
                   dangerouslySetInnerHTML={{ 
                     __html: section.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
+                      .replace(/\n/g, '<br>')
                   }}
                 />
               );
@@ -181,33 +322,43 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
                   key={key}
                   code={section.content}
                   language={section.language || 'text'}
-                  copyable={section.copyable}
+                  copyable={section.copyable !== false}
                 />
               );
               
             case 'diagram':
-              if (section.format === 'mermaid') {
+              if (section.format === 'mermaid' || section.content.startsWith('graph') || section.content.startsWith('flowchart')) {
                 return (
                   <MermaidDiagram
                     key={key}
                     code={section.content}
-                    id={`mermaid-${index}`}
+                    copyable={section.copyable !== false}
                   />
                 );
               }
               return (
-                <div key={key} className="my-4 p-4 bg-gray-50 rounded-lg">
-                  <pre className="text-sm">{section.content}</pre>
+                <div key={key} className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <pre className="text-sm overflow-x-auto">{section.content}</pre>
                 </div>
               );
               
-            case 'list':
-              const listItems = section.content.split('\n').filter(item => item.trim());
+            case 'table':
               return (
-                <ul key={key} className="mb-4 list-disc list-inside space-y-1">
-                  {listItems.map((item, i) => (
-                    <li key={i} className="leading-relaxed">
-                      {item.replace(/^[-*]\s*/, '')}
+                <Table
+                  key={key}
+                  headers={section.headers}
+                  rows={section.rows}
+                  content={section.content}
+                />
+              );
+              
+            case 'list':
+              const items = section.content.split('\n').filter(item => item.trim());
+              return (
+                <ul key={key} className="mb-4 list-disc list-inside space-y-1 text-gray-700">
+                  {items.map((item, itemIndex) => (
+                    <li key={itemIndex} className="leading-relaxed">
+                      {item.replace(/^-\s*/, '')}
                     </li>
                   ))}
                 </ul>
@@ -215,7 +366,7 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
               
             default:
               return (
-                <div key={key} className="mb-4">
+                <div key={key} className="mb-4 text-gray-700">
                   {section.content}
                 </div>
               );
@@ -225,80 +376,104 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
     );
   }
 
-  // Fallback to parsing markdown-style content
+  // Fallback: Parse markdown content
   const parseMarkdownContent = (text: string) => {
     const lines = text.split('\n');
-    const elements: JSX.Element[] = [];
+    const elements: React.ReactNode[] = [];
     let i = 0;
 
     while (i < lines.length) {
       const line = lines[i];
-
-      // Code blocks
+      
+      // Handle code blocks
       if (line.startsWith('```')) {
         const language = line.replace('```', '').trim() || 'text';
-        const codeLines: string[] = [];
-        i++; // Skip opening ```
-
+        const codeLines = [];
+        i++;
+        
         while (i < lines.length && !lines[i].startsWith('```')) {
           codeLines.push(lines[i]);
           i++;
         }
-
-        if (language === 'mermaid') {
+        
+        const code = codeLines.join('\n');
+        
+        if (language === 'mermaid' || code.startsWith('graph') || code.startsWith('flowchart')) {
           elements.push(
             <MermaidDiagram
-              key={elements.length}
-              code={codeLines.join('\n')}
-              id={`mermaid-${elements.length}`}
+              key={`diagram-${elements.length}`}
+              code={code}
+              copyable={true}
             />
           );
         } else {
           elements.push(
             <CodeBlock
-              key={elements.length}
-              code={codeLines.join('\n')}
+              key={`code-${elements.length}`}
+              code={code}
               language={language}
               copyable={true}
             />
           );
         }
-        i++; // Skip closing ```
+        i++;
+        continue;
       }
-      // Headings
-      else if (line.startsWith('##')) {
+      
+      // Handle headings
+      if (line.startsWith('##')) {
         const level = line.match(/^#+/)?.[0].length || 2;
         const text = line.replace(/^#+\s*/, '');
         const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
         
         elements.push(
           <HeadingTag 
-            key={elements.length} 
-            className={`font-semibold mb-3 ${level === 2 ? 'text-xl' : 'text-lg'}`}
+            key={`heading-${elements.length}`}
+            className={`font-semibold mb-3 ${
+              level === 2 ? 'text-xl text-gray-800' : 'text-lg text-gray-700'
+            }`}
           >
             {text}
           </HeadingTag>
         );
         i++;
+        continue;
       }
-      // Regular text
-      else if (line.trim()) {
+      
+      // Handle tables
+      if (line.includes('|') && lines[i + 1]?.includes('|')) {
+        const tableLines = [];
+        while (i < lines.length && lines[i].includes('|')) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        
+        elements.push(
+          <Table
+            key={`table-${elements.length}`}
+            content={tableLines.join('\n')}
+          />
+        );
+        continue;
+      }
+      
+      // Handle regular text
+      if (line.trim()) {
         elements.push(
           <p 
-            key={elements.length} 
-            className="mb-4 leading-relaxed"
-            dangerouslySetInnerHTML={{ 
+            key={`text-${elements.length}`}
+            className="mb-4 leading-relaxed text-gray-700"
+            dangerouslySetInnerHTML={{
               __html: line
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
             }}
           />
         );
-        i++;
-      } else {
-        i++;
       }
+      
+      i++;
     }
 
     return elements;
