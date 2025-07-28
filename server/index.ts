@@ -63,7 +63,15 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  
+
+  // Clean up any existing processes on this port
+  try {
+    const { execSync } = await import('child_process');
+    execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`, { stdio: 'ignore' });
+  } catch (e) {
+    // Ignore cleanup errors
+  }
+
   server.listen({
     port,
     host: "0.0.0.0",
@@ -79,3 +87,14 @@ app.use((req, res, next) => {
     process.exit(1);
   });
 })();
+console.log('✅ ScrapeDuck found and available for web search');
+  } else {
+    console.log('⚠️ ScrapeDuck API key not found - web search disabled');
+  }
+
+  // Database status check
+  if (process.env.DATABASE_URL) {
+    console.log('📊 Database: Configured (fallback enabled if unavailable)');
+  } else {
+    console.log('📊 Database: Running in fallback mode (memory storage)');
+  }

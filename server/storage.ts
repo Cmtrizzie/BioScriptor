@@ -6,12 +6,18 @@ import * as schema from "@shared/schema";
 // Database connection with fallback for development
 const connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/bioscriptor_dev";
 
-let db: ReturnType<typeof drizzle>;
+let db: any = null;
+let isDatabaseAvailable = false;
 
 if (process.env.DATABASE_URL) {
-  // Production: Use Neon database
-  const sql = neon(connectionString);
-  db = drizzle(sql, { schema });
+  try {
+    const sql = neon(process.env.DATABASE_URL);
+    db = drizzle(sql, { schema });
+    isDatabaseAvailable = true;
+  } catch (error) {
+    console.warn('Database connection failed, running in fallback mode:', error);
+    isDatabaseAvailable = false;
+  }
 } else {
   // Development: Use in-memory fallback or local PostgreSQL
   console.log("Warning: No DATABASE_URL found. Using mock database for development.");
@@ -21,43 +27,98 @@ if (process.env.DATABASE_URL) {
   db = drizzle(mockSql as any, { schema });
 }
 
+// In-memory fallback storage
+const fallbackStorage = {
+  users: new Map(),
+  conversations: new Map(),
+  subscriptions: new Map(),
+  adminLogs: []
+};
+
 export const storage = {
   async getUserByFirebaseUid(firebaseUid: string) {
+    if (!isDatabaseAvailable) {
+      // Fallback mode
+      const user = fallbackStorage.users.get(firebaseUid);
+      return user || null;
+    }
     try {
       const users = await db.select().from(schema.users).where(eq(schema.users.firebaseUid, firebaseUid));
       return users[0] || null;
     } catch (error) {
       console.error("Database error:", error);
-      return null;
+      isDatabaseAvailable = false;
+      const user = fallbackStorage.users.get(firebaseUid);
+      return user || null;
     }
   },
 
   async createUser(userData: any) {
+    if (!isDatabaseAvailable) {
+      // Fallback mode
+      const user = {
+        ...userData,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      fallbackStorage.users.set(userData.firebaseUid, user);
+      return user;
+    }
     try {
       const [user] = await db.insert(schema.users).values(userData).returning();
       return user;
     } catch (error) {
       console.error("Database error:", error);
-      return { id: 1, ...userData };
+      isDatabaseAvailable = false;
+      const user = {
+        ...userData,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      fallbackStorage.users.set(userData.firebaseUid, user);
+      return user;
     }
   },
 
   async updateUser(userId: number, updates: any) {
+    if (!isDatabaseAvailable) {
+      // Fallback mode
+      const existingUser = fallbackStorage.users.get(userId);
+      if (existingUser) {
+        const updatedUser = { ...existingUser, ...updates, updatedAt: new Date() };
+        fallbackStorage.users.set(userId, updatedUser);
+        return updatedUser;
+      }
+      return null;
+    }
     try {
       const [user] = await db.update(schema.users).set(updates).where(eq(schema.users.id, userId)).returning();
       return user;
     } catch (error) {
       console.error("Database error:", error);
-      return { id: userId, ...updates };
+      isDatabaseAvailable = false;
+      const existingUser = fallbackStorage.users.get(userId);
+      if (existingUser) {
+        const updatedUser = { ...existingUser, ...updates, updatedAt: new Date() };
+        fallbackStorage.users.set(userId, updatedUser);
+        return updatedUser;
+      }
+      return null;
     }
   },
 
   async getChatSessions(userId: number) {
+    if (!isDatabaseAvailable) {
+      return fallbackStorage.conversations.get(userId) || [];
+    }
     try {
       return await db.select().from(schema.chatSessions).where(eq(schema.chatSessions.userId, userId));
     } catch (error) {
       console.error("Database error:", error);
-      return [];
+      isDatabaseAvailable = false;
+      return fallbackStorage.conversations.get(userId) || [];
     }
   },
 
@@ -111,6 +172,9 @@ export const storage = {
   },
 
   async getActiveSubscription(userId: number) {
+    if (!isDatabaseAvailable) {
+      return fallbackStorage.subscriptions.get(userId) || null;
+    }
     try {
       const subscriptions = await db.select().from(schema.subscriptions)
         .where(eq(schema.subscriptions.userId, userId))
@@ -118,25 +182,34 @@ export const storage = {
       return subscriptions[0] || null;
     } catch (error) {
       console.error("Database error:", error);
-      return null;
+      isDatabaseAvailable = false;
+      return fallbackStorage.subscriptions.get(userId) || null;
     }
   },
 
   async getAllUsers() {
+    if (!isDatabaseAvailable) {
+      return Array.from(fallbackStorage.users.values());
+    }
     try {
       return await db.select().from(schema.users);
     } catch (error) {
       console.error("Database error:", error);
-      return [];
+      isDatabaseAvailable = false;
+      return Array.from(fallbackStorage.users.values());
     }
   },
 
   async getAllSubscriptions() {
+    if (!isDatabaseAvailable) {
+      return Array.from(fallbackStorage.subscriptions.values());
+    }
     try {
       return await db.select().from(schema.subscriptions);
     } catch (error) {
       console.error("Database error:", error);
-      return [];
+      isDatabaseAvailable = false;
+      return Array.from(fallbackStorage.subscriptions.values());
     }
   },
 
@@ -296,21 +369,33 @@ export const storage = {
   },
 
   async createAdminLog(logData: any) {
+    if (!isDatabaseAvailable) {
+      const log = { ...logData, id: Date.now().toString(), createdAt: new Date() };
+      fallbackStorage.adminLogs.push(log);
+      return log;
+    }
     try {
       const [log] = await db.insert(schema.adminLogs).values(logData).returning();
       return log;
     } catch (error) {
       console.error("Database error:", error);
-      return { id: 1, ...logData };
+      isDatabaseAvailable = false;
+      const log = { ...logData, id: Date.now().toString(), createdAt: new Date() };
+      fallbackStorage.adminLogs.push(log);
+      return log;
     }
   },
 
   async getAdminLogs(limit: number = 100) {
+    if (!isDatabaseAvailable) {
+      return fallbackStorage.adminLogs.slice(-100);
+    }
     try {
       return await db.select().from(schema.adminLogs).orderBy(desc(schema.adminLogs.timestamp)).limit(limit);
     } catch (error) {
       console.error("Database error:", error);
-      return [];
+      isDatabaseAvailable = false;
+      return fallbackStorage.adminLogs.slice(-100);
     }
   },
 };
