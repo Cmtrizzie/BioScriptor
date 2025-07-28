@@ -60,11 +60,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const email = req.headers['x-firebase-email'] as string;
         const displayName = req.headers['x-firebase-display-name'] as string;
         const photoURL = req.headers['x-firebase-photo-url'] as string;
-        
+
         if (!email) {
           return res.status(400).json({ error: 'Email required' });
         }
-        
+
         user = await storage.createUser({
           email,
           displayName,
@@ -80,13 +80,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const lastReset = user.updatedAt ? new Date(user.updatedAt) : new Date(user.createdAt);
         const now = new Date();
         const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-        
+
         // Reset every 24 hours OR if query count exceeds limit (for demo purposes)
         if (hoursSinceReset >= 24 || user.queryCount >= 10) {
           user = await storage.updateUser(user.id, { queryCount: 0 });
         }
       }
-      
+
       req.user = user;
       next();
     } catch (error) {
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const planLimits = SubscriptionAccessControl.getPlanLimits(req.user.tier);
       const subscriptionInfo = SubscriptionAccessControl.generateAccessSummary(req.user.tier);
-      
+
       res.json({
         tier: req.user.tier,
         limits: planLimits,
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get subscription limits
       const planLimits = SubscriptionAccessControl.getPlanLimits(req.user.tier);
-      
+
       // Check query limits
       if (SubscriptionAccessControl.hasQueryLimit(req.user.tier, req.user.queryCount)) {
         // For demo user, allow unlimited queries by resetting count when limit is reached
@@ -165,11 +165,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let fileContent = null;
       let fileAnalysis = null;
-      
+
       // Handle file upload if present
       if (req.file) {
         const fileSizeInMB = req.file.size / (1024 * 1024);
-        
+
         // Check file size limits based on subscription
         if (!SubscriptionAccessControl.canUploadFileSize(req.user.tier, fileSizeInMB)) {
           return res.status(413).json({
@@ -191,10 +191,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         fileContent = req.file.buffer.toString();
         const fileType = req.file.originalname.split('.').pop()?.toLowerCase();
-        
+
         // Analyze the uploaded file
         fileAnalysis = await analyzeBioFile(fileContent, fileType as any);
-        
+
         // Save file to storage
         await storage.createBioFile({
           userId: req.user.id,
@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const needsAdvancedAnalysis = message.toLowerCase().includes('advanced') || 
                                    message.toLowerCase().includes('complex') ||
                                    message.toLowerCase().includes('detailed analysis');
-      
+
       if (needsAdvancedAnalysis && !SubscriptionAccessControl.canAccessFeature(req.user.tier, 'advancedAnalysis')) {
         return res.status(403).json({
           error: `Advanced analysis features require a Premium or Enterprise subscription. Please upgrade to access detailed bioinformatics analysis.`,
@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Process the query with AI, passing user tier for provider filtering
       const aiResponse = await processQuery(message, fileAnalysis || undefined, undefined, undefined, req.user.tier);
-      
+
       // Update user query count
       await storage.updateUser(req.user.id, {
         queryCount: req.user.queryCount + 1
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add subscription info to response
       const subscriptionInfo = SubscriptionAccessControl.generateAccessSummary(req.user.tier);
-      
+
       res.json({ 
         response: aiResponse,
         subscriptionInfo,
@@ -280,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate export based on format
       let exportData;
       let contentType;
-      
+
       switch (format.toLowerCase()) {
         case 'txt':
           exportData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscription", requireAuth, async (req: any, res) => {
     try {
       const { paypalSubscriptionId, tier } = req.body;
-      
+
       const subscription = await storage.createSubscription({
         userId: req.user.id,
         paypalSubscriptionId,
@@ -378,13 +378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
-      
+
       // Remove sensitive information
       const publicUsers = users.map(user => ({
         ...user,
         firebaseUid: undefined
       }));
-      
+
       res.json(publicUsers);
     } catch (error) {
       console.error('Admin users fetch error:', error);
@@ -417,11 +417,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const updatedUser = await storage.resetUserDailyLimit(parseInt(userId));
-      
+
       if (!updatedUser) {
         return res.status(404).json({ error: 'User not found' });
       }
-      
+
       // Log admin action
       await storage.createAdminLog({
         adminUserId: req.user.id,
@@ -429,7 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetResource: `user:${userId}`,
         details: 'Reset daily query limit'
       });
-      
+
       res.json(updatedUser);
     } catch (error) {
       console.error('Admin reset limit error:', error);
@@ -441,13 +441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tier } = req.params;
       const updates = req.body;
-      
+
       const updatedPlanLimit = await storage.updatePlanLimit(tier as any, updates);
-      
+
       if (!updatedPlanLimit) {
         return res.status(404).json({ error: 'Plan limit not found' });
       }
-      
+
       // Log admin action
       await storage.createAdminLog({
         adminUserId: req.user.id,
@@ -455,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetResource: `plan:${tier}`,
         details: `Updated plan limits: ${JSON.stringify(updates)}`
       });
-      
+
       res.json(updatedPlanLimit);
     } catch (error) {
       console.error('Admin plan limits update error:', error);
@@ -468,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getAllUsers();
       const subscriptions = await storage.getAllSubscriptions();
       const logs = await storage.getAdminLogs(1000);
-      
+
       // Calculate revenue (mock calculation)
       const revenue = subscriptions
         .filter(s => s.status === 'active')
@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return lastActive.getTime() > Date.now() - 24 * 60 * 60 * 1000;
         }).length
       };
-      
+
       res.json(analytics);
     } catch (error) {
       console.error('Admin analytics error:', error);
@@ -516,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cohere: !!process.env.COHERE_API_KEY,
         scrapeduck: !!process.env.SCRAPEDUCK_API_KEY
       };
-      
+
       res.json(apiStatus);
     } catch (error) {
       console.error('API keys fetch error:', error);
@@ -528,19 +528,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const { banned, reason } = req.body;
-      
+
       const updatedUser = await storage.updateUser(parseInt(userId), { 
         tier: banned ? 'banned' : 'free',
         queryCount: banned ? 0 : undefined
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: banned ? 'ban_user' : 'unban_user',
         targetResource: `user:${userId}`,
         details: `Reason: ${reason || 'No reason provided'}`
       });
-      
+
       res.json(updatedUser);
     } catch (error) {
       console.error('User ban error:', error);
@@ -552,19 +552,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const { tier } = req.body;
-      
+
       const updatedUser = await storage.updateUser(parseInt(userId), { 
         tier,
         queryCount: 0 // Reset on upgrade
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'upgrade_user',
         targetResource: `user:${userId}`,
         details: `Upgraded to ${tier}`
       });
-      
+
       res.json(updatedUser);
     } catch (error) {
       console.error('User upgrade error:', error);
@@ -577,22 +577,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const { credits } = req.body;
       const user = await storage.getUserById(parseInt(userId));
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      
+
       const updatedUser = await storage.updateUser(parseInt(userId), { 
         queryCount: Math.max(0, user.queryCount - credits)
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'add_credits',
         targetResource: `user:${userId}`,
         details: `Added ${credits} credits`
       });
-      
+
       res.json(updatedUser);
     } catch (error) {
       console.error('Add credits error:', error);
@@ -614,21 +614,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/plans", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { tier, maxQueries, maxFileSize, features } = req.body;
-      
+
       const newPlan = await storage.createPlanLimit({
         tier,
         maxQueries,
         maxFileSize,
         features
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'create_plan',
         targetResource: `plan:${tier}`,
         details: `Created new plan: ${JSON.stringify({ maxQueries, maxFileSize, features })}`
       });
-      
+
       res.json(newPlan);
     } catch (error) {
       console.error('Plan creation error:', error);
@@ -640,20 +640,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tier } = req.params;
       const updates = req.body;
-      
+
       const updatedPlan = await storage.updatePlanLimit(tier as any, updates);
-      
+
       if (!updatedPlan) {
         return res.status(404).json({ error: 'Plan not found' });
       }
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'update_plan',
         targetResource: `plan:${tier}`,
         details: `Updated plan: ${JSON.stringify(updates)}`
       });
-      
+
       res.json(updatedPlan);
     } catch (error) {
       console.error('Plan update error:', error);
@@ -664,24 +664,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/plans/:tier", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { tier } = req.params;
-      
+
       if (tier === 'free') {
         return res.status(400).json({ error: 'Cannot delete free plan' });
       }
-      
+
       const deleted = await storage.deletePlanLimit(tier as any);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: 'Plan not found' });
       }
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'delete_plan',
         targetResource: `plan:${tier}`,
         details: `Deleted plan: ${tier}`
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Plan deletion error:', error);
@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { code, type, value, maxUses, expiresAt } = req.body;
-      
+
       const promoCode = await storage.createPromoCode({
         code: code.toUpperCase(),
         type,
@@ -713,14 +713,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         active: true
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'create_promo_code',
         targetResource: `promo:${code}`,
         details: `Created promo code: ${type} ${value}${type === 'percentage' ? '%' : '$'}`
       });
-      
+
       res.json(promoCode);
     } catch (error) {
       console.error('Promo code creation error:', error);
@@ -732,20 +732,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       const updatedPromo = await storage.updatePromoCode(parseInt(id), updates);
-      
+
       if (!updatedPromo) {
         return res.status(404).json({ error: 'Promo code not found' });
       }
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'update_promo_code',
         targetResource: `promo:${id}`,
         details: `Updated promo code: ${JSON.stringify(updates)}`
       });
-      
+
       res.json(updatedPromo);
     } catch (error) {
       console.error('Promo code update error:', error);
@@ -756,20 +756,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/promo-codes/:id", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       const deleted = await storage.deletePromoCode(parseInt(id));
-      
+
       if (!deleted) {
         return res.status(404).json({ error: 'Promo code not found' });
       }
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'delete_promo_code',
         targetResource: `promo:${id}`,
         details: `Deleted promo code`
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Promo code deletion error:', error);
@@ -781,17 +781,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/api-providers", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { name, type, apiKey, endpoint, enabled } = req.body;
-      
+
       // Store API provider configuration
       // This would typically be stored in a database
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'add_api_provider',
         targetResource: `api:${name}`,
         details: `Added new API provider: ${name} (${type})`
       });
-      
+
       res.json({ success: true, message: 'API provider added successfully' });
     } catch (error) {
       console.error('API provider creation error:', error);
@@ -803,17 +803,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { provider } = req.params;
       const { enabled } = req.body;
-      
+
       // Toggle API provider status
       // This would update the provider configuration
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'toggle_api_provider',
         targetResource: `api:${provider}`,
         details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}`
       });
-      
+
       res.json({ success: true, enabled });
     } catch (error) {
       console.error('API provider toggle error:', error);
@@ -824,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/api-errors", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 100;
-      
+
       // Get API error logs - this would come from a dedicated error logging system
       const mockErrors = [
         {
@@ -844,7 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           resolved: false
         }
       ];
-      
+
       res.json(mockErrors.slice(0, limit));
     } catch (error) {
       console.error('API errors fetch error:', error);
@@ -852,14 +852,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment Webhook Routes
+  ```text
+// Payment Webhook Routes
   app.post("/api/webhooks/paypal", async (req, res) => {
     try {
       const event = req.body;
-      
+
       // Log webhook event
       console.log('PayPal webhook received:', event.event_type);
-      
+
       // Handle different webhook events
       switch (event.event_type) {
         case 'BILLING.SUBSCRIPTION.ACTIVATED':
@@ -877,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           console.log('Unhandled webhook event:', event.event_type);
       }
-      
+
       res.status(200).json({ success: true });
     } catch (error) {
       console.error('Webhook processing error:', error);
@@ -888,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/webhook-logs", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 100;
-      
+
       // Mock webhook logs - in production, this would come from a webhook logging system
       const mockWebhookLogs = [
         {
@@ -913,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           processingTime: '5.2s'
         }
       ];
-      
+
       res.json(mockWebhookLogs.slice(0, limit));
     } catch (error) {
       console.error('Webhook logs fetch error:', error);
@@ -944,7 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionId: 'sub_456'
         }
       ];
-      
+
       res.json(mockFailedPayments);
     } catch (error) {
       console.error('Failed payments fetch error:', error);
@@ -955,26 +956,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/manual-subscription", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { userEmail, tier, reason } = req.body;
-      
+
       // Find user by email
       const user = await storage.getUserByEmail?.(userEmail);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      
+
       // Update user tier
       const updatedUser = await storage.updateUser(user.id, { 
         tier,
         queryCount: 0 // Reset on manual change
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'manual_subscription_change',
         targetResource: `user:${user.id}`,
         details: `Manual subscription change to ${tier}. Reason: ${reason}`
       });
-      
+
       res.json({ success: true, user: updatedUser });
     } catch (error) {
       console.error('Manual subscription error:', error);
@@ -985,15 +986,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/grant-lifetime", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { userEmail, accessLevel, customFeatures } = req.body;
-      
+
       // Find user by email
       const user = await storage.getUserByEmail?.(userEmail);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      
+
       const lifetimeTier = accessLevel === 'custom' ? 'lifetime_custom' : accessLevel;
-      
+
       // Update user with lifetime access
       const updatedUser = await storage.updateUser(user.id, { 
         tier: lifetimeTier,
@@ -1001,14 +1002,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lifetimeAccess: true,
         customFeatures: accessLevel === 'custom' ? customFeatures : null
       });
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'grant_lifetime_access',
         targetResource: `user:${user.id}`,
         details: `Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? ` with features: ${JSON.stringify(customFeatures)}` : ''}`
       });
-      
+
       res.json({ success: true, user: updatedUser });
     } catch (error) {
       console.error('Lifetime access grant error:', error);
@@ -1021,11 +1022,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const session = await storage.getChatSession(parseInt(sessionId));
-      
+
       if (!session || session.userId !== req.user.id) {
         return res.status(404).json({ error: 'Session not found' });
       }
-      
+
       res.json(session);
     } catch (error) {
       console.error('Session fetch error:', error);
@@ -1037,11 +1038,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const session = await storage.getChatSession(parseInt(sessionId));
-      
+
       if (!session || session.userId !== req.user.id) {
         return res.status(404).json({ error: 'Session not found' });
       }
-      
+
       const deleted = await storage.deleteChatSession(parseInt(sessionId));
       res.json({ success: deleted });
     } catch (error) {
@@ -1053,3 +1054,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
+
+export const requireAuth = async (req: any, res: any, next: any) => {
+  try {
+    // Rate limiting
+    const clientIp = req.ip || req.connection.remoteAddress;
+    if (securityManager.isRateLimited(clientIp, 100, 60000)) {
+      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+    }
+
+    const firebaseUid = req.headers['x-firebase-uid'];
+    if (!firebaseUid) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Security audit
+    securityManager.createAuditLog({
+      userId: firebaseUid as string,
+      action: 'api_access',
+      resource: req.path,
+      metadata: { method: req.method, userAgent: req.headers['user-agent'] }
+    });
+
+    // Try to get or create user in database, fallback to in-memory user
+    let user;
+    try {
+      user = await storage.getUserByFirebaseUid(firebaseUid as string);
+      if (!user) {
+        // Create user if doesn't exist (first-time login)
+        const email = req.headers['x-firebase-email'] as string;
+        const displayName = req.headers['x-firebase-display-name'] as string;
+        const photoURL = req.headers['x-firebase-photo-url'] as string;
+
+        if (!email) {
+          return res.status(400).json({ error: 'Email required' });
+        }
+
+        user = await storage.createUser({
+          email,
+          displayName,
+          photoURL,
+          firebaseUid: firebaseUid as string,
+          tier: 'free',
+          queryCount: 0,
+        });
+      }
+    } catch (dbError) {
+      console.log('Database unavailable, using fallback user data');
+      // Fallback user when database is disabled
+      user = {
+        id: `fallback-${firebaseUid}`,
+        email: req.headers['x-firebase-email'] as string,
+        displayName: req.headers['x-firebase-display-name'] as string,
+        photoURL: req.headers['x-firebase-photo-url'] as string,
+        firebaseUid: firebaseUid as string,
+        tier: 'free',
+        queryCount: 0,
+      };
+    }
+
+    // Reset demo user query count daily
+    if (firebaseUid === 'demo-user-123') {
+      const lastReset = user.updatedAt ? new Date(user.updatedAt) : new Date(user.createdAt);
+      const now = new Date();
+      const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+
+      // Reset every 24 hours OR if query count exceeds limit (for demo purposes)
+      if (hoursSinceReset >= 24 || user.queryCount >= 10) {
+        try {
+          await storage.updateUser(user.id, { queryCount: 0 });
+        } catch (dbError) {
+          console.log('Database unavailable, skipping user update');
+        }
+      }
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Security middleware error:', error);
+    return res.status(500).json({ error: 'Security validation failed' });
+  }
+};

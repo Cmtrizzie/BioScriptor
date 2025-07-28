@@ -46,12 +46,25 @@ def search_web(query, max_results=5):
     return results
 
 def main():
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "No search query provided"}))
-        sys.exit(1)
+    import argparse
     
-    query = sys.argv[1]
-    max_results = int(sys.argv[2]) if len(sys.argv) > 2 else 5
+    parser = argparse.ArgumentParser(description='Web search tool')
+    parser.add_argument('--query', required=True, help='Search query')
+    parser.add_argument('--num-results', type=int, default=5, help='Number of results')
+    parser.add_argument('--output-format', default='json', help='Output format')
+    
+    try:
+        args = parser.parse_args()
+        query = args.query
+        max_results = args.num_results
+    except:
+        # Fallback to old argument parsing for backward compatibility
+        if len(sys.argv) < 2:
+            print(json.dumps({"error": "No search query provided"}))
+            sys.exit(1)
+        
+        query = sys.argv[1]
+        max_results = 5
     
     try:
         results = search_web(query, max_results)

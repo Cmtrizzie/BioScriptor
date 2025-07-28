@@ -141,7 +141,7 @@ export class WebSearchService {
 
       const pythonProcess = spawn('python3', [
         scrapeDuckPath,
-        '--query', query,
+        '--query', `"${query}"`,
         '--num-results', maxResults.toString(),
         '--output-format', 'json'
       ], {
