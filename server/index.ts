@@ -87,3 +87,19 @@ app.use((req, res, next) => {
     process.exit(1);
   });
 })();
+
+// ========== DATABASE & STORAGE ==========
+import './storage';
+
+// Check database status on startup
+async function checkDatabaseStatus() {
+  try {
+    const { getUserByFirebaseUid } = await import('./storage');
+    await getUserByFirebaseUid('health-check');
+    console.log('✅ Database connection healthy');
+  } catch (error) {
+    console.warn('⚠️ Database connection issues detected, fallback mode enabled');
+  }
+}
+
+checkDatabaseStatus();
