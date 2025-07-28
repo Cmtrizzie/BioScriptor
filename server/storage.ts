@@ -4,18 +4,24 @@ import { eq, desc } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 // Database connection with fallback for development
-const connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/bioscriptor_dev";
+let connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/bioscriptor_dev";
+
+// Clean up DATABASE_URL if it starts with 'psql'
+if (connectionString.startsWith("psql '") && connectionString.endsWith("'")) {
+  connectionString = connectionString.slice(6, -1); // Remove "psql '" from start and "'" from end
+}
 
 let db: any = null;
 let isDatabaseAvailable = false;
 
 console.log('🔍 Checking database configuration...');
 console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('Cleaned connection string format:', connectionString.substring(0, 50) + '...');
 
 if (process.env.DATABASE_URL) {
   try {
     console.log('🔌 Attempting to connect to Neon PostgreSQL...');
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(connectionString);
     db = drizzle(sql, { schema });
     isDatabaseAvailable = true;
     console.log('✅ Database connection established');

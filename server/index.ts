@@ -117,6 +117,9 @@ async function checkDatabaseConnection() {
 
     console.log('🔌 Attempting to connect to Neon PostgreSQL...');
 
+    // Import storage to ensure db is initialized with cleaned connection string
+    const { db, users } = await import('./storage');
+    
     // Test with a simple query
     const testQuery = await db.select().from(users).limit(1);
     console.log('✅ Database connection established and endpoint active');
@@ -128,6 +131,9 @@ async function checkDatabaseConnection() {
     if (error.message?.includes('endpoint has been disabled')) {
       console.log('🔄 Database endpoint is disabled - enable it in Neon console');
       console.log('⚠️ Running in fallback mode with demo data');
+    } else if (error.message?.includes('not a valid URL')) {
+      console.log('🔄 DATABASE_URL format issue - cleaning connection string');
+      console.log('⚠️ Running in fallback mode while fixing connection');
     } else {
       console.log('⚠️ Database connection issues detected, fallback mode enabled');
     }
