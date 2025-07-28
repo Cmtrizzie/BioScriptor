@@ -275,8 +275,8 @@ function detectUserIntent(query: string): string {
         return 'farewell';
     }
 
-    // General trending/news queries
-    if (/(trending|what's happening|news|current events|latest|worldwide|global)/i.test(lowerQuery)) {
+    // General trending/news queries - expanded patterns
+    if (/(trending|what's happening|news|current events|latest|worldwide|global|arsenal|football|soccer|sports|player|transfer)/i.test(lowerQuery)) {
         return 'general_trending';
     }
 
@@ -405,28 +405,34 @@ export const processQuery = async (
         let webSearchResults: WebSearchResponse | undefined;
         let searchContext = '';
 
+        // Enhanced detection for sports/news queries
+        const isGeneralQuery = userIntent === 'general_trending' || 
+                              /(news|latest|arsenal|football|soccer|player|transfer|sport)/i.test(query);
+
         const shouldSearch = webSearchService.detectExplicitSearch(query) || 
                            webSearchService.detectImplicitTriggers(query) ||
-                           userIntent === 'general_trending';
+                           isGeneralQuery;
 
         if (shouldSearch) {
             console.log('🔍 Performing web search for:', query);
             let searchTerms = webSearchService.extractSearchTerms(query);
 
             // For general trending queries, expand search terms
-            if (userIntent === 'general_trending') {
-                searchTerms = `${searchTerms} trending news current events worldwide 2024`;
+            if (isGeneralQuery) {
+                searchTerms = `${searchTerms} latest news 2024`;
             }
 
             webSearchResults = await webSearchService.search(searchTerms, {
                 maxResults: 5,
-                bioinformatics: userIntent !== 'general_trending' // Don't limit to bio for general queries
+                bioinformatics: !isGeneralQuery // Don't limit to bio for general queries
             });
 
             if (webSearchResults.results.length > 0) {
                 searchContext = '\n\nWeb Search Context:\n' + 
                               webSearchService.formatResultsForAI(webSearchResults);
                 console.log(`✅ Found ${webSearchResults.results.length} search results`);
+            } else {
+                console.log('⚠️ No web search results found, providing general response');
             }
         }
 
@@ -438,24 +444,26 @@ export const processQuery = async (
         const memory = context.memory;
         let systemPrompt = '';
 
-        if (userIntent === 'general_trending') {
-            systemPrompt = `You are BioScriptor, a helpful AI assistant. The user is asking about general trending topics or world news.
+        if (userIntent === 'general_trending' || isGeneralQuery) {
+            systemPrompt = `You are BioScriptor, a helpful AI assistant. The user is asking about general topics, news, or current events.
 
 User Intent: ${userIntent}
 User's tone: ${tone}
+Query: ${query}
 
 Response Structure Guidelines:
 1. Use structured markdown format
 2. Start with "## ✅ What You Asked" - summarize their intent
-3. Follow with "## 🌐 Current Trends" - provide trending information
-4. Include "## 💡 Suggestions" with follow-up options
-5. End with engaging follow-up questions
+3. Follow with "## 📰 Latest Information" - provide relevant information
+4. Include "## 💡 Related Topics" with follow-up options
+5. Be conversational and helpful
 
 Guidelines:
-- Be informative and engaging
-- Use current information from web search results
-- Provide structured, easy-to-read responses
+- Address their specific question directly
+- Use current information from web search results when available
+- If no search results, acknowledge and provide general guidance
 - Offer relevant follow-up options
+- Be engaging and informative
 ${searchContext}`;
         } else {
             systemPrompt = `You are BioScriptor, an advanced bioinformatics assistant with a ${personality.name.toLowerCase()} personality.
@@ -488,7 +496,7 @@ ${searchContext}`;
                 ...recentHistory
             ],
             maxTokens: 2000,
-            temperature: userIntent === 'general_trending' ? 0.8 : 0.7,
+            temperature: (userIntent === 'general_trending' || isGeneralQuery) ? 0.8 : 0.7,
             fileAnalysis,
             userMemory: {
                 topics: Array.from(memory.topics),
