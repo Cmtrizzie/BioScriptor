@@ -87,14 +87,3 @@ app.use((req, res, next) => {
     process.exit(1);
   });
 })();
-console.log('✅ ScrapeDuck found and available for web search');
-  } else {
-    console.log('⚠️ ScrapeDuck API key not found - web search disabled');
-  }
-
-  // Database status check
-  if (process.env.DATABASE_URL) {
-    console.log('📊 Database: Configured (fallback enabled if unavailable)');
-  } else {
-    console.log('📊 Database: Running in fallback mode (memory storage)');
-  }
