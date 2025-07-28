@@ -667,9 +667,14 @@ export function detectUserIntent(query: string): string {
     return 'farewell';
   }
 
-  // General trending/news queries
-  if (/(trending|what's happening|news|current events|latest|worldwide|global)/i.test(lowerQuery)) {
+  // Enhanced trending/news queries with more specific patterns
+  if (/(trending|what's happening|news|current events|latest|worldwide|global|breaking|recent|today|this week|this month|update|developments|uganda|tech news|computer|production|manufacturing|search|hard news|try to search)/i.test(lowerQuery)) {
     return 'trending_inquiry';
+  }
+
+  // Web search requests
+  if (/(search|look up|find information|google|browse|web search|online search)/i.test(lowerQuery)) {
+    return 'web_search_request';
   }
 
   // Technical questions
@@ -718,6 +723,14 @@ export function generateConversationHook(intent: string, context: any, userMessa
     case 'farewell':
       return "You're welcome! Feel free to reach out whenever you need assistance with bioinformatics, coding, or data analysis. Have a great day!";
     case 'trending_inquiry':
+    case 'web_search_request':
+      if (userMessage.toLowerCase().includes('uganda') || userMessage.toLowerCase().includes('computer') || userMessage.toLowerCase().includes('tech news')) {
+        return `## 🔍 Searching for Information
+
+I'll search for current information about: "${userMessage}"
+
+Let me find the latest news and developments for you.`;
+      }
       return "I'd be happy to help you find current information and trends.";
     case 'code_request':
       return "I'll help you create the code you need.";
@@ -770,7 +783,15 @@ export function generateCodeExample(userMessage: string): string {
   return "```python\n# Example code will be generated based on your request\nprint('Hello, BioScriptor!')\n```";
 }
 
-export function generateTrendingInquiryResponse(): string {
+export function generateTrendingInquiryResponse(query?: string): string {
+  if (query && (query.includes('uganda') || query.includes('computer') || query.includes('tech news'))) {
+    return `## 🔍 Searching for: ${query}
+
+I'm searching for current information about this topic. Let me look for the latest news and developments.
+
+*Note: I'm performing a web search to find the most current information available.*`;
+  }
+  
   return `## 🌐 Trending Information
 
 I'd be happy to help you find trending information! However, I need more specific details about what you're looking for.
@@ -780,11 +801,15 @@ I'd be happy to help you find trending information! However, I need more specifi
 - 📊 **Recent research publications**
 - 🧬 **Emerging techniques in genomics**
 - 💻 **New programming tools for science**
+- 🌍 **Current tech news and developments**
+- 🏭 **Technology manufacturing and production news**
 
 ### Example queries:
 - "What are the latest CRISPR developments?"
 - "Recent advances in protein folding prediction"
 - "New Python libraries for bioinformatics"
+- "Latest tech news from Uganda"
+- "Current developments in computer manufacturing"
 
 **What specific trending topic interests you?**`;
 }
@@ -831,17 +856,41 @@ export async function enhanceResponse(
   );
 
   // Handle special cases with direct responses
-  if (intent === "trending_inquiry") {
-    return {
-      ...message,
-      content: generateTrendingInquiryResponse(),
-      metadata: {
-        ...message.metadata,
-        intent,
-        conversationContext,
-        naturalResponse: true,
-      },
-    };
+  if (intent === "trending_inquiry" || intent === "web_search_request") {
+    // Check if this should trigger a web search
+    const shouldSearch = options.userMessage && (
+      options.userMessage.toLowerCase().includes('uganda') ||
+      options.userMessage.toLowerCase().includes('search') ||
+      options.userMessage.toLowerCase().includes('news') ||
+      options.userMessage.toLowerCase().includes('latest') ||
+      options.userMessage.toLowerCase().includes('current')
+    );
+    
+    if (shouldSearch) {
+      return {
+        ...message,
+        content: generateTrendingInquiryResponse(options.userMessage),
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext,
+          requiresWebSearch: true,
+          searchQuery: options.userMessage,
+          naturalResponse: true,
+        },
+      };
+    } else {
+      return {
+        ...message,
+        content: generateTrendingInquiryResponse(),
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext,
+          naturalResponse: true,
+        },
+      };
+    }
   }
 
   if (intent === "greeting" || intent === "farewell") {
