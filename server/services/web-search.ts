@@ -1,6 +1,6 @@
-
 import { spawn } from 'child_process';
 import * as path from 'path';
+import fs from 'fs';
 
 export interface SearchResult {
   title: string;
@@ -99,7 +99,7 @@ export class WebSearchService {
     bioinformatics?: boolean;
   } = {}): Promise<WebSearchResponse> {
     const startTime = Date.now();
-    
+
     if (!this.isAvailable) {
       return {
         results: [],
@@ -111,7 +111,7 @@ export class WebSearchService {
     try {
       const searchQuery = this.buildSearchQuery(query, options.bioinformatics);
       const results = await this.runScrapeDuck(searchQuery, options.maxResults || 5);
-      
+
       return {
         results,
         query: searchQuery,
@@ -131,8 +131,16 @@ export class WebSearchService {
   // Run ScrapeDuck locally
   private async runScrapeDuck(query: string, maxResults: number): Promise<SearchResult[]> {
     return new Promise((resolve, reject) => {
+      // Check if ScrapeDuck main.py exists
+      const scrapeDuckPath = path.join(this.scrapeDuckPath, 'main.py');
+      if (!fs.existsSync(scrapeDuckPath)) {
+        console.warn('ScrapeDuck main.py not found, using fallback search');
+        resolve([]); // Resolve with empty array instead of rejecting
+        return;
+      }
+
       const pythonProcess = spawn('python3', [
-        path.join(this.scrapeDuckPath, 'main.py'),
+        scrapeDuckPath,
         '--query', query,
         '--num-results', maxResults.toString(),
         '--output-format', 'json'
@@ -154,8 +162,8 @@ export class WebSearchService {
 
       pythonProcess.on('close', (code) => {
         if (code !== 0) {
-          console.error('ScrapeDuck error:', errorOutput);
-          reject(new Error(`ScrapeDuck exited with code ${code}: ${errorOutput}`));
+          console.error(`ScrapeDuck error (code ${code}): ${errorOutput}`);
+          resolve([]);  // Resolve with empty array instead of rejecting
           return;
         }
 
@@ -163,7 +171,7 @@ export class WebSearchService {
           // Parse the JSON output from ScrapeDuck
           const lines = output.trim().split('\n');
           const jsonLine = lines.find(line => line.startsWith('{') || line.startsWith('['));
-          
+
           if (!jsonLine) {
             console.warn('No JSON output from ScrapeDuck');
             resolve([]);
@@ -188,7 +196,7 @@ export class WebSearchService {
 
       pythonProcess.on('error', (error) => {
         console.error('Failed to start ScrapeDuck:', error);
-        reject(error);
+        resolve([]); // Resolve with empty array instead of rejecting
       });
     });
   }
@@ -203,7 +211,7 @@ export class WebSearchService {
         'bioinformatics', 'genomics', 'proteomics', 'dna', 'rna', 'protein',
         'crispr', 'pcr', 'sequencing', 'gene', 'genome', 'molecular biology'
       ];
-      
+
       const hasBioTerms = bioTerms.some(term => 
         query.toLowerCase().includes(term)
       );
@@ -228,7 +236,7 @@ export class WebSearchService {
     }
 
     let formatted = `## Web Search Results for "${searchResponse.query}"\n\n`;
-    
+
     searchResponse.results.forEach((result, index) => {
       formatted += `### ${index + 1}. ${result.title}\n`;
       formatted += `**URL:** ${result.url}\n`;
@@ -239,7 +247,7 @@ export class WebSearchService {
     });
 
     formatted += `*Search completed in ${searchResponse.searchTime}ms*\n\n`;
-    
+
     return formatted;
   }
 }
