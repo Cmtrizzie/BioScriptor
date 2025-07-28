@@ -11,6 +11,11 @@ if (connectionString.startsWith("psql '") && connectionString.endsWith("'")) {
   connectionString = connectionString.slice(6, -1); // Remove "psql '" from start and "'" from end
 }
 
+// Ensure SSL mode is set for Neon
+if (connectionString.includes('neon.tech') && !connectionString.includes('sslmode=')) {
+  connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+}
+
 let db: any = null;
 let isDatabaseAvailable = false;
 
