@@ -228,11 +228,15 @@ export function generateContextualReferences(
 
 // ========== RESPONSE STRUCTURING ==========
 const RESPONSE_STRUCTURE = {
-  header: "### ✅ What You Asked\n",
-  solution: "### 🧰 Solution\n",
-  example: "### 🧪 Example\n",
-  notes: "### 📌 Notes\n",
-  suggestions: "### 💬 Suggestions\nWould you like me to:\n",
+  greeting: "",
+  summary: "## Understanding Your Request\n",
+  solution: "## Solution\n",
+  example: "### Example Implementation\n",
+  code: "```",
+  explanation: "### How It Works\n",
+  notes: "### Key Points\n",
+  followup: "### Next Steps\n",
+  suggestions: "Would you like me to help with:\n",
 };
 
 export function structureResponseContent(
@@ -245,37 +249,56 @@ export function structureResponseContent(
   },
 ): string {
   if (content.length < 100) return content;
-  if (content.includes("### ✅") || content.includes("### 🧰")) return content;
+  if (content.includes("## Understanding") || content.includes("## Solution")) return content;
 
   const lines = content.split("\n").filter((line) => line.trim());
   const intent = context.intent || "general";
 
+  // For simple responses, just clean formatting
   if (context.complexity === "simple" || lines.length <= 2) {
     return lines
-      .map((line, i) => (i === 0 ? `**${line}**` : `🔹 ${line}`))
+      .map((line, i) => (i === 0 ? `**${line}**` : line))
       .join("\n\n");
   }
 
   let structured = "";
 
-  if (
-    context.userMessage &&
-    intent !== "greeting" &&
-    intent !== "thanks" &&
-    intent !== "farewell"
-  ) {
-    structured += `${RESPONSE_STRUCTURE.header}${generateIntentSummary(context.userMessage, intent)}\n\n`;
+  // Add greeting for certain intents
+  if (intent === "greeting") {
+    return content; // Keep greetings simple
   }
 
-  structured += `${RESPONSE_STRUCTURE.solution}${extractMainContent(lines)}\n\n`;
+  // Add understanding section for complex queries
+  if (context.userMessage && intent !== "farewell") {
+    const summary = generateIntentSummary(context.userMessage, intent);
+    if (summary) {
+      structured += `${RESPONSE_STRUCTURE.summary}${summary}\n\n`;
+    }
+  }
 
-  const exampleContent = extractExampleContent(content, context.topics);
-  if (exampleContent)
-    structured += `${RESPONSE_STRUCTURE.example}${exampleContent}\n\n`;
+  // Main solution content
+  const mainContent = extractMainContent(lines);
+  if (mainContent) {
+    structured += `${RESPONSE_STRUCTURE.solution}${mainContent}\n\n`;
+  }
 
-  const notesContent = extractNotesContent(lines);
-  if (notesContent)
+  // Code examples with proper formatting
+  const codeContent = extractCodeContent(content);
+  if (codeContent) {
+    structured += `${RESPONSE_STRUCTURE.example}${codeContent}\n\n`;
+  }
+
+  // Explanations
+  const explanationContent = extractExplanationContent(lines);
+  if (explanationContent) {
+    structured += `${RESPONSE_STRUCTURE.explanation}${explanationContent}\n\n`;
+  }
+
+  // Key points/notes
+  const notesContent = extractKeyPoints(lines);
+  if (notesContent) {
     structured += `${RESPONSE_STRUCTURE.notes}${notesContent}\n\n`;
+  }
 
   return structured.trim();
 }
@@ -316,17 +339,45 @@ function extractExampleContent(content: string, topics: string[]): string {
   );
 }
 
-function extractNotesContent(lines: string[]): string {
-  const NOTE_EMOJIS = ["💡", "⚠️", "📌"];
-  const noteLines = lines.filter(
+function extractKeyPoints(lines: string[]): string {
+  const keyPoints = lines.filter(
     (line) =>
-      NOTE_EMOJIS.some((emoji) => line.includes(emoji)) ||
-      /note|warning|important/i.test(line),
+      /important|note|remember|key|warning/i.test(line) ||
+      line.includes("⚠️") || line.includes("💡") || line.includes("📌")
   );
 
-  return noteLines.length > 0
-    ? noteLines.join("\n")
-    : "💡 This solution is ready to use and can be customized further.";
+  if (keyPoints.length === 0) return "";
+
+  return keyPoints
+    .map(point => point.startsWith("-") ? point : `- ${point}`)
+    .join("\n");
+}
+
+function extractCodeContent(content: string): string {
+  const codeBlocks = content.match(/```[\s\S]*?```/g);
+  if (codeBlocks && codeBlocks.length > 0) {
+    return codeBlocks.join("\n\n");
+  }
+
+  // Look for inline code patterns
+  const inlineCode = content.match(/`[^`]+`/g);
+  if (inlineCode && inlineCode.length > 2) {
+    return inlineCode.join(", ");
+  }
+
+  return "";
+}
+
+function extractExplanationContent(lines: string[]): string {
+  const explanationLines = lines.filter(line => 
+    line.length > 50 && 
+    !line.startsWith("```") && 
+    !line.startsWith("#") &&
+    !line.includes("example") &&
+    /this|how|why|when|because/i.test(line)
+  );
+
+  return explanationLines.slice(0, 3).join("\n\n");
 }
 
 // ========== INTENT DETECTION ==========
@@ -390,32 +441,56 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
 export function generateConversationHook(intent: string, context: any, userMessage: string): string {
   switch (intent) {
     case 'greeting':
-      return "👋 **Hello!** I'm BioScriptor, your AI assistant for bioinformatics and coding tasks.";
+      return "Hello! I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing. How can I help you today?";
     case 'farewell':
-      return "👋 **Thanks for using BioScriptor!** Feel free to return anytime for help with your research.";
+      return "You're welcome! Feel free to reach out whenever you need assistance with bioinformatics, coding, or data analysis. Have a great day!";
     case 'trending_inquiry':
-      return "🌐 **Let me help you with trending information!**";
+      return "I'd be happy to help you find current information and trends.";
     case 'code_request':
-      return "💻 **Let me help you with that code!**";
+      return "I'll help you create the code you need.";
     case 'technical_question':
-      return "🔬 **Great question!** Let me break this down for you.";
+      return "I'll break this down for you step by step.";
     default:
-      return "✨ **I'm here to help!**";
+      return "";
   }
 }
 
 export function generateSmartFollowUps(intent: string, content: string, context: any): string {
   const followUps = [
-    "🔍 Need more details on any part?",
-    "🧪 Want to see a practical example?",
-    "📚 Looking for related resources?"
+    "Would you like me to explain any part in more detail?",
+    "Need help implementing this in your specific use case?",
+    "Want to see additional examples or variations?",
+    "Should I walk through the next steps?",
+    "Any questions about the implementation?"
   ];
 
-  return `### 💬 What's Next?\n${followUps.slice(0, 2).map(f => `- ${f}`).join('\n')}`;
+  // Select contextually relevant follow-ups
+  let relevantFollowUps = followUps;
+  
+  if (content.includes("```")) {
+    relevantFollowUps = [
+      "Would you like me to explain how this code works?",
+      "Need help adapting this for your specific data?",
+      "Want to see how to handle edge cases?"
+    ];
+  }
+
+  return `### ${RESPONSE_STRUCTURE.followup}${relevantFollowUps.slice(0, 2).map(f => `- ${f}`).join('\n')}`;
 }
 
 export function generateIntentSummary(userMessage: string, intent: string): string {
-  return `You're asking about: **${userMessage.slice(0, 60)}${userMessage.length > 60 ? '...' : ''}**`;
+  const summary = userMessage.slice(0, 100);
+  
+  switch (intent) {
+    case 'code_request':
+      return `You want me to create code${summary.includes('for') ? ' for' : ':'} ${summary.toLowerCase()}${userMessage.length > 100 ? '...' : ''}`;
+    case 'technical_question':
+      return `You're asking about ${summary.toLowerCase()}${userMessage.length > 100 ? '...' : ''}`;
+    case 'trending_inquiry':
+      return `You want current information about ${summary.toLowerCase()}${userMessage.length > 100 ? '...' : ''}`;
+    default:
+      return `You need help with: ${summary}${userMessage.length > 100 ? '...' : ''}`;
+  }
 }
 
 export function generateCodeExample(userMessage: string): string {
@@ -482,7 +557,7 @@ export async function enhanceResponse(
     options.context.previousResponses || [],
   );
 
-  // Handle trending inquiry directly
+  // Handle special cases with direct responses
   if (intent === "trending_inquiry") {
     return {
       ...message,
@@ -496,51 +571,122 @@ export async function enhanceResponse(
     };
   }
 
-  // Generate enhanced response
-  const hook = generateConversationHook(
-    intent,
-    conversationContext,
-    options.userMessage,
-  );
-  let enhancedContent = hook;
-
-  if (intent === "code_request") {
-    enhancedContent = generateCodeResponse(
-      intent,
-      hook,
-      options.userMessage,
-      conversationContext,
-    );
-  } else {
-    const structuredContent = structureResponseContent(message.content, {
-      complexity: conversationContext.complexity,
-      topics: conversationContext.topics,
-      intent,
-      userMessage: options.userMessage,
-    });
-
-    enhancedContent = `${hook}\n\n${structuredContent}`;
-
-    if (["question", "request", "code_request"].includes(intent)) {
-      enhancedContent += `\n\n${generateSmartFollowUps(intent, message.content, conversationContext)}`;
-    }
+  if (intent === "greeting" || intent === "farewell") {
+    const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+    return {
+      ...message,
+      content: hook,
+      metadata: {
+        ...message.metadata,
+        intent,
+        conversationContext,
+        naturalResponse: true,
+      },
+    };
   }
+
+  // Generate conversational hook
+  const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+
+  // Structure the main content
+  const structuredContent = structureResponseContent(message.content, {
+    complexity: conversationContext.complexity,
+    topics: conversationContext.topics,
+    intent,
+    userMessage: options.userMessage,
+  });
+
+  // Combine hook and content naturally
+  let enhancedContent = "";
+  
+  if (hook && !structuredContent.includes(hook)) {
+    enhancedContent = hook;
+    if (structuredContent) {
+      enhancedContent += "\n\n" + structuredContent;
+    }
+  } else {
+    enhancedContent = structuredContent || message.content;
+  }
+
+  // Add follow-ups for interactive intents
+  if (["technical_question", "code_request", "request"].includes(intent) && 
+      !enhancedContent.includes("### Next Steps")) {
+    enhancedContent += "\n\n" + generateSmartFollowUps(intent, message.content, conversationContext);
+  }
+
+  // Final post-processing for ChatGPT-like quality
+  const finalContent = postProcessResponse(enhancedContent.trim(), intent);
 
   return {
     ...message,
-    content: enhancedContent,
+    content: finalContent,
     metadata: {
       ...message.metadata,
       intent,
       conversationContext,
+      responseStyle: "chatgpt",
       embedding: {
         vector: generateSimpleEmbedding(tokenizeText(options.userMessage)),
         model: "simple_bow",
-        dimension: 22, // Vocabulary size
+        dimension: 22,
         timestamp: Date.now(),
       },
     },
   };
 }
 
-// Additional helper functions would follow here...
+// ========== MARKDOWN FORMATTING UTILITIES ==========
+export function formatCodeBlocks(content: string): string {
+  // Ensure proper spacing around code blocks
+  return content
+    .replace(/```(\w+)?\n/g, '\n```$1\n')
+    .replace(/\n```/g, '\n```\n')
+    .replace(/```\n\n/g, '```\n');
+}
+
+export function formatSections(content: string): string {
+  // Add proper spacing between sections
+  return content
+    .replace(/\n##/g, '\n\n##')
+    .replace(/\n###/g, '\n\n###')
+    .replace(/\n\n\n+/g, '\n\n'); // Remove excessive line breaks
+}
+
+export function formatLists(content: string): string {
+  // Ensure consistent list formatting
+  return content
+    .replace(/\n-([^\n])/g, '\n- $1')
+    .replace(/\n\*([^\n])/g, '\n* $1')
+    .replace(/\n(\d+)\.([^\n])/g, '\n$1. $2');
+}
+
+export function enhanceMarkdownFormatting(content: string): string {
+  let formatted = content;
+  
+  // Apply all formatting enhancements
+  formatted = formatCodeBlocks(formatted);
+  formatted = formatSections(formatted);
+  formatted = formatLists(formatted);
+  
+  // Clean up extra whitespace
+  formatted = formatted
+    .replace(/[ \t]+\n/g, '\n')  // Remove trailing spaces
+    .replace(/\n{3,}/g, '\n\n')  // Max 2 consecutive newlines
+    .trim();
+    
+  return formatted;
+}
+
+// ========== RESPONSE POST-PROCESSING ==========
+export function postProcessResponse(content: string, intent: string): string {
+  let processed = enhanceMarkdownFormatting(content);
+  
+  // Add appropriate closing based on intent
+  if (intent === "code_request" && !processed.includes("Need help")) {
+    processed += "\n\nLet me know if you need any modifications or have questions about the implementation!";
+  } else if (intent === "technical_question" && !processed.includes("Would you like")) {
+    processed += "\n\nFeel free to ask if you'd like me to elaborate on any part of this explanation.";
+  }
+  
+  return processed;
+}
