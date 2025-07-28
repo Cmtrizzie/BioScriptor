@@ -852,8 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  ```text
-// Payment Webhook Routes
+  // Payment Webhook Routes
   app.post("/api/webhooks/paypal", async (req, res) => {
     try {
       const event = req.body;
