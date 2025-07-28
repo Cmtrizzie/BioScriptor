@@ -9,18 +9,23 @@ const connectionString = process.env.DATABASE_URL || "postgresql://localhost:543
 let db: any = null;
 let isDatabaseAvailable = false;
 
+console.log('🔍 Checking database configuration...');
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+
 if (process.env.DATABASE_URL) {
   try {
+    console.log('🔌 Attempting to connect to Neon PostgreSQL...');
     const sql = neon(process.env.DATABASE_URL);
     db = drizzle(sql, { schema });
     isDatabaseAvailable = true;
+    console.log('✅ Database connection established');
   } catch (error) {
-    console.warn('Database connection failed, running in fallback mode:', error);
+    console.warn('❌ Database connection failed, running in fallback mode:', error.message);
     isDatabaseAvailable = false;
   }
 } else {
   // Development: Use in-memory fallback or local PostgreSQL
-  console.log("Warning: No DATABASE_URL found. Using mock database for development.");
+  console.log("⚠️ No DATABASE_URL found. Using mock database for development.");
 
   // Create a mock database object for development
   const mockSql = () => Promise.resolve([]);
