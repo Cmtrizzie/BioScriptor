@@ -175,14 +175,15 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 transition-colors",
+        "fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 transition-colors",
         isDragging && "bg-bio-blue/5 border-bio-blue"
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto p-4 pb-6">
         {/* Drag overlay */}
         {isDragging && (
           <div className="absolute inset-0 bg-bio-blue/10 border-2 border-dashed border-bio-blue rounded-lg flex items-center justify-center z-10">

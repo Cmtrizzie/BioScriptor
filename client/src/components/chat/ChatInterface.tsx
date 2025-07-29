@@ -44,11 +44,13 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="flex-1 min-h-0 overflow-hidden pb-24">
-          <MessageList 
-            messages={messages} 
-            isLoading={isLoading}
-            bottomRef={bottomRef}
-          />
+          <div className="pb-32">
+            <MessageList 
+              messages={messages} 
+              isLoading={isLoading} 
+              bottomRef={bottomRef} 
+            />
+          </div>
         </div>
 
         <MessageInput 

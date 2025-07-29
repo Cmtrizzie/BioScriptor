@@ -326,6 +326,13 @@ body {
   @apply font-medium;
 }
 
+/* Safe area support for mobile devices */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}
+
 /* Simple bullet point styling */
 .prose ul li {
   @apply mb-2;
