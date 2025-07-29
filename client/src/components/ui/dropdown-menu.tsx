@@ -191,8 +191,8 @@ export {
   DropdownMenuShortcut,
   DropdownMenuGroup,
   DropdownMenuPortal,
+  DropdownMenuRadioGroup,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
 }

@@ -9,6 +9,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
@@ -266,13 +269,28 @@ export default function Sidebar({
                   </DropdownMenuItem>
                 )}
 
-                <DropdownMenuItem 
-                  onClick={() => handleNavigation('/settings')}
-                  className="text-gray-100 hover:bg-gray-700"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="text-gray-100 hover:bg-gray-700">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                    <DropdownMenuItem 
+                      onClick={toggleTheme}
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      <span className="mr-2 text-base">{getThemeIcon()}</span>
+                      <span>Theme: {getThemeLabel()}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleNavigation('/settings')}
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Preferences</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
 
                 <DropdownMenuSeparator className="bg-gray-700" />
 
@@ -296,33 +314,7 @@ export default function Sidebar({
             </Button>
           )}
         </div>
-        {/* Profile Section - Fixed at bottom */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-bio-blue to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                U
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                  Demo User
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  demo@biobuddy.dev
-                </p>
-              </div>
-            </div>
-
-            {/* Theme Toggle */}
-            <Button
-              onClick={toggleTheme}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 text-xs h-8 px-2"
-            >
-              <span className="text-base">{getThemeIcon()}</span>
-              <span>Theme: {getThemeLabel()}</span>
-            </Button>
-          </div>
+        
       </div>
     </>
   );
