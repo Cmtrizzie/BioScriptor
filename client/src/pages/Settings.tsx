@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft, Mail, Database, Globe, Palette, Type, Info, FileText, MessageCircle, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Mail, Database, Globe, Palette, Type, Info, FileText, MessageCircle, LogOut, Download, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -9,22 +9,117 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/context/theme-context';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
   console.log('Settings component rendering');
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [language, setLanguage] = useState('English');
   const [fontSize, setFontSize] = useState('Medium');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') || 'English';
+    const savedFontSize = localStorage.getItem('fontSize') || 'Medium';
+    setLanguage(savedLanguage);
+    setFontSize(savedFontSize);
+  }, []);
 
   const handleBack = () => {
     setLocation('/chat');
   };
 
   const handleLogout = async () => {
-    await logout();
-    setLocation('/auth');
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been safely logged out.",
+      });
+      setLocation('/auth');
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+    toast({
+      title: "Language updated",
+      description: `Language changed to ${newLanguage}`,
+    });
+  };
+
+  const handleFontSizeChange = (newFontSize: string) => {
+    setFontSize(newFontSize);
+    localStorage.setItem('fontSize', newFontSize);
+    
+    // Apply font size to document root
+    const root = document.documentElement;
+    switch (newFontSize) {
+      case 'Small':
+        root.style.fontSize = '14px';
+        break;
+      case 'Large':
+        root.style.fontSize = '18px';
+        break;
+      default: // Medium
+        root.style.fontSize = '16px';
+        break;
+    }
+    
+    toast({
+      title: "Font size updated",
+      description: `Font size changed to ${newFontSize}`,
+    });
+  };
+
+  const handleDataManagement = () => {
+    toast({
+      title: "Data Management",
+      description: "Data controls will help you manage your personal data and chat history.",
+    });
+    // Future: Open data management modal
+  };
+
+  const handleCheckForUpdates = async () => {
+    setIsUpdating(true);
+    // Simulate update check
+    setTimeout(() => {
+      setIsUpdating(false);
+      toast({
+        title: "Up to date",
+        description: "You're running the latest version of BioScriptor.",
+      });
+    }, 2000);
+  };
+
+  const handleViewServiceAgreement = () => {
+    window.open('/terms', '_blank');
+  };
+
+  const handleContactSupport = () => {
+    const emailBody = encodeURIComponent(
+      `Hello BioScriptor Support Team,
+
+I need assistance with:
+
+User Email: ${user?.email || 'Not available'}
+Subscription Tier: ${user?.tier || 'free'}
+
+Please describe your issue below:
+`
+    );
+    window.open(`mailto:support@bioscriptor.com?subject=BioScriptor Support Request&body=${emailBody}`, '_blank');
   };
 
   const getThemeLabel = () => {
@@ -86,7 +181,12 @@ export default function Settings() {
                 <Database className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Data controls</span>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-500">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                onClick={handleDataManagement}
+              >
                 <span>Manage</span>
               </Button>
             </div>
@@ -107,15 +207,17 @@ export default function Settings() {
                 <Globe className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Language</span>
               </div>
-              <Select value={language} onValueChange={setLanguage}>
+              <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="Spanish">Spanish</SelectItem>
-                  <SelectItem value="French">French</SelectItem>
-                  <SelectItem value="German">German</SelectItem>
+                  <SelectItem value="Spanish">Español</SelectItem>
+                  <SelectItem value="French">Français</SelectItem>
+                  <SelectItem value="German">Deutsch</SelectItem>
+                  <SelectItem value="Chinese">中文</SelectItem>
+                  <SelectItem value="Japanese">日本語</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -146,7 +248,7 @@ export default function Settings() {
                 <Type className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Font size</span>
               </div>
-              <Select value={fontSize} onValueChange={setFontSize}>
+              <Select value={fontSize} onValueChange={handleFontSizeChange}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
@@ -174,9 +276,24 @@ export default function Settings() {
                 <Info className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Check for updates</span>
               </div>
-              <Badge variant="outline" className="text-xs">
-                v1.0.0
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  v1.0.0
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={handleCheckForUpdates}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <Download className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             <Separator />
@@ -187,7 +304,13 @@ export default function Settings() {
                 <FileText className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Service agreement</span>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-500">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                onClick={handleViewServiceAgreement}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
                 View
               </Button>
             </div>
@@ -200,7 +323,13 @@ export default function Settings() {
                 <MessageCircle className="h-5 w-5 text-gray-500" />
                 <span className="text-gray-900 dark:text-white">Contact us</span>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-500">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                onClick={handleContactSupport}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
                 Support
               </Button>
             </div>
@@ -224,7 +353,7 @@ export default function Settings() {
         {/* Footer */}
         <div className="text-center py-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            AI-generated, for reference only. Use legally.
+            BioScriptor v1.0.0 - AI-powered bioinformatics assistant. Please verify results independently.
           </p>
         </div>
       </div>

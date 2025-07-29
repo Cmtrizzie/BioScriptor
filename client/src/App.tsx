@@ -66,6 +66,21 @@ function App() {
     document.documentElement.classList.add(actualTheme);
     document.documentElement.setAttribute('data-theme', actualTheme);
 
+    // Initialize font size
+    const savedFontSize = localStorage.getItem('fontSize') || 'Medium';
+    const root = document.documentElement;
+    switch (savedFontSize) {
+      case 'Small':
+        root.style.fontSize = '14px';
+        break;
+      case 'Large':
+        root.style.fontSize = '18px';
+        break;
+      default: // Medium
+        root.style.fontSize = '16px';
+        break;
+    }
+
     // Remove no-transition class after a brief delay
     setTimeout(() => {
       document.body.classList.remove('no-transition');
