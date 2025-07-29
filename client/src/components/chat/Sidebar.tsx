@@ -109,57 +109,39 @@ export default function Sidebar({
         </div>
 
         {/* Bioinformatics Quick Actions */}
-        <div className="px-4 mb-4">
-          <h3 className="text-sm font-medium text-gray-400 mb-3">Quick Actions</h3>
-          <div className="space-y-2">
+        <div className="px-4 mb-3">
+          <h3 className="text-sm font-medium text-gray-400 mb-2">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-1">
             <Button
               variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              className="h-8 px-2 text-xs font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
               onClick={() => handleQuickAction("Analyze this DNA sequence for potential CRISPR targets")}
             >
-              <div className="truncate w-full">
-                CRISPR Target Analysis
-              </div>
+              CRISPR
             </Button>
 
             <Button
               variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              className="h-8 px-2 text-xs font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
               onClick={() => handleQuickAction("Design PCR primers for this sequence")}
             >
-              <div className="truncate w-full">
-                PCR Primer Design
-              </div>
+              PCR
             </Button>
 
             <Button
               variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              className="h-8 px-2 text-xs font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
               onClick={() => handleQuickAction("Optimize codon usage for E. coli expression")}
             >
-              <div className="truncate w-full">
-                Codon Optimization
-              </div>
+              Codon
             </Button>
 
             <Button
               variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              className="h-8 px-2 text-xs font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
               onClick={() => handleQuickAction("Perform protein structure analysis")}
             >
-              <div className="truncate w-full">
-                Protein Analysis
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Compare DNA sequences for similarity")}
-            >
-              <div className="truncate w-full">
-                Sequence Alignment
-              </div>
+              Protein
             </Button>
           </div>
         </div>
