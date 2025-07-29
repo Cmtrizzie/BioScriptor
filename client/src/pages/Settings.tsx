@@ -7,25 +7,23 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
-import { useTheme } from '@/context/theme-context';
+import { useTheme, useTranslations } from '@/context/theme-context';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
   console.log('Settings component rendering');
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, language, toggleTheme, setLanguage } = useTheme();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [language, setLanguage] = useState('English');
   const [fontSize, setFontSize] = useState('Medium');
   const [isUpdating, setIsUpdating] = useState(false);
+  const t = useTranslations();
 
   // Load saved settings on component mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') || 'English';
     const savedFontSize = localStorage.getItem('fontSize') || 'Medium';
-    setLanguage(savedLanguage);
     setFontSize(savedFontSize);
   }, []);
 
@@ -51,8 +49,8 @@ export default function Settings() {
   };
 
   const handleLanguageChange = (newLanguage: string) => {
-    setLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
+    const typedLanguage = newLanguage as 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Japanese';
+    setLanguage(typedLanguage);
     toast({
       title: "Language updated",
       description: `Language changed to ${newLanguage}`,
@@ -142,7 +140,7 @@ Please describe your issue below:
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Settings
+              {t.settings}
             </h1>
           </div>
         </div>
@@ -154,7 +152,7 @@ Please describe your issue below:
         <Card className="bg-white dark:bg-gray-800">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-gray-900 dark:text-white">
-              Profile
+              {t.profile}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -162,7 +160,7 @@ Please describe your issue below:
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900 dark:text-white">Email</span>
+                <span className="text-gray-900 dark:text-white">{t.email}</span>
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-sm">
                 {user?.email || 'Not available'}
@@ -175,7 +173,7 @@ Please describe your issue below:
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Database className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900 dark:text-white">Data controls</span>
+                <span className="text-gray-900 dark:text-white">{t.dataControls}</span>
               </div>
               <Button 
                 variant="ghost" 
@@ -183,7 +181,7 @@ Please describe your issue below:
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 onClick={handleDataManagement}
               >
-                <span>Manage</span>
+                <span>{t.manage}</span>
               </Button>
             </div>
           </CardContent>
@@ -193,7 +191,7 @@ Please describe your issue below:
         <Card className="bg-white dark:bg-gray-800">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-gray-900 dark:text-white">
-              App
+              {t.app}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -201,7 +199,7 @@ Please describe your issue below:
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900 dark:text-white">Language</span>
+                <span className="text-gray-900 dark:text-white">{t.language}</span>
               </div>
               <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-32">
@@ -224,7 +222,7 @@ Please describe your issue below:
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Palette className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900 dark:text-white">Appearance</span>
+                <span className="text-gray-900 dark:text-white">{t.appearance}</span>
               </div>
               <Button
                 variant="ghost"
@@ -242,7 +240,7 @@ Please describe your issue below:
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Type className="h-5 w-5 text-gray-500" />
-                <span className="text-gray-900 dark:text-white">Font size</span>
+                <span className="text-gray-900 dark:text-white">{t.fontSize}</span>
               </div>
               <Select value={fontSize} onValueChange={handleFontSizeChange}>
                 <SelectTrigger className="w-24">

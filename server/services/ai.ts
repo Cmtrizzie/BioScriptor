@@ -325,7 +325,8 @@ function detectUserIntent(query: string): string {
 export const processQuery = async (
     query: string,
     fileAnalysis?: BioFileAnalysis,
-    userTier?: string
+    userTier?: string,
+    dataPrivacyMode?: string
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
@@ -526,12 +527,15 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
                 model: aiResponse.provider,
                 processingTime,
                 confidence: 0.85,
+                dataPrivacyMode: dataPrivacyMode || 'private',
                 ...(aiResponse.tokens && { tokens: aiResponse.tokens })
             }
         };
 
-        // Add to conversation history
-        conversationManager.addMessage(responseMessage);
+        // Add to conversation history only if user allows data usage
+        if (dataPrivacyMode !== 'private') {
+            conversationManager.addMessage(responseMessage);
+        }
 
         return responseMessage;
 

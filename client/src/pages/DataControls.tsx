@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Shield, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,23 +7,45 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/context/theme-context';
 
 export default function DataControls() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [improveModel, setImproveModel] = useState(true);
+  const t = useTranslations();
+  const [improveModel, setImproveModel] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Load saved data settings on component mount
+  useEffect(() => {
+    const savedModelTraining = localStorage.getItem('improveModel');
+    if (savedModelTraining !== null) {
+      setImproveModel(savedModelTraining === 'true');
+    }
+  }, []);
 
   const handleBack = () => {
     setLocation('/settings');
   };
 
   const handleLogoutAllDevices = async () => {
+    if (!window.confirm("Are you sure you want to log out of all devices? You will need to sign in again on all your devices.")) {
+      return;
+    }
+    
     setIsProcessing(true);
     try {
-      // Simulate logout from all devices
+      // Clear all local storage and session data
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Logout from Firebase
+      await logout();
+      
+      // Simulate additional security logout process
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
       toast({
         title: "Success",
         description: "You have been logged out of all devices.",
@@ -41,10 +63,26 @@ export default function DataControls() {
   };
 
   const handleDeleteAllChats = async () => {
+    if (!window.confirm("Are you sure you want to delete all your chats? This action cannot be undone.")) {
+      return;
+    }
+    
     setIsProcessing(true);
     try {
-      // Simulate delete all chats
+      // Clear chat data from localStorage
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('chat_') || key.startsWith('session_') || key.includes('messages'))) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Simulate server-side deletion
       await new Promise(resolve => setTimeout(resolve, 1500));
+      
       toast({
         title: "Success",
         description: "All chats have been deleted.",
@@ -61,14 +99,28 @@ export default function DataControls() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.")) {
+      return;
+    }
+    
+    const confirmText = prompt("Type 'DELETE' to confirm account deletion:");
+    if (confirmText !== 'DELETE') {
+      toast({
+        title: "Cancelled",
+        description: "Account deletion cancelled.",
+      });
       return;
     }
     
     setIsProcessing(true);
     try {
-      // Simulate account deletion
+      // Clear all user data
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Simulate account deletion process
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
       toast({
         title: "Account Deleted",
         description: "Your account has been permanently deleted.",
@@ -87,11 +139,16 @@ export default function DataControls() {
 
   const handleModelTrainingToggle = (enabled: boolean) => {
     setImproveModel(enabled);
+    
+    // Save preference to localStorage
+    localStorage.setItem('improveModel', enabled.toString());
+    localStorage.setItem('dataPrivacyMode', enabled ? 'shared' : 'private');
+    
     toast({
       title: enabled ? "Model training enabled" : "Model training disabled",
       description: enabled 
-        ? "Your content will be used to improve our models." 
-        : "Your content will not be used for model training.",
+        ? "Your content will be used to improve our models and services." 
+        : "Your content will be kept private and not used for model training.",
     });
   };
 
@@ -110,7 +167,7 @@ export default function DataControls() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Data controls
+              {t.dataControls}
             </h1>
           </div>
         </div>
@@ -124,10 +181,10 @@ export default function DataControls() {
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Improve the model for everyone
+                  {t.improveModel}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Allow your content to be used to train our models and improve our services. We secure your data privacy.
+                  {t.improveModelDescription}
                 </p>
               </div>
               <Switch
@@ -150,7 +207,7 @@ export default function DataControls() {
               className="w-full justify-start text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-4 h-auto"
             >
               <Shield className="h-5 w-5 mr-3 text-gray-500" />
-              <span className="text-base">Log out of all devices</span>
+              <span className="text-base">{t.logOutAllDevices}</span>
             </Button>
 
             {/* Delete all chats */}
@@ -161,7 +218,7 @@ export default function DataControls() {
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-4 h-auto"
             >
               <Trash2 className="h-5 w-5 mr-3" />
-              <span className="text-base">Delete all chats</span>
+              <span className="text-base">{t.deleteAllChats}</span>
             </Button>
 
             {/* Delete account */}
@@ -172,7 +229,7 @@ export default function DataControls() {
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-4 h-auto"
             >
               <Trash2 className="h-5 w-5 mr-3" />
-              <span className="text-base">Delete account</span>
+              <span className="text-base">{t.deleteAccount}</span>
             </Button>
           </CardContent>
         </Card>
