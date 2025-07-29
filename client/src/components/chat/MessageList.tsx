@@ -302,8 +302,8 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
           {/* Message Content */}
           <div className={cn(
-            "min-w-0 space-y-1 overflow-hidden",
-            message.role === 'user' ? "max-w-[80%]" : "flex-1 max-w-full"
+            "min-w-0 space-y-1 overflow-hidden w-full",
+            message.role === 'user' ? "max-w-[80%] ml-auto" : "max-w-full mr-auto"
           )}>
             {/* Header */}
             <div className={cn(
@@ -321,16 +321,10 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
             <div className={cn(
               "rounded-xl p-4 border relative group max-w-full overflow-hidden",
               message.role === 'user' 
-                ? "ml-auto" 
-                : "mr-auto"
+                ? "bg-blue-500 text-white border-blue-600 ml-auto rounded-br-md" 
+                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mr-auto"
             )}
             style={{
-              backgroundColor: message.role === 'user' 
-                ? 'var(--message-user-bg)' 
-                : 'var(--message-ai-bg)',
-              borderColor: message.role === 'user' 
-                ? 'var(--message-user-border)' 
-                : 'var(--message-ai-border)',
               wordBreak: 'break-word',
               overflowWrap: 'anywhere'
             }}>
@@ -341,7 +335,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               </div>
 
               {message.role === 'user' ? (
-                <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8 max-w-full">
+                <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8 max-w-full text-white">
                   {message.content}
                 </div>
               ) : (
