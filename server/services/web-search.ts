@@ -133,13 +133,13 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
 
 // SearXNG search implementation with multiple instances
 async function searxngSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
-  // Check for local SearXNG first, then try public instances
+  // Use only working public instances (local Docker not available on Replit)
   const searxngInstances = [
-    'http://0.0.0.0:8080', // Local instance (preferred)
-    'http://localhost:8080', // Alternative local
     'https://searx.thegpm.org',
-    'https://search.inetol.net',
-    'https://searx.prvcy.eu'
+    'https://search.inetol.net', 
+    'https://searx.prvcy.eu',
+    'https://searx.work',
+    'https://searxng.site'
   ];
 
   console.log('🔍 Performing web search with SearXNG...');
