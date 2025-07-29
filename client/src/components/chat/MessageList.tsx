@@ -213,7 +213,7 @@ export default function MessageList({
                         // Render with error boundary
                         try {
                           return (
-                            <div className="markdown-wrapper">
+                            <div className="markdown-wrapper text-gray-900 dark:text-gray-100">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
@@ -297,7 +297,7 @@ export default function MessageList({
                                   p({ node, children, ...props }) {
                                     return (
                                       <p
-                                        className="mb-4 leading-relaxed break-words overflow-wrap-anywhere max-w-full"
+                                        className="mb-4 leading-relaxed break-words overflow-wrap-anywhere max-w-full text-gray-800 dark:text-gray-200"
                                         style={{
                                           wordBreak: "break-word",
                                           overflowWrap: "anywhere",
