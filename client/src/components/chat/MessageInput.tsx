@@ -219,7 +219,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "w-full bg-white dark:bg-gray-900 p-4 transition-colors",
+        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 transition-colors",
         isDragging && "bg-bio-blue/10 border-bio-blue"
       )}
       onDragOver={handleDragOver}
