@@ -1542,6 +1542,42 @@ function generateIdeas(userInput: string): string {
   return `🧠 **Idea Generation Sprint**\n\n${ideas.join('\n')}\n\n**Choose one that resonates and let's explore it further!**`;
 }
 
+// ========== CREATIVE ENHANCEMENT FEATURES ==========
+const CREATIVE_STARTERS = [
+  "🧬 **Diving into the molecular world...**",
+  "🔬 **Let's explore this scientifically...**", 
+  "🚀 **Here's an innovative approach...**",
+  "💡 **Creative insight incoming...**",
+  "⚗️ **Mixing science with creativity...**"
+];
+
+const ENGAGEMENT_BOOSTERS = [
+  "\n\n🎯 **Pro tip**: Try visualizing this data for deeper insights!",
+  "\n\n🔥 **Fun fact**: This connects to cutting-edge research in synthetic biology!",
+  "\n\n✨ **Creative twist**: What if we approached this from a systems biology perspective?",
+  "\n\n🚀 **Next level**: Consider implementing this in a cloud-based pipeline!",
+  "\n\n🧠 **Think differently**: This could revolutionize how we understand molecular interactions!"
+];
+
+function addCreativeFlourishes(content: string, intent: string): string {
+  // Add creative starter for technical responses
+  if (intent === 'technical_question' && !content.startsWith('🧬') && !content.startsWith('🔬')) {
+    const starter = getRandomFromArray(CREATIVE_STARTERS);
+    content = `${starter}\n\n${content}`;
+  }
+
+  // Add engagement booster for detailed responses
+  if (content.length > 200 && Math.random() > 0.5) {
+    const booster = getRandomFromArray(ENGAGEMENT_BOOSTERS);
+    content += booster;
+  }
+
+  // Add creative section breaks for long content
+  content = content.replace(/\n\n(?=###)/g, '\n\n---\n\n');
+  
+  return content;
+}
+
 // ========== ENHANCEMENT CORE ==========
 export async function enhanceResponse(
   message: ChatMessage,
@@ -1707,8 +1743,11 @@ export async function enhanceResponse(
       });
   }
 
+  // Apply creative flourishes
+  const creativeContent = addCreativeFlourishes(enhancedContent.trim(), intent);
+  
   // Final post-processing for ChatGPT-like quality
-  const finalContent = postProcessResponse(enhancedContent.trim(), intent);
+  const finalContent = postProcessResponse(creativeContent, intent);
 
   return {
     ...message,

@@ -3,7 +3,9 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
+import CreativeSuggestions from "./CreativeSuggestions";
 import { useChat } from "@/hooks/use-chat";
+import { getRandom, greetings } from "@/lib/personality";
 
 interface ChatInterfaceProps {
   sessionId?: string;
@@ -11,6 +13,7 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [welcomeShown, setWelcomeShown] = useState(false);
   const { 
     messages, 
     sessions, 
@@ -18,7 +21,8 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
     newChat, 
     switchToSession,
     loadSession,
-    isLoading, 
+    isLoading,
+    isTyping,
     bottomRef 
   } = useChat();
 
@@ -28,6 +32,24 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
       loadSession(sessionId);
     }
   }, [sessionId, loadSession]);
+
+  // Show creative welcome message on first load
+  useEffect(() => {
+    if (!welcomeShown && messages.length === 0 && !sessionId) {
+      setTimeout(() => {
+        const welcomeMessage = {
+          id: 'welcome-' + Date.now(),
+          content: getRandom(greetings),
+          role: "assistant" as const,
+          timestamp: Date.now(),
+          status: 'complete' as const
+        };
+        
+        // Add welcome message without triggering API
+        setWelcomeShown(true);
+      }, 1000);
+    }
+  }, [messages.length, welcomeShown, sessionId]);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -54,22 +76,28 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         </div>
         
         {/* Improved scrolling container with padding for fixed input */}
-        <div className="flex-1 overflow-y-auto pb-32 max-w-full">
+        <div className="flex-1 overflow-y-auto pb-40 max-w-full">
           <MessageList 
             messages={messages} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
+            isTyping={isTyping}
             bottomRef={bottomRef} 
           />
         </div>
       </div>
       
-      {/* Fixed MessageInput at bottom - Hidden when sidebar is open on mobile */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700 transition-transform duration-300 lg:translate-x-0 ${
+      {/* Fixed MessageInput at bottom with creative suggestions */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6 px-4 transition-transform duration-300 lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-full lg:translate-x-0' : 'translate-x-0'
       }`}>
+        {/* Show suggestions when there are no messages or only welcome message */}
+        <CreativeSuggestions 
+          onSelect={sendMessage} 
+          visible={messages.length <= 1 && !isLoading && !isTyping}
+        />
         <MessageInput 
           onSendMessage={sendMessage} 
-          disabled={isLoading}
+          disabled={isLoading || isTyping}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
-
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { getRandom, thinkingMessages, enhanceResponse, enhanceWithContext, errorResponses } from "@/lib/personality";
 
 export interface Message {
   id: string;
@@ -22,6 +22,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [_, navigate] = useLocation();
   const { user } = useAuth();
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -62,6 +63,7 @@ export function useChat() {
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    setIsTyping(true);
 
     try {
       let responseContent = 'Simulated AI response.';
@@ -104,10 +106,14 @@ export function useChat() {
         responseContent = data.response?.content || data.response?.response || 'AI response';
       }
 
+      // Enhance response with personality and context
+      let enhancedContent = enhanceResponse(responseContent);
+      enhancedContent = enhanceWithContext(enhancedContent, content);
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responseContent,
+        content: enhancedContent,
         timestamp: new Date(),
       };
 
@@ -121,19 +127,19 @@ export function useChat() {
           'blast', 'alignment', 'phylogenetic', 'mutation', 'expression', 'analysis',
           'bioinformatics', 'genomics', 'proteomics', 'transcriptomics'
         ];
-        
+
         const programmingKeywords = [
           'python', 'javascript', 'code', 'function', 'algorithm', 'data', 'API',
           'programming', 'script', 'analysis', 'visualization', 'database'
         ];
 
         const lowerContent = content.toLowerCase();
-        
+
         // Check for bioinformatics topics
         const bioTopics = bioinformaticsKeywords.filter(keyword => 
           lowerContent.includes(keyword.toLowerCase())
         );
-        
+
         // Check for programming topics  
         const progTopics = programmingKeywords.filter(keyword => 
           lowerContent.includes(keyword.toLowerCase())
@@ -158,7 +164,7 @@ export function useChat() {
             title = content.substring(0, 30);
           }
         }
-        
+
         return title.length > 50 ? title.substring(0, 47) + '...' : title;
       };
 
@@ -177,13 +183,14 @@ export function useChat() {
       localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
       setSessions(updatedSessions);
       setMessages(currentMessages);
-      
+
       // Navigate to new session
       navigate(`/chat/${sessionId}`);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
       setIsLoading(false);
+      setIsTyping(false);
     }
   }, [messages, user, navigate, sessions, isLoading]);
 
@@ -192,7 +199,7 @@ export function useChat() {
     setMessages([]);
     setIsLoading(false);
     navigate('/chat');
-    
+
     setTimeout(() => {
       scrollToBottom();
     }, 100);
@@ -214,7 +221,7 @@ export function useChat() {
   const loadSession = useCallback((sessionId: string) => {
     const savedSessions = JSON.parse(localStorage.getItem('bioscriptor-sessions') || '[]');
     const session = savedSessions.find((s: ChatSession) => s.id === sessionId);
-    
+
     if (session) {
       const sessionMessages = session.messages.map(msg => ({
         ...msg,
@@ -234,6 +241,7 @@ export function useChat() {
     switchToSession,
     loadSession,
     isLoading,
+    isTyping,
     bottomRef,
   };
 }

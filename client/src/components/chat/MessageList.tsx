@@ -222,10 +222,11 @@ interface ExtendedMessage extends Message {
 interface MessageListProps {
   messages: ExtendedMessage[];
   isLoading: boolean;
+  isTyping?: boolean;
   bottomRef: React.RefObject<HTMLDivElement>;
 }
 
-export default function MessageList({ messages, isLoading, bottomRef }: MessageListProps) {
+export default function MessageList({ messages, isLoading, isTyping, bottomRef }: MessageListProps) {
   const { theme } = useTheme();
 
   // Show welcome screen when no messages exist
