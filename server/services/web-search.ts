@@ -277,6 +277,11 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 
 // Helper function to determine if a query might benefit from web search
 export function shouldPerformWebSearch(query: string): boolean {
+  // Ensure query is a string
+  if (!query || typeof query !== 'string') {
+    return false;
+  }
+
   const webSearchKeywords = [
     'latest', 'recent', 'news', 'current', 'today', 'this year', '2024', '2025',
     'what is', 'how to', 'tutorial', 'guide', 'example', 'documentation',
@@ -308,6 +313,9 @@ export const webSearchService = {
   },
 
   detectExplicitSearch(query: string): boolean {
+    if (!query || typeof query !== 'string') {
+      return false;
+    }
     const explicitKeywords = ['search', 'look up', 'find', 'google', 'web search'];
     const queryLower = query.toLowerCase();
     return explicitKeywords.some(keyword => queryLower.includes(keyword));
@@ -318,6 +326,11 @@ export const webSearchService = {
   },
 
   extractSearchTerms(query: string): string {
+    // Ensure query is a string
+    if (!query || typeof query !== 'string') {
+      return '';
+    }
+    
     // Remove common question words and extract key terms
     return query
       .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')

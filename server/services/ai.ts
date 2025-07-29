@@ -269,6 +269,9 @@ function analyzeConversationContext(history: ChatMessage[]) {
 
 // Detect user intent
 function detectUserIntent(query: string): string {
+    if (!query || typeof query !== 'string') {
+        return 'general_query';
+    }
     const lowerQuery = query.toLowerCase().trim();
 
     // Greeting patterns
