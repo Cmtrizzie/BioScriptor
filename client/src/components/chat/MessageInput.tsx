@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { X, File, ImageIcon, Bio } from "lucide-react";
 
 interface MessageInputProps {
-  onSendMessage: (message: string, file?: File) => void;
+  onSendMessage: (message: string, files?: File[]) => void;
   disabled?: boolean;
 }
 
@@ -20,23 +21,28 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // File type detection
+  // File type detection with better MIME type support
   const getFileType = (file: File): 'text' | 'image' | 'bio' => {
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (['fasta', 'gb', 'pdb', 'csv'].includes(ext || '')) return 'bio';
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '')) return 'image';
-    return 'text';
+    if (file.type.startsWith('image/')) return 'image';
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const bioTypes = ['fasta', 'gb', 'pdb', 'csv', 'tsv', 'genbank', 'fa', 'fastq', 'fq', 'vcf', 'gtf', 'gff'];
+    const textTypes = ['txt', 'md', 'json', 'xml', 'log'];
+
+    if (bioTypes.includes(ext)) return 'bio';
+    if (textTypes.includes(ext)) return 'text';
+
+    return file.type.startsWith('text/') ? 'text' : 'bio';
   };
 
-  // Handle file addition
+  // Handle file addition with cleanup
   const addFile = useCallback(async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
       alert('File size must be less than 10MB');
       return;
     }
@@ -44,24 +50,30 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     const fileType = getFileType(file);
     let preview = '';
 
-    if (fileType === 'image') {
-      preview = URL.createObjectURL(file);
-    } else if (fileType === 'text' || fileType === 'bio') {
-      const text = await file.text();
-      preview = text.substring(0, 200) + (text.length > 200 ? '...' : '');
+    try {
+      if (fileType === 'image') {
+        preview = URL.createObjectURL(file);
+      } else if (fileType === 'text' || fileType === 'bio') {
+        const text = await file.text();
+        preview = text.substring(0, 200) + (text.length > 200 ? '...' : '');
+      }
+    } catch (error) {
+      console.error('Error processing file:', error);
+      preview = 'Could not preview file';
     }
 
-    const filePreview: FilePreview = { file, preview, type: fileType };
-    setFiles(prev => [...prev, filePreview]);
+    setFiles(prev => [...prev, { file, preview, type: fileType }]);
   }, []);
 
   // Handle paste events
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
-    const items = Array.from(e.clipboardData?.items || []);
+    if (!e.clipboardData || disabled) return;
+
+    const items = Array.from(e.clipboardData.items);
     let hasImage = false;
 
     for (const item of items) {
-      if (item.type.startsWith('image/')) {
+      if (item.kind === 'file') {
         const file = item.getAsFile();
         if (file) {
           e.preventDefault();
@@ -72,8 +84,30 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     }
 
     // Only prevent default for images, let text paste work normally
-    // This prevents the duplicate paste issue
-  }, [addFile]);
+    if (hasImage) {
+      e.preventDefault();
+    }
+  }, [addFile, disabled]);
+
+  // Clean up object URLs
+  useEffect(() => {
+    return () => {
+      files.forEach(file => {
+        if (file.type === 'image' && file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, [files]);
+
+  // Register paste event
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.addEventListener('paste', handlePaste);
+    return () => textarea.removeEventListener('paste', handlePaste);
+  }, [handlePaste]);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -92,18 +126,36 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    for (const file of files) {
+    if (disabled) return;
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    for (const file of droppedFiles) {
       await addFile(file);
     }
-  }, [addFile]);
+  }, [addFile, disabled]);
 
-  // Submit handler
-  const handleSubmit = () => {
+  // Remove file handler
+  const handleRemoveFile = (index: number) => {
+    setFiles(prev => {
+      const newFiles = [...prev];
+      const removed = newFiles.splice(index, 1)[0];
+      if (removed.type === 'image' && removed.preview) {
+        URL.revokeObjectURL(removed.preview);
+      }
+      return newFiles;
+    });
+  };
+
+  // Send message with files
+  const handleSend = () => {
     if ((!message.trim() && files.length === 0) || disabled || isComposing) return;
 
-    onSendMessage(message, files[0]?.file);
-    setMessage("");
+    onSendMessage(
+      message.trim(), 
+      files.map(f => f.file)
+    );
+
+    setMessage('');
     setFiles([]);
 
     // Reset textarea height
@@ -112,17 +164,13 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     }
   };
 
-  // Keyboard handler with composition support
+  // Handle textarea keydown
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault();
-      handleSubmit();
+      handleSend();
     }
-
-    
   };
-
-  
 
   // File input handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,27 +197,23 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Remove file
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
   // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
-    }
-  }, [message]);
-
-  // Setup paste listener
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.addEventListener('paste', handlePaste);
-      return () => textarea.removeEventListener('paste', handlePaste);
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
-  }, [handlePaste]);
+  }, [message]);
+
+  // File type icons
+  const FileIcon = ({ type }: { type: 'text' | 'image' | 'bio' }) => {
+    switch (type) {
+      case 'image': return <ImageIcon className="w-4 h-4 mr-1" />;
+      case 'bio': return <Bio className="w-4 h-4 mr-1" />;
+      default: return <File className="w-4 h-4 mr-1" />;
+    }
+  };
 
   return (
     <div 
@@ -240,7 +284,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
 
                 {/* Remove button */}
                 <button
-                  onClick={() => removeFile(index)}
+                  onClick={() => handleRemoveFile(index)}
                   className="flex-shrink-0 ml-2 text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,15 +296,12 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
           </div>
         )}
 
-        
-
         <div className="flex items-end space-x-2">
-
           {/* Hidden File Input */}
           <input
             ref={fileInputRef}
             type="file"
-            accept=".fasta,.gb,.pdb,.csv,.png,.jpg,.jpeg,.gif,.webp"
+            accept=".fasta,.fa,.fastq,.fq,.gb,.pdb,.csv,.tsv,.vcf,.gtf,.gff,.txt,.png,.jpg,.jpeg,.gif,.webp"
             onChange={handleFileChange}
             multiple
             className="hidden"
@@ -297,7 +338,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
 
             {/* Send Button */}
             <Button
-              onClick={handleSubmit}
+              onClick={handleSend}
               disabled={(!message.trim() && files.length === 0) || disabled || isComposing}
               size="icon"
               className="absolute right-2 bottom-2 bg-bio-blue hover:bg-bio-blue/90 disabled:bg-gray-300 text-white rounded-xl transition-colors h-8 w-8"
