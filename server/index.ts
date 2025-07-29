@@ -142,6 +142,13 @@ async function checkDatabaseConnection() {
   }
 }
 
+// Clean connection string for logging (hide password)
+const cleanUrl = process.env.DATABASE_URL?.replace(
+  /:[^:@]*@/,
+  ':***@'
+);
+console.log('Cleaned connection string format:', cleanUrl?.substring(0, 50) + '...');
+
 console.log('AI Provider Configuration:');
 console.log('- Groq API Key:', !!process.env.GROQ_API_KEY ? 'Set' : 'Missing');
 console.log('- Together API Key:', !!process.env.TOGETHER_API_KEY ? 'Set' : 'Missing');
@@ -153,4 +160,3 @@ if (process.env.SCRAPEDUCK_API_KEY) {
 } else {
   console.log('⚠️ ScrapeDuck API key not found - using fallback search methods');
 }
-```
