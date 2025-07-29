@@ -443,3 +443,124 @@ export const processQuery = async (
         }
 
         // Always continue with AI response, whether search succeeded or not
+        
+        // Analyze conversation context
+        const conversationAnalysis = analyzeConversationContext(context.history);
+        
+        // Build enhanced system prompt based on context
+        const systemPrompt = `You are BioScriptor, a specialized AI assistant for bioinformatics, data analysis, and scientific computing.
+
+${conversationAnalysis.personality.tone && `Communication Style: ${conversationAnalysis.personality.tone}`}
+${conversationAnalysis.personality.explanation_style && `Explanation Style: ${conversationAnalysis.personality.explanation_style}`}
+
+Current Context:
+- User Intent: ${userIntent}
+- Query Type: ${queryType}
+- Conversation Topics: ${Array.from(context.memory.topics).join(', ') || 'None'}
+- Time: ${getTimeBasedGreeting()}
+
+${searchContext}
+
+Always provide helpful, accurate, and scientifically sound responses. When discussing bioinformatics topics, include relevant examples and cite best practices.`;
+
+        // Prepare conversation context
+        const conversationHistory = recentHistory.length > 0 ? recentHistory : [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: query }
+        ];
+
+        if (recentHistory.length > 0) {
+            conversationHistory.unshift({ role: 'system', content: systemPrompt });
+        }
+
+        // Generate AI response
+        const startTime = Date.now();
+        const aiResponse = await faultTolerantAI.processQuery(
+            query,
+            { 
+                fileAnalysis,
+                webSearchResults,
+                conversationContext: context,
+                userIntent
+            },
+            tone,
+            conversationHistory,
+            userTier
+        );
+
+        const processingTime = Date.now() - startTime;
+
+        // Enhance the response
+        let enhancedContent = aiResponse.content;
+        
+        try {
+            enhancedContent = await enhanceResponse(
+                {
+                    id: generateUniqueId(),
+                    role: 'assistant',
+                    content: aiResponse.content,
+                    timestamp: Date.now(),
+                    status: 'complete' as const,
+                    metadata: {
+                        confidence: 0.85,
+                        topic: userIntent
+                    }
+                },
+                {
+                    context: {
+                        currentTopic: userIntent,
+                        taskType: queryType
+                    },
+                    tone,
+                    userMessage: query,
+                    userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
+                }
+            );
+        } catch (enhanceError) {
+            console.warn('Response enhancement failed, using original response:', enhanceError);
+        }
+
+        // Create response message
+        const responseMessage: ChatMessage = {
+            id: generateUniqueId(),
+            role: 'assistant',
+            content: enhancedContent,
+            timestamp: Date.now(),
+            status: 'complete',
+            metadata: {
+                tone,
+                intent: userIntent,
+                model: aiResponse.provider,
+                processingTime,
+                confidence: 0.85,
+                webSearchResults,
+                ...(aiResponse.tokens && { tokens: aiResponse.tokens })
+            }
+        };
+
+        // Add to conversation history
+        conversationManager.addMessage(responseMessage);
+
+        return responseMessage;
+
+    } catch (error) {
+        console.error('Error processing query:', error);
+        
+        const errorMessage: ChatMessage = {
+            id: generateUniqueId(),
+            role: 'error',
+            content: `I apologize, but I encountered an error processing your request. Please try again or rephrase your question.
+
+Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            timestamp: Date.now(),
+            status: 'error',
+            metadata: {
+                confidence: 0.0,
+                intent: 'error'
+            }
+        };
+
+        conversationManager.addMessage(errorMessage);
+        return errorMessage;
+    }
+};
