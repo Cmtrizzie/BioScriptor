@@ -58,25 +58,21 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   // Handle paste events
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
     const items = Array.from(e.clipboardData?.items || []);
+    let hasImage = false;
 
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
         if (file) {
           e.preventDefault();
+          hasImage = true;
           await addFile(file);
         }
-      } else if (item.kind === 'string' && item.type === 'text/plain') {
-        item.getAsString((text) => {
-          // Handle pasted text with potential markdown or code
-          const currentValue = textareaRef.current?.value || '';
-          const start = textareaRef.current?.selectionStart || 0;
-          const end = textareaRef.current?.selectionEnd || 0;
-          const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
-          setMessage(newValue);
-        });
       }
     }
+
+    // Only prevent default for images, let text paste work normally
+    // This prevents the duplicate paste issue
   }, [addFile]);
 
   // Drag and drop handlers

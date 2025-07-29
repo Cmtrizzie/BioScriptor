@@ -60,7 +60,7 @@ export default function Sidebar({
         <div className="p-4 border-b border-gray-200">
           <Button 
             onClick={onNewChat}
-            className="w-full justify-start bg-bio-blue hover:bg-bio-blue/90 text-white"
+            className="w-full justify-start bg-bio-blue hover:bg-bio-blue/90 text-white dark:bg-bio-blue dark:hover:bg-bio-blue/90 dark:text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Chat
