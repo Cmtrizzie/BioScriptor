@@ -273,9 +273,8 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                             </div>
                           );
                         }
-                        );
                       } catch (error) {
-                        console.error('Markdown rendering error:', error);
+                        console.error('Message content processing error:', error);
                         return (
                           <div className="text-red-500 bg-red-50 p-3 rounded border">
                             <p className="font-medium">Error rendering message</p>
