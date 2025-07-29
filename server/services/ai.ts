@@ -1,7 +1,6 @@
 // services/ai.ts
 import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
-import { webSearchService, WebSearchResponse } from './web-search';
 import { enhanceResponse } from './response-enhancer';
 
 // ========== Type Definitions ==========
@@ -24,12 +23,6 @@ export interface ChatMessage {
             completion: number;
             total: number;
         };
-        citations?: Array<{
-            text: string;
-            url?: string;
-            type: 'paper' | 'database' | 'tool';
-        }>;
-        webSearchResults?: WebSearchResponse;
         codeBlocks?: Array<{
             language: string;
             code: string;
@@ -420,42 +413,11 @@ export const processQuery = async (
             .slice(-6) // Last 3 exchanges (user + assistant)
             .map(m => ({ role: m.role, content: m.content }));
 
-        // Check if web search is needed - especially for trending/general queries
-        let webSearchResults: WebSearchResponse | undefined;
-        let searchContext = '';
-
         // Enhanced detection for sports/news queries
         const isGeneralQuery = userIntent === 'general_trending' || 
                               /(news|latest|arsenal|football|soccer|player|transfer|sport)/i.test(query);
 
-        const shouldSearch = webSearchService.detectExplicitSearch(query) || 
-                           webSearchService.detectImplicitTriggers(query) ||
-                           isGeneralQuery;
-
-        if (shouldSearch) {
-            console.log('🔍 Performing web search for:', query);
-            let searchTerms = webSearchService.extractSearchTerms(query);
-
-            // For general trending queries, expand search terms
-            if (isGeneralQuery) {
-                searchTerms = `${searchTerms} latest news 2024`;
-            }
-
-            webSearchResults = await webSearchService.search(searchTerms, {
-                maxResults: 5,
-                bioinformatics: !isGeneralQuery // Don't limit to bio for general queries
-            });
-
-            if (webSearchResults.results.length > 0) {
-                searchContext = '\n\nWeb Search Context:\n' + 
-                              webSearchService.formatResultsForAI(webSearchResults);
-                console.log(`✅ Found ${webSearchResults.results.length} search results`);
-            } else {
-                console.log('⚠️ No web search results found, providing general response');
-            }
-        }
-
-        // Always continue with AI response, whether search succeeded or not
+        // Always continue with AI response
 
         // Analyze conversation context
         const conversationAnalysis = analyzeConversationContext(context.history);
@@ -471,8 +433,6 @@ Current Context:
 - Query Type: ${queryType}
 - Conversation Topics: ${Array.from(context.memory.topics).join(', ') || 'None'}
 - Time: ${getTimeBasedGreeting()}
-
-${searchContext}
 
 Always provide helpful, accurate, and scientifically sound responses. When discussing bioinformatics topics, include relevant examples and cite best practices.`;
 
@@ -492,7 +452,6 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
             query,
             { 
                 fileAnalysis,
-                webSearchResults,
                 conversationContext: context,
                 userIntent
             },
@@ -546,7 +505,6 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
                 model: aiResponse.provider,
                 processingTime,
                 confidence: 0.85,
-                webSearchResults,
                 ...(aiResponse.tokens && { tokens: aiResponse.tokens })
             }
         };
