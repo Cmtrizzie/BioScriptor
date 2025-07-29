@@ -22,6 +22,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onSwitchSession: (session: any) => void;
   onSendMessage: (message: string) => void;
+  onMenuClick: () => void;
 }
 
 export default function Sidebar({ 
@@ -29,8 +30,9 @@ export default function Sidebar({
   onClose, 
   sessions, 
   onNewChat, 
-  onSwitchSession,
-  onSendMessage 
+  onSwitchSession, 
+  onSendMessage,
+  onMenuClick
 }: SidebarProps) {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -84,30 +86,6 @@ export default function Sidebar({
         "fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-gray-900 text-gray-100 transform transition-transform duration-300 ease-in-out flex flex-col",
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
-        {/* Header */}
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">BioScriptor</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* New Chat Button */}
-          <Button 
-            onClick={onNewChat}
-            className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white font-medium mb-4"
-          >
-            <Plus className="h-4 w-4 mr-3" />
-            New chat
-          </Button>
-        </div>
-
         {/* Bioinformatics Quick Actions */}
         <div className="px-4 mb-3">
           <h3 className="text-sm font-medium text-gray-400 mb-2">Quick Actions</h3>
@@ -191,82 +169,6 @@ export default function Sidebar({
               )}
             </div>
           </ScrollArea>
-        </div>
-
-        {/* Fixed Profile Section at Bottom */}
-        <div className="border-t border-gray-800 p-4 mt-auto">
-          {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-100"
-                >
-                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                    {getUserInitials(user?.email)}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-white truncate">
-                      {user?.displayName || user?.email?.split('@')[0] || 'User'}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {user?.tier || 'free'} plan
-                    </div>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-gray-800 border-gray-700">
-                <DropdownMenuItem 
-                  onClick={() => handleNavigation('/subscription')}
-                  className="text-gray-100 hover:bg-gray-700"
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Subscription</span>
-                  <Badge variant="outline" className="ml-auto text-xs border-gray-600">
-                    {user?.tier || 'free'}
-                  </Badge>
-                </DropdownMenuItem>
-
-                {user?.tier === 'enterprise' && (
-                  <DropdownMenuItem 
-                    onClick={() => handleNavigation('/admin')}
-                    className="text-gray-100 hover:bg-gray-700"
-                  >
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>Admin Dashboard</span>
-                  </DropdownMenuItem>
-                )}
-
-                <DropdownMenuItem 
-                  onClick={() => handleNavigation('/settings')}
-                  className="text-gray-100 hover:bg-gray-700"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="bg-gray-700" />
-
-                <DropdownMenuItem 
-                  onClick={handleLogout}
-                  className="text-gray-100 hover:bg-gray-700"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {!user && (
-            <Button 
-              onClick={() => handleNavigation('/auth')}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Sign In
-            </Button>
-          )}
         </div>
       </div>
     </>
