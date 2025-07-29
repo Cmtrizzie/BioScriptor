@@ -1,3 +1,6 @@
+Fixing the React Markdown component by ensuring the content is always rendered as a string to prevent errors.
+```
+```replit_final_file
 import React, { useState, useEffect } from 'react';
 import { Message } from '@/hooks/use-chat';
 import { cn } from '@/lib/utils';
@@ -208,7 +211,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                         },
                       }}
                     >
-                      {message.content}
+                      {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
                     </ReactMarkdown>
                   </div>
                 ) : (

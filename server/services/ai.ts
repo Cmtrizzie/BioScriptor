@@ -111,7 +111,7 @@ class ConversationManager {
         if (!text || typeof text !== 'string') {
             return [];
         }
-        
+
         const topics = new Set<string>();
         const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
         scientificTerms.forEach(term => topics.add(term.toLowerCase()));
@@ -123,7 +123,7 @@ class ConversationManager {
         if (!text || typeof text !== 'string') {
             return [];
         }
-        
+
         const entities = new Set<string>();
         const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
         sequenceIds.forEach(id => entities.add(id));
@@ -456,10 +456,10 @@ export const processQuery = async (
         }
 
         // Always continue with AI response, whether search succeeded or not
-        
+
         // Analyze conversation context
         const conversationAnalysis = analyzeConversationContext(context.history);
-        
+
         // Build enhanced system prompt based on context
         const systemPrompt = `You are BioScriptor, a specialized AI assistant for bioinformatics, data analysis, and scientific computing.
 
@@ -505,7 +505,7 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
 
         // Enhance the response
         let enhancedContent = aiResponse.content;
-        
+
         try {
             enhancedContent = await enhanceResponse(
                 {
@@ -558,7 +558,7 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
 
     } catch (error) {
         console.error('Error processing query:', error);
-        
+
         const errorMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'error',
