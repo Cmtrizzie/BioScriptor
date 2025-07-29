@@ -119,7 +119,7 @@ async function checkDatabaseConnection() {
 
     // Import storage to ensure db is initialized with cleaned connection string
     const { db, users } = await import('./storage');
-    
+
     // Test with a simple query
     const testQuery = await db.select().from(users).limit(1);
     console.log('✅ Database connection established and endpoint active');
@@ -141,3 +141,16 @@ async function checkDatabaseConnection() {
     return false;
   }
 }
+
+console.log('AI Provider Configuration:');
+console.log('- Groq API Key:', !!process.env.GROQ_API_KEY ? 'Set' : 'Missing');
+console.log('- Together API Key:', !!process.env.TOGETHER_API_KEY ? 'Set' : 'Missing');
+console.log('- OpenRouter API Key:', !!process.env.OPENROUTER_API_KEY ? 'Set' : 'Missing');
+
+// Web Search Configuration
+if (process.env.SCRAPEDUCK_API_KEY) {
+  console.log('✅ ScrapeDuck found and available for web search');
+} else {
+  console.log('⚠️ ScrapeDuck API key not found - using fallback search methods');
+}
+```
