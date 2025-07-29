@@ -853,8 +853,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment Webhook Routes
-  Removing web search functionality.
-```javascript
   app.post("/api/webhooks/paypal", async (req, res) => {
     try {
       const event = req.body;
