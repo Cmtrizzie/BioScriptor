@@ -294,13 +294,22 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
       }}
     >
       {messages.map((message) => (
-        <div key={message.id} className="flex gap-2 sm:gap-3 group max-w-full">
+        <div key={message.id} className={cn(
+          "flex gap-2 sm:gap-3 group max-w-full",
+          message.role === 'user' ? "justify-end" : "justify-start"
+        )}>
           
 
           {/* Message Content */}
-          <div className="flex-1 min-w-0 space-y-1 max-w-full overflow-hidden">
+          <div className={cn(
+            "min-w-0 space-y-1 overflow-hidden",
+            message.role === 'user' ? "max-w-[80%]" : "flex-1 max-w-full"
+          )}>
             {/* Header */}
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className={cn(
+              "flex items-center gap-2 text-xs text-slate-500",
+              message.role === 'user' ? "justify-end" : "justify-start"
+            )}>
               <span className="font-medium">
                 {message.role === 'user' ? 'You' : 'BioScriptor'}
               </span>
@@ -312,8 +321,8 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
             <div className={cn(
               "rounded-xl p-4 border relative group max-w-full overflow-hidden",
               message.role === 'user' 
-                ? "ml-0" 
-                : "mr-0"
+                ? "ml-auto" 
+                : "mr-auto"
             )}
             style={{
               backgroundColor: message.role === 'user' 
@@ -486,7 +495,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
       ))}
 
       {isLoading && (
-        <div className="flex gap-3">
+        <div className="flex gap-3 justify-start">
           <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarFallback className="text-xs">
               <Logo size="small" variant={theme === 'dark' ? 'dark' : 'light'} />
