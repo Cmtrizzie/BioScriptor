@@ -98,7 +98,7 @@ export default function Settings() {
   };
 
   const handleViewServiceAgreement = () => {
-    window.open('/terms', '_blank');
+    setLocation('/service-agreement');
   };
 
   const handleContactSupport = () => {

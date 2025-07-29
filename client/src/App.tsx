@@ -12,6 +12,9 @@ import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Settings from "@/pages/Settings";
 import DataControls from '@/pages/DataControls';
+import ServiceAgreement from '@/pages/ServiceAgreement';
+import TermsOfUse from '@/pages/TermsOfUse';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import { ThemeProvider } from "@/context/theme-context";
 
 function Router() {
@@ -42,6 +45,9 @@ function Router() {
       <Route path="/admin" component={user ? AdminDashboard : Auth} />
       <Route path="/settings" component={Settings} />
       <Route path="/data-controls" component={DataControls} />
+      <Route path="/service-agreement" component={ServiceAgreement} />
+      <Route path="/terms-of-use" component={TermsOfUse} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/subscription" component={Subscription} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
