@@ -53,8 +53,10 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         </div>
       </div>
       
-      {/* Fixed MessageInput at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
+      {/* Fixed MessageInput at bottom - Hidden when sidebar is open on mobile */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700 transition-transform duration-300 lg:translate-x-0 ${
+        sidebarOpen ? 'translate-x-full lg:translate-x-0' : 'translate-x-0'
+      }`}>
         <MessageInput 
           onSendMessage={sendMessage} 
           disabled={isLoading}
