@@ -116,38 +116,69 @@ const CodeBlock = ({ language, value }: { language: string; value: string }) => 
 // Theme-aware Mermaid diagram
 const MermaidDiagram = ({ content }: { content: string }) => {
   const diagramRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const renderDiagram = async () => {
-      if (diagramRef.current) {
-        try {
-          const mermaid = (await import('mermaid')).default;
-          const { theme } = document.documentElement.getAttribute('data-theme') === 'dark' 
-            ? { theme: 'dark' } 
-            : { theme: 'default' };
+      if (!diagramRef.current || !content?.trim()) {
+        setIsLoading(false);
+        setHasError(true);
+        return;
+      }
 
-          mermaid.initialize({
-            startOnLoad: false,
-            theme,
-            themeVariables: {
-              darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
-              background: 'var(--mermaid-bg)',
-              primaryColor: 'var(--mermaid-primary)',
-              secondaryColor: 'var(--mermaid-secondary)',
-              tertiaryColor: 'var(--mermaid-accent)',
-              mainBkg: 'var(--mermaid-bg)',
-              lineColor: 'var(--mermaid-text)',
-              textColor: 'var(--mermaid-text)',
-            }
-          });
+      try {
+        setIsLoading(true);
+        setHasError(false);
 
-          const { svg } = await mermaid.render('mermaid-' + Date.now(), content);
-          diagramRef.current.innerHTML = svg;
-        } catch (error) {
-          console.error('Error rendering Mermaid diagram:', error);
-          if (diagramRef.current) {
-            diagramRef.current.innerHTML = `<pre>${content}</pre>`;
+        // Dynamic import of mermaid
+        const mermaid = (await import('mermaid')).default;
+        
+        // Initialize mermaid with proper configuration
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? 'dark' : 'default',
+          securityLevel: 'loose',
+          themeVariables: {
+            darkMode: isDark,
+            background: isDark ? '#1f2937' : '#ffffff',
+            primaryColor: isDark ? '#3b82f6' : '#2563eb',
+            secondaryColor: isDark ? '#374151' : '#f3f4f6',
+            tertiaryColor: isDark ? '#059669' : '#10b981',
+            primaryBorderColor: isDark ? '#6b7280' : '#d1d5db',
+            primaryTextColor: isDark ? '#f9fafb' : '#111827',
+            lineColor: isDark ? '#6b7280' : '#374151',
+            textColor: isDark ? '#f9fafb' : '#111827',
           }
+        });
+
+        // Generate unique ID for this diagram
+        const diagramId = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Render the diagram
+        const { svg } = await mermaid.render(diagramId, content.trim());
+        
+        if (diagramRef.current) {
+          diagramRef.current.innerHTML = svg;
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error rendering Mermaid diagram:', error);
+        setHasError(true);
+        setIsLoading(false);
+        
+        if (diagramRef.current) {
+          diagramRef.current.innerHTML = `
+            <div class="text-red-600 text-sm p-4 bg-red-50 border border-red-200 rounded">
+              <p><strong>⚠️ Diagram rendering failed</strong></p>
+              <details class="mt-2">
+                <summary class="cursor-pointer text-xs">Show diagram code</summary>
+                <pre class="mt-2 text-xs bg-red-100 p-2 rounded overflow-x-auto">${content}</pre>
+              </details>
+            </div>
+          `;
         }
       }
     };
@@ -158,13 +189,27 @@ const MermaidDiagram = ({ content }: { content: string }) => {
   return (
     <div className="mermaid-diagram my-4 p-4 rounded-lg border group relative"
       style={{
-        backgroundColor: 'var(--mermaid-bg)',
-        borderColor: 'var(--code-border)'
+        backgroundColor: 'var(--code-background, #ffffff)',
+        borderColor: 'var(--code-border, #e5e7eb)'
       }}>
       <div className="absolute top-2 right-2 z-10">
         <CopyButton content={content} />
       </div>
-      <div ref={diagramRef} style={{ color: 'var(--mermaid-text)' }} />
+      
+      {isLoading && (
+        <div className="flex items-center justify-center h-20 text-gray-500">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-sm">Rendering diagram...</span>
+        </div>
+      )}
+      
+      <div 
+        ref={diagramRef} 
+        style={{ 
+          color: 'var(--mermaid-text, #111827)',
+          minHeight: hasError ? 'auto' : '50px'
+        }} 
+      />
     </div>
   );
 };
