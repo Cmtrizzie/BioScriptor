@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Message } from '@/hooks/use-chat';
 import { cn } from '@/lib/utils';
@@ -209,7 +208,15 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                         },
                       }}
                     >
-                      {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                      {(() => {
+                        if (typeof message.content === 'string') {
+                          return message.content;
+                        } else if (message.content && typeof message.content === 'object' && message.content.content) {
+                          return message.content.content;
+                        } else {
+                          return JSON.stringify(message.content);
+                        }
+                      })()}
                     </ReactMarkdown>
                   </div>
                 ) : (
