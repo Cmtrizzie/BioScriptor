@@ -246,7 +246,6 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     />
                   ) : (
                     <ReactMarkdown
-                      className="markdown-content leading-relaxed break-words overflow-wrap-anywhere max-w-full"
                       remarkPlugins={[remarkGfm]}
                       components={{
                         code({ node, inline, className, children, ...props }) {
