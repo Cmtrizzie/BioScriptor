@@ -296,7 +296,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
       {messages.map((message) => (
         <div key={message.id} className={cn(
           "flex w-full",
-          message.role === 'user' ? "justify-start" : "justify-start"
+          message.role === 'user' ? "justify-end" : "justify-start"
         )}>
           {/* Message Content Container */}
           <div className={cn(
@@ -306,7 +306,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
             {/* Header */}
             <div className={cn(
               "flex items-center gap-2 text-xs text-slate-500",
-              message.role === 'user' ? "justify-start" : "justify-start"
+              message.role === 'user' ? "justify-end" : "justify-start"
             )}>
               <span className="font-medium">
                 {message.role === 'user' ? 'You' : 'BioScriptor'}
@@ -319,7 +319,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
             <div className={cn(
               "rounded-xl p-4 border relative group overflow-hidden",
               message.role === 'user' 
-                ? "bg-blue-500 text-white border-blue-600" 
+                ? "bg-blue-500 text-white border-blue-600 rounded-br-md" 
                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
             )}
             style={{
