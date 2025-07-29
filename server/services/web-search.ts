@@ -6,6 +6,13 @@ interface WebSearchResult {
   snippet: string;
 }
 
+export interface WebSearchResponse {
+  results: WebSearchResult[];
+  query: string;
+  totalResults: number;
+  searchTime: number;
+}
+
 interface ScrapeDuckResponse {
   results: Array<{
     title: string;
@@ -144,3 +151,41 @@ export function shouldPerformWebSearch(query: string): boolean {
   const queryLower = query.toLowerCase();
   return webSearchKeywords.some(keyword => queryLower.includes(keyword));
 }
+
+// Web search service object
+export const webSearchService = {
+  async search(query: string, options: { maxResults?: number; bioinformatics?: boolean } = {}): Promise<WebSearchResponse> {
+    const startTime = Date.now();
+    const results = await performWebSearch(query, options.maxResults || 5);
+    
+    return {
+      results,
+      query,
+      totalResults: results.length,
+      searchTime: Date.now() - startTime
+    };
+  },
+
+  detectExplicitSearch(query: string): boolean {
+    const explicitKeywords = ['search', 'look up', 'find', 'google', 'web search'];
+    const queryLower = query.toLowerCase();
+    return explicitKeywords.some(keyword => queryLower.includes(keyword));
+  },
+
+  detectImplicitTriggers(query: string): boolean {
+    return shouldPerformWebSearch(query);
+  },
+
+  extractSearchTerms(query: string): string {
+    // Remove common question words and extract key terms
+    return query
+      .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')
+      .replace(/\b(is|are|was|were|the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  },
+
+  formatResultsForAI(searchResponse: WebSearchResponse): string {
+    return formatSearchResults(searchResponse.results);
+  }
+};
