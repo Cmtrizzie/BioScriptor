@@ -60,9 +60,11 @@ export default function Sidebar({
         <div className="p-4 border-b border-gray-200">
           <Button 
             onClick={onNewChat}
-            className="w-full justify-start bg-bio-blue hover:bg-bio-blue/90 text-white dark:bg-bio-blue dark:hover:bg-bio-blue/90 dark:text-white"
+            className="w-full justify-start bg-bio-blue hover:bg-bio-blue/90 text-white dark:bg-bio-blue dark:hover:bg-bio-blue/90 dark:text-white shadow-md border-2 border-bio-blue/20 rounded-xl font-medium"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mr-3">
+              <Plus className="h-4 w-4" />
+            </div>
             New Chat
           </Button>
         </div>
