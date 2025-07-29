@@ -46,9 +46,11 @@
   @apply max-w-2xl w-full rounded-2xl px-5 py-3 mb-3 text-base leading-relaxed relative;
   @apply shadow-sm transition-all duration-200 ease-in-out;
   word-wrap: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   hyphens: auto;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .chatbot-message {

@@ -110,11 +110,12 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} w-full`}
             >
               <div
-                className={`max-w-[85%] min-w-0 group relative break-words overflow-hidden ${
+                className={`max-w-[85%] min-w-0 group relative break-words overflow-wrap-anywhere ${
                   message.type === 'user'
                     ? 'chatgpt-user-message ml-auto'
                     : 'chatgpt-message'
                 }`}
+                style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
               >
                 {/* Copy button - positioned absolutely in top right */}
                 <div className="absolute top-2 right-2 z-10">
