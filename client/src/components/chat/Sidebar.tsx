@@ -281,14 +281,6 @@ export default function Sidebar({
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="bg-gray-700" />
-
-                <DropdownMenuItem 
-                  onClick={handleLogout}
-                  className="text-gray-100 hover:bg-gray-700"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -302,7 +294,7 @@ export default function Sidebar({
             </Button>
           )}
         </div>
-        
+
       </div>
     </>
   );

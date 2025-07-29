@@ -133,10 +133,10 @@ const MermaidDiagram = ({ content }: { content: string }) => {
 
         // Dynamic import of mermaid
         const mermaid = (await import('mermaid')).default;
-        
+
         // Initialize mermaid with proper configuration
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        
+
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',
@@ -156,10 +156,10 @@ const MermaidDiagram = ({ content }: { content: string }) => {
 
         // Generate unique ID for this diagram
         const diagramId = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
+
         // Render the diagram
         const { svg } = await mermaid.render(diagramId, content.trim());
-        
+
         if (diagramRef.current) {
           diagramRef.current.innerHTML = svg;
           setIsLoading(false);
@@ -168,7 +168,7 @@ const MermaidDiagram = ({ content }: { content: string }) => {
         console.error('Error rendering Mermaid diagram:', error);
         setHasError(true);
         setIsLoading(false);
-        
+
         if (diagramRef.current) {
           diagramRef.current.innerHTML = `
             <div class="text-red-600 text-sm p-4 bg-red-50 border border-red-200 rounded">
@@ -195,14 +195,14 @@ const MermaidDiagram = ({ content }: { content: string }) => {
       <div className="absolute top-2 right-2 z-10">
         <CopyButton content={content} />
       </div>
-      
+
       {isLoading && (
         <div className="flex items-center justify-center h-20 text-gray-500">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
           <span className="ml-2 text-sm">Rendering diagram...</span>
         </div>
       )}
-      
+
       <div 
         ref={diagramRef} 
         style={{ 
@@ -295,16 +295,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
     >
       {messages.map((message) => (
         <div key={message.id} className="flex gap-3 group">
-          {/* Avatar */}
-          <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="text-xs">
-              {message.role === 'user' ? (
-                <User size={16} />
-              ) : (
-                <Logo size="small" variant={theme === 'dark' ? 'dark' : 'light'} />
-              )}
-            </AvatarFallback>
-          </Avatar>
+          
 
           {/* Message Content */}
           <div className="flex-1 min-w-0 space-y-1">
