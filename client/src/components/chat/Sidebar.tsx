@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, Plus, MessageSquare, Search, Library, Users, ChevronDown, CreditCard, Settings, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -144,6 +143,111 @@ export default function Sidebar({
             <MessageSquare className="h-4 w-4 mr-3" />
             Chats
           </Button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="px-4 mt-6">
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Analyze this DNA sequence for potential CRISPR targets")}
+            >
+              <div className="truncate w-full">
+                Improving chatbot creativity
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("What are the latest bioinformatics tools and techniques?")}
+            >
+              <div className="truncate w-full">
+                Open source web search tools
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Give me an overview of the latest genomics databases")}
+            >
+              <div className="truncate w-full">
+                Neon database overview
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("What's new in computational biology and machine learning?")}
+            >
+              <div className="truncate w-full">
+                Uganda computer production news
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Help me optimize my Python code for better performance")}
+            >
+              <div className="truncate w-full">
+                Code modification suggestions
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Explain the differences between various color spaces and their usage")}
+            >
+              <div className="truncate w-full">
+                Clarifying color usage
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Help me improve my scientific writing and research proposals")}
+            >
+              <div className="truncate w-full">
+                BioScriptor Enhancement Feedback
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Create a comprehensive guide for building wealth through smart investments")}
+            >
+              <div className="truncate w-full">
+                Wealth building blueprint
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("What's up! How are you doing today?")}
+            >
+              <div className="truncate w-full">
+                Wassup You Good?
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Help me implement a search feature for chat history")}
+            >
+              <div className="truncate w-full">
+                Chat history search ability
+              </div>
+            </Button>
+          </div>
         </div>
 
         {/* Chat History */}
