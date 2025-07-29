@@ -135,11 +135,11 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
 async function searxngSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   // Use only working public instances (local Docker not available on Replit)
   const searxngInstances = [
-    'https://searx.thegpm.org',
-    'https://search.inetol.net', 
-    'https://searx.prvcy.eu',
+    'https://searx.be',
     'https://searx.work',
-    'https://searxng.site'
+    'https://search.bus-hit.me',
+    'https://searx.tiekoetter.com',
+    'https://searx.space'
   ];
 
   console.log('🔍 Performing web search with SearXNG...');
