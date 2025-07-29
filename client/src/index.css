@@ -309,19 +309,57 @@
 
 /* Ensure markdown text is visible in both light and dark modes */
 .prose {
-  @apply text-gray-900 dark:text-gray-100;
+  /* Force explicit colors instead of relying on CSS variables */
+  color: #1f2937 !important;
 }
 
-.prose p, .prose li, .prose td, .prose th {
-  @apply text-gray-800 dark:text-gray-200;
+.dark .prose {
+  color: #f9fafb !important;
+}
+
+.prose p, .prose li, .prose td, .prose th, .prose div, .prose span {
+  color: #374151 !important;
+}
+
+.dark .prose p, .dark .prose li, .dark .prose td, .dark .prose th, .dark .prose div, .dark .prose span {
+  color: #e5e7eb !important;
 }
 
 .prose strong {
-  @apply text-gray-900 dark:text-gray-100 font-semibold;
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.dark .prose strong {
+  color: #f9fafb !important;
+  font-weight: 600;
 }
 
 .prose em {
-  @apply text-gray-700 dark:text-gray-300;
+  color: #4b5563 !important;
+}
+
+.dark .prose em {
+  color: #d1d5db !important;
+}
+
+/* Fix list items specifically */
+.prose ul li, .prose ol li {
+  color: #374151 !important;
+}
+
+.dark .prose ul li, .dark .prose ol li {
+  color: #e5e7eb !important;
+}
+
+/* Fix headings */
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 {
+  color: #f9fafb !important;
 }
 
 .chatgpt-message {

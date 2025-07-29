@@ -213,7 +213,7 @@ export default function MessageList({
                         // Render with error boundary
                         try {
                           return (
-                            <div className="markdown-wrapper text-gray-900 dark:text-gray-100">
+                            <div className="markdown-wrapper text-gray-900 dark:text-gray-100" style={{ color: '#374151' }}>
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
