@@ -32,17 +32,61 @@ interface SearXNGResponse {
   unresponsive_engines: string[];
 }
 
-// DuckDuckGo HTML scraping fallback (when SearXNG fails)
+// DuckDuckGo Instant Answer API and HTML fallback
 async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   try {
-    console.log('🦆 Trying DuckDuckGo HTML search...');
+    console.log('🦆 Trying DuckDuckGo Instant Answer API...');
     
+    // First try the Instant Answer API
+    const instantUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+    
+    const instantResponse = await fetch(instantUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BioScriptor/1.0)',
+      },
+      timeout: 8000
+    });
+
+    if (instantResponse.ok) {
+      const instantData = await instantResponse.json();
+      
+      // Check for abstract or definition
+      if (instantData.Abstract && instantData.AbstractText) {
+        return [{
+          title: instantData.Heading || `Information about: ${query}`,
+          url: instantData.AbstractURL || 'https://duckduckgo.com',
+          snippet: instantData.AbstractText.substring(0, 200)
+        }];
+      }
+      
+      // Check for related topics
+      if (instantData.RelatedTopics && instantData.RelatedTopics.length > 0) {
+        const results = instantData.RelatedTopics
+          .slice(0, maxResults)
+          .filter(topic => topic.Text && topic.FirstURL)
+          .map(topic => ({
+            title: topic.Text.split(' - ')[0] || 'Related Information',
+            url: topic.FirstURL,
+            snippet: topic.Text.substring(0, 200)
+          }));
+        
+        if (results.length > 0) {
+          console.log(`✅ DuckDuckGo Instant API found ${results.length} results`);
+          return results;
+        }
+      }
+    }
+    
+    console.log('🔄 DuckDuckGo Instant API had no results, trying HTML search...');
+    
+    // Fallback to HTML scraping
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
     
     const response = await fetch(searchUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BioScriptor/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
@@ -50,40 +94,35 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
     });
 
     if (!response.ok) {
-      console.warn('DuckDuckGo failed:', response.status);
+      console.warn('DuckDuckGo HTML failed:', response.status);
       return [];
     }
 
     const html = await response.text();
     
-    // Simple regex-based extraction (works better than DOM parsing on Replit)
+    // Improved regex patterns for better extraction
     const results: WebSearchResult[] = [];
-    const linkRegex = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
-    const snippetRegex = /<a[^>]+class="result__snippet"[^>]*>([^<]+)<\/a>/g;
+    const resultPattern = /<div class="result__body">[\s\S]*?<a[^>]*href="([^"]+)"[^>]*class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
     
     let match;
-    let snippetMatch;
     let count = 0;
     
-    while ((match = linkRegex.exec(html)) && count < maxResults) {
+    while ((match = resultPattern.exec(html)) && count < maxResults) {
       const url = match[1];
-      const title = match[2].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      const title = match[2].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+      const snippet = match[3].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
       
-      // Try to find corresponding snippet
-      snippetMatch = snippetRegex.exec(html);
-      const snippet = snippetMatch ? snippetMatch[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') : title;
-      
-      if (url && title && !url.includes('duckduckgo.com')) {
+      if (url && title && !url.includes('duckduckgo.com') && title.length > 0) {
         results.push({
           title: title.substring(0, 100),
           url: url,
-          snippet: snippet.substring(0, 200)
+          snippet: snippet.substring(0, 200) || title
         });
         count++;
       }
     }
     
-    console.log(`✅ DuckDuckGo found ${results.length} results`);
+    console.log(`✅ DuckDuckGo HTML found ${results.length} results`);
     return results;
     
   } catch (error) {
@@ -94,12 +133,13 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
 
 // SearXNG search implementation with multiple instances
 async function searxngSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
-  // Updated working SearXNG instances (July 2025)
+  // Updated working SearXNG instances (January 2025) - more reliable public instances
   const searxngInstances = [
-    'https://searxng.thegpm.org', // Working as of July 2025
-    'https://searx.fmac.xyz',
-    'https://search.sapti.me',
-    'https://searx.tiekoetter.com'
+    'https://search.inetol.net',
+    'https://searx.work',
+    'https://searx.prvcy.eu',
+    'https://searx.be',
+    'https://searxng.thegpm.org'
   ];
 
   console.log('🔍 Performing web search with SearXNG...');
