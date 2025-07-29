@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { X, File, ImageIcon, Dna } from "lucide-react";
+import { X, File, ImageIcon, FileText } from "lucide-react";
 
 interface MessageInputProps {
   onSendMessage: (message: string, files?: File[]) => void;
@@ -210,7 +210,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const FileIcon = ({ type }: { type: 'text' | 'image' | 'bio' }) => {
     switch (type) {
       case 'image': return <ImageIcon className="w-4 h-4 mr-1" />;
-      case 'bio': return <Dna className="w-4 h-4 mr-1" />;
+      case 'bio': return <FileText className="w-4 h-4 mr-1" />;
       default: return <File className="w-4 h-4 mr-1" />;
     }
   };
