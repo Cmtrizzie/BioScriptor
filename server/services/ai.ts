@@ -100,34 +100,44 @@ class ConversationManager {
     }
 
     private extractTopics(text: string): string[] {
-        // Ensure text is a string
+        // Ensure text is a string and not null/undefined
         if (!text || typeof text !== 'string') {
             return [];
         }
 
-        const topics = new Set<string>();
-        const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
-        scientificTerms.forEach(term => topics.add(term.toLowerCase()));
-        return Array.from(topics);
+        try {
+            const topics = new Set<string>();
+            const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
+            scientificTerms.forEach(term => topics.add(term.toLowerCase()));
+            return Array.from(topics);
+        } catch (error) {
+            console.warn('Error extracting topics:', error);
+            return [];
+        }
     }
 
     private extractEntities(text: string): string[] {
-        // Ensure text is a string
+        // Ensure text is a string and not null/undefined
         if (!text || typeof text !== 'string') {
             return [];
         }
 
-        const entities = new Set<string>();
-        const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
-        sequenceIds.forEach(id => entities.add(id));
+        try {
+            const entities = new Set<string>();
+            const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
+            sequenceIds.forEach(id => entities.add(id));
 
-        const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
-        geneNames.forEach(gene => entities.add(gene));
+            const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
+            geneNames.forEach(gene => entities.add(gene));
 
-        const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
-        speciesNames.forEach(species => entities.add(species));
+            const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
+            speciesNames.forEach(species => entities.add(species));
 
-        return Array.from(entities);
+            return Array.from(entities);
+        } catch (error) {
+            console.warn('Error extracting entities:', error);
+            return [];
+        }
     }
 }
 
@@ -464,30 +474,33 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
             : JSON.stringify(aiResponse.content);
 
         try {
-            enhancedContent = await enhanceResponse(
-                {
-                    id: generateUniqueId(),
-                    role: 'assistant',
-                    content: aiResponse.content,
-                    timestamp: Date.now(),
-                    status: 'complete' as const,
-                    metadata: {
-                        confidence: 0.85,
-                        topic: userIntent
-                    }
-                },
-                {
-                    context: {
-                        currentTopic: userIntent,
-                        taskType: queryType
-                    },
-                    tone,
-                    userMessage: query,
-                    userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
+            const responseToEnhance = {
+                id: generateUniqueId(),
+                role: 'assistant' as const,
+                content: aiResponse.content,
+                timestamp: Date.now(),
+                status: 'complete' as const,
+                metadata: {
+                    confidence: 0.85,
+                    topic: userIntent
                 }
-            );
+            };
+
+            const enhancedResponse = await enhanceResponse(responseToEnhance, {
+                context: {
+                    previousResponses: context.history || [],
+                    currentTopic: userIntent,
+                    taskType: queryType
+                },
+                tone,
+                userMessage: query,
+                userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
+            });
+
+            enhancedContent = typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content;
         } catch (enhanceError) {
             console.warn('Response enhancement failed, using original response:', enhanceError);
+            enhancedContent = aiResponse.content;
         }
 
         // Create response message

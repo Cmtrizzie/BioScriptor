@@ -270,22 +270,22 @@ export function generateStructuredResponse(
 ): StructuredResponse {
   const sections: ResponseSection[] = [];
   const intent = context.intent || "general";
-  
+
   // Handle special response types
   if (intent === "code_request") {
     return generateCodeStructuredResponse(content, context);
   }
-  
+
   if (context.topics.includes('bioinformatics') || context.topics.includes('analysis')) {
     return generateBioinformaticsStructuredResponse(content, context);
   }
 
   // Parse existing content into sections
   const lines = content.split("\n").filter(line => line.trim());
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    
+
     // Headings
     if (line.startsWith("##")) {
       sections.push({
@@ -305,12 +305,12 @@ export function generateStructuredResponse(
       const language = line.replace("```", "").trim();
       const codeLines = [];
       i++; // Skip opening ```
-      
+
       while (i < lines.length && !lines[i].startsWith("```")) {
         codeLines.push(lines[i]);
         i++;
       }
-      
+
       sections.push({
         type: 'code',
         content: codeLines.join('\n'),
@@ -326,7 +326,7 @@ export function generateStructuredResponse(
       });
     }
   }
-  
+
   // Add diagram if workflow or process is mentioned
   if (content.includes('workflow') || content.includes('process') || content.includes('steps')) {
     const diagram = generateWorkflowDiagram(context.userMessage || '');
@@ -355,14 +355,14 @@ export function generateCodeStructuredResponse(
   context: any
 ): StructuredResponse {
   const sections: ResponseSection[] = [];
-  
+
   // Add main heading
   sections.push({
     type: 'heading',
     level: 2,
     content: '🚀 Code Solution'
   });
-  
+
   // Add understanding section
   if (context.userMessage) {
     sections.push({
@@ -370,7 +370,7 @@ export function generateCodeStructuredResponse(
       content: `Here's the solution for: ${context.userMessage.slice(0, 100)}${context.userMessage.length > 100 ? '...' : ''}`
     });
   }
-  
+
   // Extract and add code blocks
   const codeBlocks = content.match(/```[\s\S]*?```/g) || [];
   if (codeBlocks.length > 0) {
@@ -378,7 +378,7 @@ export function generateCodeStructuredResponse(
       const lines = block.split('\n');
       const language = lines[0].replace('```', '').trim() || 'text';
       const code = lines.slice(1, -1).join('\n');
-      
+
       sections.push({
         type: 'code',
         content: code,
@@ -396,7 +396,7 @@ export function generateCodeStructuredResponse(
       copyable: true
     });
   }
-  
+
   // Add explanation
   const explanation = extractExplanationContent(content.split('\n'));
   if (explanation) {
@@ -410,7 +410,7 @@ export function generateCodeStructuredResponse(
       content: explanation
     });
   }
-  
+
   return {
     sections,
     metadata: {
@@ -427,13 +427,13 @@ export function generateBioinformaticsStructuredResponse(
   context: any
 ): StructuredResponse {
   const sections: ResponseSection[] = [];
-  
+
   sections.push({
     type: 'heading',
     level: 2,
     content: '🧬 Bioinformatics Solution'
   });
-  
+
   // Add workflow diagram for complex analyses
   if (context.userMessage?.includes('analysis') || context.userMessage?.includes('pipeline')) {
     sections.push({
@@ -442,7 +442,7 @@ export function generateBioinformaticsStructuredResponse(
       content: generateBioinformaticsDiagram(context.userMessage)
     });
   }
-  
+
   // Add main content
   const mainContent = extractMainContent(content.split('\n'));
   if (mainContent) {
@@ -451,7 +451,7 @@ export function generateBioinformaticsStructuredResponse(
       content: mainContent
     });
   }
-  
+
   // Add code if present
   const codeContent = extractCodeContent(content);
   if (codeContent) {
@@ -467,7 +467,7 @@ export function generateBioinformaticsStructuredResponse(
       copyable: true
     });
   }
-  
+
   return {
     sections,
     metadata: {
@@ -510,7 +510,7 @@ function generateWorkflowDiagram(query: string): string {
     C --> D[Visualization]
     D --> E[Results]`;
   }
-  
+
   if (query.includes('development') || query.includes('build')) {
     return `graph LR
     A[Plan] --> B[Design]
@@ -518,7 +518,7 @@ function generateWorkflowDiagram(query: string): string {
     C --> D[Test]
     D --> E[Deploy]`;
   }
-  
+
   return `graph TD
     A[Start] --> B[Process]
     B --> C[Result]`;
@@ -533,7 +533,7 @@ function generateBioinformaticsDiagram(query: string): string {
     D --> E[Annotation]
     E --> F[Results]`;
   }
-  
+
   if (query.includes('protein') || query.includes('structure')) {
     return `graph TD
     A[Sequence] --> B[Homology Search]
@@ -541,7 +541,7 @@ function generateBioinformaticsDiagram(query: string): string {
     C --> D[Validation]
     D --> E[Analysis]`;
   }
-  
+
   return `graph TD
     A[Data Input] --> B[Processing]
     B --> C[Analysis]
@@ -559,7 +559,7 @@ export function structureResponseContent(
 ): string {
   // Generate structured response and convert back to markdown
   const structured = generateStructuredResponse(content, context);
-  
+
   return structured.sections.map(section => {
     switch (section.type) {
       case 'heading':
@@ -693,7 +693,7 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
 } {
   const topics: string[] = [];
   const complexity = messages.length > 3 ? 'complex' : 'simple';
-  
+
   // Extract topics from recent messages
   messages.slice(-3).forEach(msg => {
     const content = msg.content.toLowerCase();
@@ -732,7 +732,7 @@ export function generateSmartFollowUps(intent: string, content: string, context:
 
   // Select contextually relevant follow-ups
   let relevantFollowUps = followUps;
-  
+
   if (content.includes("```")) {
     relevantFollowUps = [
       "Would you like me to explain how this code works?",
@@ -746,7 +746,7 @@ export function generateSmartFollowUps(intent: string, content: string, context:
 
 export function generateIntentSummary(userMessage: string, intent: string): string {
   const summary = userMessage.slice(0, 100);
-  
+
   switch (intent) {
     case 'code_request':
       return `You want me to create code${summary.includes('for') ? ' for' : ':'} ${summary.toLowerCase()}${userMessage.length > 100 ? '...' : ''}`;
@@ -870,7 +870,7 @@ export async function enhanceResponse(
 
   // Combine hook and content naturally
   let enhancedContent = "";
-  
+
   if (hook && !structuredContent.includes(hook)) {
     enhancedContent = hook;
     if (structuredContent) {
@@ -935,31 +935,62 @@ export function formatLists(content: string): string {
 
 export function enhanceMarkdownFormatting(content: string): string {
   let formatted = content;
-  
+
   // Apply all formatting enhancements
   formatted = formatCodeBlocks(formatted);
   formatted = formatSections(formatted);
   formatted = formatLists(formatted);
-  
+
   // Clean up extra whitespace
   formatted = formatted
     .replace(/[ \t]+\n/g, '\n')  // Remove trailing spaces
     .replace(/\n{3,}/g, '\n\n')  // Max 2 consecutive newlines
     .trim();
-    
+
   return formatted;
 }
 
 // ========== RESPONSE POST-PROCESSING ==========
 export function postProcessResponse(content: string, intent: string): string {
   let processed = enhanceMarkdownFormatting(content);
-  
+
   // Add appropriate closing based on intent
   if (intent === "code_request" && !processed.includes("Need help")) {
     processed += "\n\nLet me know if you need any modifications or have questions about the implementation!";
   } else if (intent === "technical_question" && !processed.includes("Would you like")) {
     processed += "\n\nFeel free to ask if you'd like me to elaborate on any part of this explanation.";
   }
-  
+
   return processed;
 }
+
+function extractTopics(text: string): string[] {
+        // Ensure text is a string
+        if (!text || typeof text !== 'string') {
+            return [];
+        }
+
+        const topics = new Set<string>();
+        const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
+        scientificTerms.forEach(term => topics.add(term.toLowerCase()));
+        return Array.from(topics);
+    }
+
+function extractEntities(text: string): string[] {
+        // Ensure text is a string
+        if (!text || typeof text !== 'string') {
+            return [];
+        }
+
+        const entities = new Set<string>();
+        const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
+        sequenceIds.forEach(id => entities.add(id));
+
+        const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
+        geneNames.forEach(gene => entities.add(gene));
+
+        const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
+        speciesNames.forEach(species => entities.add(species));
+
+        return Array.from(entities);
+    }
