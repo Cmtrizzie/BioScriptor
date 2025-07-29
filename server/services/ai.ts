@@ -107,6 +107,11 @@ class ConversationManager {
     }
 
     private extractTopics(text: string): string[] {
+        // Ensure text is a string
+        if (!text || typeof text !== 'string') {
+            return [];
+        }
+        
         const topics = new Set<string>();
         const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
         scientificTerms.forEach(term => topics.add(term.toLowerCase()));
@@ -114,6 +119,11 @@ class ConversationManager {
     }
 
     private extractEntities(text: string): string[] {
+        // Ensure text is a string
+        if (!text || typeof text !== 'string') {
+            return [];
+        }
+        
         const entities = new Set<string>();
         const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
         sequenceIds.forEach(id => entities.add(id));
