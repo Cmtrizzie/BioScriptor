@@ -1,30 +1,36 @@
 
 #!/bin/bash
 
-echo "🔍 Setting up SearXNG for local web search..."
+echo "🔍 Setting up Web Search for BioScriptor..."
 
-# Check if SearXNG is already running
-if curl -s http://0.0.0.0:8080 > /dev/null 2>&1; then
-    echo "✅ SearXNG is already running on port 8080"
+# Test current web search functionality
+echo "🧪 Testing web search with current configuration..."
+
+# Test the working SearXNG instance
+echo "📡 Testing SearXNG instance..."
+if curl -s "https://searxng.thegpm.org/search?q=test&format=json" > /dev/null 2>&1; then
+    echo "✅ SearXNG instance is working"
 else
-    echo "⚠️ SearXNG not found on port 8080"
-    echo "📝 To set up SearXNG locally:"
-    echo "   1. Install Docker (if available)"
-    echo "   2. Run: docker run -d -p 8080:8080 searxng/searxng"
-    echo "   3. Or use the existing public instances (already configured)"
+    echo "⚠️ SearXNG instance not responding"
 fi
 
-# Test web search functionality
-echo "🧪 Testing web search..."
-node -e "
-const { performWebSearch } = require('./server/services/web-search.ts');
-performWebSearch('test query', 1)
-  .then(results => {
-    console.log('✅ Web search working:', results.length > 0 ? 'Found results' : 'No results (but no errors)');
-  })
-  .catch(err => {
-    console.log('⚠️ Web search issue:', err.message);
-  });
-"
+# Test DuckDuckGo fallback
+echo "🦆 Testing DuckDuckGo fallback..."
+if curl -s "https://html.duckduckgo.com/html/?q=test" > /dev/null 2>&1; then
+    echo "✅ DuckDuckGo fallback is working"
+else
+    echo "⚠️ DuckDuckGo fallback not responding"
+fi
 
-echo "🎉 Setup complete! Your chatbot already has web search integrated."
+# Test the actual web search service
+echo "🧪 Testing BioScriptor web search service..."
+npm run test -- --testNamePattern="Web Search" 2>/dev/null || echo "🔧 Run 'npm test' to verify web search functionality"
+
+echo ""
+echo "🎉 Web Search Setup Complete!"
+echo "📝 Your chatbot now uses:"
+echo "   1. SearXNG (primary) - https://searxng.thegpm.org"
+echo "   2. DuckDuckGo (fallback) - html.duckduckgo.com"
+echo "   3. Mock results (development fallback)"
+echo ""
+echo "💡 To test, ask your chatbot: 'What's the latest news about CRISPR?'"
