@@ -705,8 +705,178 @@ export function analyzeConversationContext(messages: ChatMessage[]): {
   return { complexity, topics: [...new Set(topics)] };
 }
 
+// ========== TRIGGER PHRASES & BUILDER MODE ==========
+export interface BuilderContext {
+  isBuilderMode: boolean;
+  useCase?: string;
+  techStack?: string[];
+  experience?: 'beginner' | 'intermediate' | 'advanced';
+}
+
+const TRIGGER_PHRASES = {
+  chatbot: [
+    "build a chatbot", "create chatbot", "chatbot development", "ai assistant", "conversational ai"
+  ],
+  webapp: [
+    "build a website", "create web app", "web application", "full stack", "frontend", "backend"
+  ],
+  analysis: [
+    "data analysis", "analyze data", "bioinformatics pipeline", "genomic analysis", "sequence analysis"
+  ],
+  api: [
+    "build api", "create endpoint", "rest api", "graphql", "microservice"
+  ],
+  automation: [
+    "automate", "script", "workflow", "pipeline", "batch processing"
+  ]
+};
+
+const BUILDER_MODE_TRIGGERS = [
+  "build", "create", "develop", "implement", "design", "architect", "code", "program",
+  "setup", "configure", "deploy", "integrate", "optimize", "scale"
+];
+
+export function detectBuilderMode(userMessage: string, conversationHistory: ChatMessage[]): BuilderContext {
+  const lowerMessage = userMessage.toLowerCase();
+  const recentMessages = conversationHistory.slice(-5).map(m => m.content.toLowerCase()).join(' ');
+  
+  // Check for builder mode triggers
+  const hasBuilderTriggers = BUILDER_MODE_TRIGGERS.some(trigger => 
+    lowerMessage.includes(trigger) || recentMessages.includes(trigger)
+  );
+  
+  // Detect tech stack mentions
+  const techStack: string[] = [];
+  const techKeywords = {
+    'python': ['python', 'django', 'flask', 'fastapi', 'pandas', 'numpy'],
+    'javascript': ['javascript', 'js', 'node', 'react', 'vue', 'angular', 'express'],
+    'bioinformatics': ['biopython', 'bioconductor', 'blast', 'samtools', 'bedtools'],
+    'databases': ['postgresql', 'mysql', 'mongodb', 'redis', 'sqlite'],
+    'cloud': ['aws', 'azure', 'gcp', 'docker', 'kubernetes', 'vercel', 'netlify']
+  };
+  
+  Object.entries(techKeywords).forEach(([tech, keywords]) => {
+    if (keywords.some(keyword => lowerMessage.includes(keyword) || recentMessages.includes(keyword))) {
+      techStack.push(tech);
+    }
+  });
+  
+  // Detect experience level
+  let experience: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
+  if (lowerMessage.includes('beginner') || lowerMessage.includes('new to') || lowerMessage.includes('learning')) {
+    experience = 'beginner';
+  } else if (lowerMessage.includes('advanced') || lowerMessage.includes('expert') || lowerMessage.includes('professional')) {
+    experience = 'advanced';
+  }
+  
+  return {
+    isBuilderMode: hasBuilderTriggers,
+    techStack,
+    experience
+  };
+}
+
+export function generateFollowUpResponse(userMessage: string, builderContext: BuilderContext): string {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Chatbot building triggers
+  if (TRIGGER_PHRASES.chatbot.some(phrase => lowerMessage.includes(phrase))) {
+    return `🤖 **That's amazing!** Building a chatbot is exciting! 
+
+Do you have a specific use case in mind?
+- 🏥 **Healthcare**: Patient support, symptom checking, appointment scheduling
+- 📚 **Education**: Tutoring, course assistance, knowledge base queries  
+- 🛍️ **Customer Support**: FAQ handling, order tracking, product recommendations
+- 🧬 **Bioinformatics**: Sequence analysis, research assistance, data interpretation
+- 💼 **Business**: Lead qualification, internal tools, workflow automation
+
+I can help you pick the right tools and architecture based on your specific needs! What's your target use case?`;
+  }
+  
+  // Web app building triggers
+  if (TRIGGER_PHRASES.webapp.some(phrase => lowerMessage.includes(phrase))) {
+    return `🚀 **Awesome choice!** Let's build something great together!
+
+What type of web application are you thinking about?
+- 📊 **Data Dashboard**: Analytics, visualizations, real-time monitoring
+- 🧬 **Scientific Tool**: Bioinformatics analysis, research platform
+- 💬 **Social Platform**: Community, collaboration, sharing
+- 🛒 **E-commerce**: Online store, marketplace, booking system
+- 📱 **SaaS Tool**: Productivity, automation, business solutions
+
+Based on your choice, I'll recommend the perfect tech stack and guide you through the development process!`;
+  }
+  
+  // Analysis pipeline triggers
+  if (TRIGGER_PHRASES.analysis.some(phrase => lowerMessage.includes(phrase))) {
+    return `🔬 **Perfect!** Let's design a robust analysis pipeline!
+
+What kind of data are you working with?
+- 🧬 **Genomic Data**: DNA/RNA sequences, variants, expression data
+- 🧪 **Experimental Data**: Lab results, measurements, time series
+- 📊 **Research Data**: Publications, surveys, clinical trials
+- 🌍 **Public Datasets**: NCBI, EBI, genomic databases
+- 📈 **Custom Data**: Proprietary formats, mixed data types
+
+I'll help you choose the right tools (Python/R, cloud platforms, visualization) and build an efficient workflow!`;
+  }
+  
+  // API building triggers
+  if (TRIGGER_PHRASES.api.some(phrase => lowerMessage.includes(phrase))) {
+    return `⚡ **Great idea!** APIs are the backbone of modern applications!
+
+What type of API are you planning to build?
+- 🔄 **Data Processing**: Transform, validate, analyze scientific data
+- 🧬 **Bioinformatics Service**: Sequence analysis, BLAST searches, annotations
+- 🔗 **Integration Hub**: Connect multiple tools, databases, services
+- 📊 **Analytics Engine**: Real-time data processing, reporting
+- 🤖 **AI/ML Service**: Model serving, predictions, intelligent processing
+
+I'll guide you through design patterns, authentication, scaling, and deployment on Replit!`;
+  }
+  
+  // Automation triggers
+  if (TRIGGER_PHRASES.automation.some(phrase => lowerMessage.includes(phrase))) {
+    return `🤖 **Smart thinking!** Automation saves time and reduces errors!
+
+What would you like to automate?
+- 📁 **File Processing**: Batch operations, format conversions, data cleaning
+- 🧬 **Analysis Workflows**: Sequential analysis steps, quality control
+- 📊 **Data Collection**: Web scraping, API polling, database syncing
+- 📧 **Notifications**: Alerts, reports, status updates
+- 🔄 **System Tasks**: Backups, monitoring, maintenance
+
+I'll help you build efficient scripts and workflows that run reliably!`;
+  }
+  
+  return "";
+}
+
 // ========== CONVERSATION HELPERS ==========
 export function generateConversationHook(intent: string, context: any, userMessage: string): string {
+  // Check for builder mode first
+  const builderContext = detectBuilderMode(userMessage, context.previousResponses || []);
+  
+  if (builderContext.isBuilderMode) {
+    const followUp = generateFollowUpResponse(userMessage, builderContext);
+    if (followUp) return followUp;
+    
+    // Builder mode general response
+    return `🚀 **Builder Mode Activated!** 
+
+I can see you're interested in development! I'm here to help you build amazing things. Whether it's bioinformatics tools, web applications, APIs, or automation scripts - let's create something powerful together!
+
+**My building expertise includes:**
+- 🧬 Bioinformatics pipelines and analysis tools
+- 💻 Full-stack web applications  
+- 🤖 AI-powered chatbots and assistants
+- 📊 Data analysis and visualization platforms
+- ⚡ APIs and microservices
+
+What would you like to build today?`;
+  }
+  
+  // Standard intent responses
   switch (intent) {
     case 'greeting':
       return "Hello! I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing. How can I help you today?";
@@ -722,7 +892,10 @@ export function generateConversationHook(intent: string, context: any, userMessa
 }
 
 export function generateSmartFollowUps(intent: string, content: string, context: any): string {
-  const followUps = [
+  // Check if we're in builder mode
+  const builderContext = detectBuilderMode(context.userMessage || "", context.previousResponses || []);
+  
+  let followUps = [
     "Would you like me to explain any part in more detail?",
     "Need help implementing this in your specific use case?",
     "Want to see additional examples or variations?",
@@ -730,18 +903,50 @@ export function generateSmartFollowUps(intent: string, content: string, context:
     "Any questions about the implementation?"
   ];
 
-  // Select contextually relevant follow-ups
-  let relevantFollowUps = followUps;
+  // Builder mode follow-ups
+  if (builderContext.isBuilderMode) {
+    followUps = [
+      "Ready to start building? I can provide step-by-step guidance!",
+      "Want me to suggest the best tech stack for your project?",
+      "Need help with project architecture and planning?",
+      "Should we discuss deployment and scaling strategies?",
+      "Would you like to see a complete implementation roadmap?"
+    ];
+    
+    if (builderContext.techStack.length > 0) {
+      followUps.unshift(`I noticed you're interested in ${builderContext.techStack.join(', ')}. Want specific guidance for these technologies?`);
+    }
+  }
 
+  // Code-specific follow-ups
   if (content.includes("```")) {
-    relevantFollowUps = [
+    const codeFollowUps = builderContext.isBuilderMode ? [
+      "Want me to explain how this integrates with your overall project?",
+      "Need help with testing and deployment strategies?",
+      "Should we add error handling and optimization?"
+    ] : [
       "Would you like me to explain how this code works?",
       "Need help adapting this for your specific data?",
       "Want to see how to handle edge cases?"
     ];
+    
+    followUps = codeFollowUps;
   }
 
-  return `### ${RESPONSE_STRUCTURE.followup}${relevantFollowUps.slice(0, 2).map(f => `- ${f}`).join('\n')}`;
+  // Bioinformatics-specific follow-ups
+  if (context.topics?.includes('bioinformatics') || content.includes('sequence') || content.includes('analysis')) {
+    followUps = builderContext.isBuilderMode ? [
+      "Ready to build a complete bioinformatics pipeline?",
+      "Want to integrate this with databases and APIs?",
+      "Should we create a web interface for your analysis?"
+    ] : [
+      "Want to see this applied to real biological data?",
+      "Need help with visualization and interpretation?",
+      "Should I show you related analysis methods?"
+    ];
+  }
+
+  return `### ${RESPONSE_STRUCTURE.followup}${followUps.slice(0, 2).map(f => `- ${f}`).join('\n')}`;
 }
 
 export function generateIntentSummary(userMessage: string, intent: string): string {
@@ -824,11 +1029,16 @@ export async function enhanceResponse(
   const conversationContext = analyzeConversationContext(
     options.context.previousResponses || [],
   );
+  
+  // Detect builder mode
+  const builderContext = detectBuilderMode(options.userMessage, options.context.previousResponses || []);
 
   // Handle special cases with direct responses
-
   if (intent === "greeting" || intent === "farewell") {
-    const hook = generateConversationHook(intent, conversationContext, options.userMessage);
+    const hook = generateConversationHook(intent, { 
+      ...conversationContext, 
+      previousResponses: options.context.previousResponses 
+    }, options.userMessage);
     return {
       ...message,
       content: hook,
@@ -836,7 +1046,24 @@ export async function enhanceResponse(
         ...message.metadata,
         intent,
         conversationContext,
+        builderContext,
         naturalResponse: true,
+      },
+    };
+  }
+
+  // Check for follow-up trigger phrases
+  const followUpResponse = generateFollowUpResponse(options.userMessage, builderContext);
+  if (followUpResponse && builderContext.isBuilderMode) {
+    return {
+      ...message,
+      content: followUpResponse,
+      metadata: {
+        ...message.metadata,
+        intent,
+        conversationContext,
+        builderContext,
+        triggerResponse: true,
       },
     };
   }
@@ -883,7 +1110,11 @@ export async function enhanceResponse(
   // Add follow-ups for interactive intents
   if (["technical_question", "code_request", "request"].includes(intent) && 
       !enhancedContent.includes("### Next Steps")) {
-    enhancedContent += "\n\n" + generateSmartFollowUps(intent, message.content, conversationContext);
+    enhancedContent += "\n\n" + generateSmartFollowUps(intent, message.content, {
+      ...conversationContext,
+      userMessage: options.userMessage,
+      previousResponses: options.context.previousResponses
+    });
   }
 
   // Final post-processing for ChatGPT-like quality
@@ -896,6 +1127,7 @@ export async function enhanceResponse(
       ...message.metadata,
       intent,
       conversationContext,
+      builderContext,
       responseStyle: "chatgpt",
       structuredResponse: structuredResponse, // Include structured data for frontend
       embedding: {
