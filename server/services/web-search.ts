@@ -34,9 +34,10 @@ interface SearXNGResponse {
 
 // SearXNG search implementation with multiple instances
 async function searxngSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
-  // Multiple SearXNG instances for fallback
+  // Check for local SearXNG first, then fallback to public instances
   const searxngInstances = [
-    process.env.SEARXNG_URL || 'https://searx.space',
+    process.env.SEARXNG_URL || 'http://0.0.0.0:8080', // Local SearXNG
+    'https://searx.space',
     'https://searx.fmac.xyz',
     'https://search.sapti.me',
     'https://searx.tiekoetter.com',

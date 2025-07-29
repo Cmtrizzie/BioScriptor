@@ -136,6 +136,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Test web search endpoint
+  app.get("/api/test/search", requireAuth, async (req: any, res) => {
+    try {
+      const query = req.query.q as string || 'test search';
+      const results = await webSearchService.search(query, { maxResults: 3 });
+      res.json({
+        query,
+        results: results.results,
+        searchTime: results.searchTime,
+        working: results.results.length > 0
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Search test failed', details: error.message });
+    }
+  });
+
   // Chat routes
   app.post("/api/chat/message", requireAuth, upload.single('file'), async (req: any, res) => {
     try {
