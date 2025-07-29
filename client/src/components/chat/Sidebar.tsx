@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, MessageSquare, Search, ChevronDown, CreditCard, Settings, Shield, LogOut, Library, Users } from "lucide-react";
+import { X, Plus, Search, ChevronDown, CreditCard, Settings, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -64,6 +64,11 @@ export default function Sidebar({
     )
   );
 
+  // Sort sessions by timestamp (newest first)
+  const sortedSessions = filteredSessions.sort((a, b) => 
+    new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+  );
+
   return (
     <>
       {/* Mobile overlay */}
@@ -79,9 +84,9 @@ export default function Sidebar({
         "fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-gray-900 text-gray-100 transform transition-transform duration-300 ease-in-out flex flex-col",
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
-        {/* Header with Search */}
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        {/* Header */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">BioScriptor</h2>
             <Button
               variant="ghost"
@@ -93,11 +98,78 @@ export default function Sidebar({
             </Button>
           </div>
 
-          {/* Search Bar */}
+          {/* New Chat Button */}
+          <Button 
+            onClick={onNewChat}
+            className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white font-medium mb-4"
+          >
+            <Plus className="h-4 w-4 mr-3" />
+            New chat
+          </Button>
+        </div>
+
+        {/* Bioinformatics Quick Actions */}
+        <div className="px-4 mb-4">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">Quick Actions</h3>
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Analyze this DNA sequence for potential CRISPR targets")}
+            >
+              <div className="truncate w-full">
+                CRISPR Target Analysis
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Design PCR primers for this sequence")}
+            >
+              <div className="truncate w-full">
+                PCR Primer Design
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Optimize codon usage for E. coli expression")}
+            >
+              <div className="truncate w-full">
+                Codon Optimization
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Perform protein structure analysis")}
+            >
+              <div className="truncate w-full">
+                Protein Analysis
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+              onClick={() => handleQuickAction("Compare DNA sequences for similarity")}
+            >
+              <div className="truncate w-full">
+                Sequence Alignment
+              </div>
+            </Button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-4 mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search"
+              placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400 focus:border-gray-600"
@@ -105,171 +177,32 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Navigation Items */}
-        <div className="px-4 space-y-2">
-          {/* New Chat */}
-          <Button 
-            onClick={onNewChat}
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
-            variant="ghost"
-          >
-            <Plus className="h-4 w-4 mr-3" />
-            New chat
-          </Button>
-
-          {/* Library */}
-          <Button 
-            variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
-            onClick={() => handleNavigation('/library')}
-          >
-            <Library className="h-4 w-4 mr-3" />
-            Library
-          </Button>
-
-          {/* GPTs */}
-          <Button 
-            variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
-            onClick={() => handleNavigation('/gpts')}
-          >
-            <Users className="h-4 w-4 mr-3" />
-            GPTs
-          </Button>
-
-          {/* Chats */}
-          <Button 
-            variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
-          >
-            <MessageSquare className="h-4 w-4 mr-3" />
-            Chats
-          </Button>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="px-4 mt-6">
-          <div className="space-y-1">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Analyze this DNA sequence for potential CRISPR targets")}
-            >
-              <div className="truncate w-full">
-                Improving chatbot creativity
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("What are the latest bioinformatics tools and techniques?")}
-            >
-              <div className="truncate w-full">
-                Open source web search tools
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Give me an overview of the latest genomics databases")}
-            >
-              <div className="truncate w-full">
-                Neon database overview
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("What's new in computational biology and machine learning?")}
-            >
-              <div className="truncate w-full">
-                Uganda computer production news
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Help me optimize my Python code for better performance")}
-            >
-              <div className="truncate w-full">
-                Code modification suggestions
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Explain the differences between various color spaces and their usage")}
-            >
-              <div className="truncate w-full">
-                Clarifying color usage
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Help me improve my scientific writing and research proposals")}
-            >
-              <div className="truncate w-full">
-                BioScriptor Enhancement Feedback
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Create a comprehensive guide for building wealth through smart investments")}
-            >
-              <div className="truncate w-full">
-                Wealth building blueprint
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("What's up! How are you doing today?")}
-            >
-              <div className="truncate w-full">
-                Wassup You Good?
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
-              onClick={() => handleQuickAction("Help me implement a search feature for chat history")}
-            >
-              <div className="truncate w-full">
-                Chat history search ability
-              </div>
-            </Button>
-          </div>
-        </div>
-
-        {/* Chat History */}
-        <div className="flex-1 flex flex-col min-h-0 mt-6">
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-1">
-              {filteredSessions.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  {searchQuery ? 'No matching sessions' : 'No recent sessions'}
+        {/* Chat History - Scrollable */}
+        <div className="flex-1 flex flex-col min-h-0 px-4">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">Recent Chats</h3>
+          <ScrollArea className="flex-1">
+            <div className="space-y-1 pb-4">
+              {sortedSessions.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">
+                  {searchQuery ? 'No matching chats found' : 'No chat history yet'}
                 </p>
               ) : (
-                filteredSessions.map((session) => (
+                sortedSessions.map((session) => (
                   <Button
                     key={session.id}
                     variant="ghost"
                     className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
                     onClick={() => onSwitchSession(session)}
                   >
-                    <div className="truncate w-full">
-                      {session.title || "Untitled Chat"}
+                    <div className="flex flex-col items-start w-full">
+                      <div className="truncate w-full font-medium">
+                        {session.title || "Untitled Chat"}
+                      </div>
+                      {session.timestamp && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {new Date(session.timestamp).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </Button>
                 ))
@@ -278,8 +211,8 @@ export default function Sidebar({
           </ScrollArea>
         </div>
 
-        {/* Profile Section at Bottom */}
-        <div className="border-t border-gray-800 p-4">
+        {/* Fixed Profile Section at Bottom */}
+        <div className="border-t border-gray-800 p-4 mt-auto">
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -293,6 +226,9 @@ export default function Sidebar({
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium text-white truncate">
                       {user?.displayName || user?.email?.split('@')[0] || 'User'}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {user?.tier || 'free'} plan
                     </div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-gray-400" />
