@@ -54,7 +54,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         </div>
         
         {/* Improved scrolling container with padding for fixed input */}
-        <div className="flex-1 overflow-y-auto pb-32">
+        <div className="flex-1 overflow-y-auto pb-32 max-w-full">
           <MessageList 
             messages={messages} 
             isLoading={isLoading} 

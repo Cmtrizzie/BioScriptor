@@ -80,7 +80,7 @@ const CodeBlock = ({ language, value }: { language: string; value: string }) => 
   const style = isDark ? vscDarkPlus : tomorrow;
 
   return (
-    <div className="relative mb-4 group max-w-full overflow-hidden rounded-lg border"
+    <div className="relative mb-4 group max-w-full overflow-x-auto rounded-lg border"
       style={{ borderColor: 'var(--code-border)' }}>
       <div className="flex items-center justify-between px-3 py-2 text-xs font-medium border-b"
         style={{ 
@@ -187,7 +187,7 @@ const MermaidDiagram = ({ content }: { content: string }) => {
   }, [content]);
 
   return (
-    <div className="mermaid-diagram my-4 p-4 rounded-lg border group relative"
+    <div className="mermaid-diagram my-4 p-2 sm:p-4 rounded-lg border group relative max-w-full overflow-x-auto"
       style={{
         backgroundColor: 'var(--code-background, #ffffff)',
         borderColor: 'var(--code-border, #e5e7eb)'
@@ -287,18 +287,18 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
   return (
     <div 
-      className="flex-1 overflow-y-auto p-4 space-y-4 h-full"
+      className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 h-full max-w-full"
       style={{
         backgroundColor: 'var(--color-background)',
         color: 'var(--color-foreground)'
       }}
     >
       {messages.map((message) => (
-        <div key={message.id} className="flex gap-3 group">
+        <div key={message.id} className="flex gap-2 sm:gap-3 group max-w-full">
           
 
           {/* Message Content */}
-          <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex-1 min-w-0 space-y-1 max-w-full overflow-hidden">
             {/* Header */}
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span className="font-medium">
@@ -310,7 +310,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
             {/* Message Bubble */}
             <div className={cn(
-              "rounded-xl p-4 border relative group",
+              "rounded-xl p-4 border relative group max-w-full overflow-hidden",
               message.role === 'user' 
                 ? "ml-0" 
                 : "mr-0"
@@ -321,7 +321,9 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                 : 'var(--message-ai-bg)',
               borderColor: message.role === 'user' 
                 ? 'var(--message-user-border)' 
-                : 'var(--message-ai-border)'
+                : 'var(--message-ai-border)',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere'
             }}>
 
               {/* Copy button for entire message */}
@@ -330,11 +332,11 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               </div>
 
               {message.role === 'user' ? (
-                <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8">
+                <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8 max-w-full">
                   {message.content}
                 </div>
               ) : (
-                <div className="prose prose-sm max-w-none leading-relaxed overflow-hidden pr-8">
+                <div className="prose prose-sm max-w-full leading-relaxed overflow-hidden pr-8 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   {message.isStreaming ? (
                     <TypingEffect 
                       text={message.content} 
