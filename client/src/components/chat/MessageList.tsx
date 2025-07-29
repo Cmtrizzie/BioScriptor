@@ -324,7 +324,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
             <div className={cn(
               "rounded-xl p-4 border relative group overflow-hidden",
               message.role === 'user' 
-                ? "bg-blue-500 text-white border-blue-600 rounded-br-md ml-auto" 
+                ? "bg-gray-700 text-white border-gray-600 rounded-br-md ml-auto" 
                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mr-auto"
             )}
             style={{
