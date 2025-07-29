@@ -295,15 +295,13 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
     >
       {messages.map((message) => (
         <div key={message.id} className={cn(
-          "flex gap-2 sm:gap-3 group max-w-full",
+          "flex w-full",
           message.role === 'user' ? "justify-end" : "justify-start"
         )}>
-          
-
-          {/* Message Content */}
+          {/* Message Content Container */}
           <div className={cn(
-            "min-w-0 space-y-1 overflow-hidden w-full",
-            message.role === 'user' ? "max-w-[80%] ml-auto" : "max-w-full mr-auto"
+            "space-y-1 overflow-hidden",
+            message.role === 'user' ? "max-w-[80%]" : "max-w-[90%]"
           )}>
             {/* Header */}
             <div className={cn(
@@ -319,10 +317,10 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
             {/* Message Bubble */}
             <div className={cn(
-              "rounded-xl p-4 border relative group max-w-full overflow-hidden",
+              "rounded-xl p-4 border relative group overflow-hidden",
               message.role === 'user' 
-                ? "bg-blue-500 text-white border-blue-600 ml-auto rounded-br-md" 
-                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mr-auto"
+                ? "bg-blue-500 text-white border-blue-600 rounded-br-md" 
+                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
             )}
             style={{
               wordBreak: 'break-word',
