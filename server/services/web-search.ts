@@ -13,107 +13,81 @@ export interface WebSearchResponse {
   searchTime: number;
 }
 
-interface ScrapeDuckResponse {
-  results: Array<{
-    title: string;
-    url: string;
-    description: string;
-  }>;
+interface SearXNGResult {
+  title: string;
+  url: string;
+  content: string;
+  engine: string;
+  score: number;
 }
 
-// Fallback search using DuckDuckGo instant answers
-async function fallbackSearch(query: string): Promise<WebSearchResult[]> {
+interface SearXNGResponse {
+  query: string;
+  number_of_results: number;
+  results: SearXNGResult[];
+  answers: any[];
+  corrections: any[];
+  infoboxes: any[];
+  suggestions: string[];
+  unresponsive_engines: string[];
+}
+
+// SearXNG search implementation
+async function searxngSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   try {
-    const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(`https://api.duckduckgo.com/?q=${encodedQuery}&format=json&no_html=1&skip_disambig=1`);
+    // Use public SearXNG instance or configure your own
+    const searxngUrl = process.env.SEARXNG_URL || 'https://searx.be';
+    const searchUrl = `${searxngUrl}/search`;
+
+    console.log('🔍 Performing web search with SearXNG...');
+
+    const params = new URLSearchParams({
+      q: query,
+      format: 'json',
+      engines: 'google,bing,duckduckgo',
+      categories: 'general',
+      language: 'en',
+      time_range: '',
+      safesearch: '1'
+    });
+
+    const response = await fetch(`${searchUrl}?${params}`, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'BioScriptor/1.0 (Scientific Research Assistant)',
+        'Accept': 'application/json',
+      },
+      timeout: 10000 // 10 second timeout
+    });
 
     if (!response.ok) {
-      return [];
+      throw new Error(`SearXNG API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const results: WebSearchResult[] = [];
+    const data: SearXNGResponse = await response.json();
 
-    // Add abstract if available
-    if (data.Abstract && data.AbstractText) {
-      results.push({
-        title: data.Abstract,
-        url: data.AbstractURL || 'https://duckduckgo.com',
-        snippet: data.AbstractText.substring(0, 200) + '...'
-      });
-    }
+    const results = data.results
+      ?.filter(result => result.title && result.content && result.url)
+      ?.slice(0, maxResults)
+      ?.map(result => ({
+        title: result.title,
+        url: result.url,
+        snippet: result.content.length > 200 ? result.content.substring(0, 200) + '...' : result.content
+      })) || [];
 
-    // Add related topics
-    if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-      data.RelatedTopics.slice(0, 3).forEach((topic: any) => {
-        if (topic.Text && topic.FirstURL) {
-          results.push({
-            title: topic.Text.split(' - ')[0] || 'Related Topic',
-            url: topic.FirstURL,
-            snippet: topic.Text.substring(0, 200) + '...'
-          });
-        }
-      });
-    }
-
+    console.log(`✅ SearXNG found ${results.length} results`);
     return results;
   } catch (error) {
-    console.error('Fallback search error:', error);
+    console.error('SearXNG search failed:', error.message);
     return [];
   }
 }
 
 export async function performWebSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
-  const apiKey = process.env.SCRAPEDUCK_API_KEY;
-
-  // Try ScrapeDuck first if API key is available
-  if (apiKey) {
-    try {
-      console.log('🔍 Performing web search with ScrapeDuck...');
-      const response = await fetch('https://api.scrapeduck.com/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          query,
-          max_results: maxResults,
-          country: 'US',
-          language: 'en'
-        }),
-        timeout: 10000 // 10 second timeout
-      });
-
-      if (!response.ok) {
-        throw new Error(`ScrapeDuck API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data: ScrapeDuckResponse = await response.json();
-
-      const results = data.results?.map(result => ({
-        title: result.title || 'No title',
-        url: result.url || '',
-        snippet: result.description || 'No description available'
-      })) || [];
-
-      console.log(`✅ ScrapeDuck found ${results.length} results`);
-      return results;
-    } catch (error) {
-      console.error('ScrapeDuck search failed:', error.message);
-      console.log('🔄 Falling back to alternative search...');
-    }
-  } else {
-    console.log('⚠️ ScrapeDuck API key not found, using fallback search');
-  }
-
-  // Fallback to DuckDuckGo instant answers
   try {
-    const fallbackResults = await fallbackSearch(query);
-    console.log(`✅ Fallback search found ${fallbackResults.length} results`);
-    return fallbackResults;
+    return await searxngSearch(query, maxResults);
   } catch (error) {
-    console.error('All search methods failed:', error);
+    console.error('Web search failed:', error);
     return [];
   }
 }
@@ -157,7 +131,7 @@ export const webSearchService = {
   async search(query: string, options: { maxResults?: number; bioinformatics?: boolean } = {}): Promise<WebSearchResponse> {
     const startTime = Date.now();
     const results = await performWebSearch(query, options.maxResults || 5);
-    
+
     return {
       results,
       query,

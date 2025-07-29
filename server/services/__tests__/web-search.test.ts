@@ -1,7 +1,7 @@
 
 import { performWebSearch, formatSearchResults, shouldPerformWebSearch } from '../web-search';
 
-describe('Web Search Service', () => {
+describe('Web Search Service (SearXNG)', () => {
   describe('shouldPerformWebSearch', () => {
     it('should return true for queries that benefit from web search', () => {
       expect(shouldPerformWebSearch('what is CRISPR latest research')).toBe(true);
@@ -40,11 +40,17 @@ describe('Web Search Service', () => {
   });
 
   describe('performWebSearch', () => {
-    it('should handle API failures gracefully', async () => {
-      // This test will use the fallback method since no real API key
+    it('should handle SearXNG API gracefully', async () => {
+      // This test will use SearXNG public instance
       const results = await performWebSearch('test query');
       expect(Array.isArray(results)).toBe(true);
-      // Should not throw an error even if APIs fail
+      // Should not throw an error even if SearXNG fails
+    });
+
+    it('should return limited results based on maxResults parameter', async () => {
+      const results = await performWebSearch('bioinformatics', 3);
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeLessThanOrEqual(3);
     });
   });
 });

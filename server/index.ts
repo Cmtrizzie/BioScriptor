@@ -155,8 +155,7 @@ console.log('- Together API Key:', !!process.env.TOGETHER_API_KEY ? 'Set' : 'Mis
 console.log('- OpenRouter API Key:', !!process.env.OPENROUTER_API_KEY ? 'Set' : 'Missing');
 
 // Web Search Configuration
-if (process.env.SCRAPEDUCK_API_KEY) {
-  console.log('✅ ScrapeDuck found and available for web search');
-} else {
-  console.log('⚠️ ScrapeDuck API key not found - using fallback search methods');
-}
+console.log('Search Service Configuration:');
+const searxngUrl = process.env.SEARXNG_URL || 'https://searx.be';
+console.log(`✅ SearXNG configured: ${searxngUrl}`);
+console.log('🔍 Web search powered by SearXNG (privacy-focused meta search engine)');
