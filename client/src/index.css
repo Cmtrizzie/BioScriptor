@@ -315,9 +315,24 @@
   word-break: break-word;
   hyphens: auto;
   min-width: 0;
-  max-width: 100%;
+  max-width: 100% !important;
   box-sizing: border-box;
   overflow: hidden;
+  container-type: inline-size;
+}
+
+.chatgpt-user-message {
+  @apply max-w-2xl w-full rounded-2xl px-5 py-3 mb-3 text-base leading-relaxed relative;
+  @apply shadow-sm transition-all duration-200 ease-in-out;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  min-width: 0;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  container-type: inline-size;
 }
 
 /* Markdown Content Styling */
@@ -326,13 +341,52 @@
   word-wrap: break-word;
   overflow-wrap: anywhere;
   word-break: break-word;
-  max-width: 100%;
+  max-width: 100% !important;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .markdown-content * {
-  max-width: 100%;
+  max-width: 100% !important;
   box-sizing: border-box;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
+/* Force overflow protection for all text elements */
+.markdown-content p,
+.markdown-content div,
+.markdown-content span,
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6,
+.markdown-content li,
+.markdown-content td,
+.markdown-content th {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  overflow: hidden !important;
+}
+
+/* Special handling for code elements */
+.markdown-content code,
+.markdown-content pre {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+  white-space: pre-wrap !important;
+}
+
+.markdown-content pre code {
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
 }
 
 .markdown-content h1,

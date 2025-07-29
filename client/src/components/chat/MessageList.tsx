@@ -122,128 +122,147 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                   <CopyButton content={typeof message.content === 'string' ? message.content : JSON.stringify(message.content)} />
                 </div>
                 {message.type === 'ai' ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed">
-                    <ReactMarkdown
-                      className="markdown-content leading-relaxed break-words overflow-wrap-anywhere"
-                      components={{
-                        code({ node, inline, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || '');
-                          const language = match ? match[1] : '';
+                  <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed overflow-hidden">
+                    {(() => {
+                      try {
+                        // Safely extract content
+                        let content = '';
+                        if (typeof message.content === 'string') {
+                          content = message.content;
+                        } else if (message.content && typeof message.content === 'object') {
+                          if (message.content.content) {
+                            content = String(message.content.content);
+                          } else if (message.content.text) {
+                            content = String(message.content.text);
+                          } else {
+                            content = JSON.stringify(message.content, null, 2);
+                          }
+                        } else {
+                          content = String(message.content || '');
+                        }
 
-                          return !inline && match ? (
-                            <div className="relative mb-4 group max-w-full overflow-hidden">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                                }}
-                                className="absolute top-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                title="Copy code"
-                              >
-                                Copy
-                              </button>
-                              <SyntaxHighlighter
-                                style={tomorrow}
-                                language={language}
-                                PreTag="div"
-                                customStyle={{
-                                  margin: 0,
-                                  borderRadius: '0.375rem',
-                                  fontSize: '0.875rem',
-                                  maxWidth: '100%',
-                                  overflow: 'auto',
-                                }}
-                                wrapLongLines={true}
-                                {...props}
-                              >
-                                {String(children).replace(/\n$/, '')}
-                              </SyntaxHighlighter>
-                            </div>
-                          ) : (
-                            <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono break-all`} {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                        a({ node, href, children, ...props }) {
-                          return (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-bio-blue hover:text-bio-blue/80 underline"
-                              {...props}
-                            >
-                              {children}
-                            </a>
-                          );
-                        },
-                        p({ node, children, ...props }) {
-                          // Convert plain text URLs to clickable links and format whitespace
-                          const processText = (text: string) => {
-                            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
-                            const parts = text.split(urlRegex);
+                        // Ensure content is a valid string and not empty
+                        if (!content || typeof content !== 'string') {
+                          return <div className="text-gray-500 italic">Invalid message content</div>;
+                        }
 
-                            return parts.map((part, index) => {
-                              if (urlRegex.test(part)) {
-                                const href = part.startsWith('http') ? part : `https://${part}`;
+                        return (
+                          <ReactMarkdown
+                            className="markdown-content leading-relaxed break-words overflow-wrap-anywhere max-w-full"
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const language = match ? match[1] : '';
+                                const codeContent = String(children).replace(/\n$/, '');
+
+                                return !inline && match ? (
+                                  <div className="relative mb-4 group max-w-full overflow-hidden">
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(codeContent);
+                                      }}
+                                      className="absolute top-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                      title="Copy code"
+                                    >
+                                      Copy
+                                    </button>
+                                    <SyntaxHighlighter
+                                      style={tomorrow}
+                                      language={language}
+                                      PreTag="div"
+                                      customStyle={{
+                                        margin: 0,
+                                        borderRadius: '0.375rem',
+                                        fontSize: '0.875rem',
+                                        maxWidth: '100%',
+                                        overflow: 'auto',
+                                        wordBreak: 'break-word',
+                                        overflowWrap: 'anywhere'
+                                      }}
+                                      wrapLongLines={true}
+                                      {...props}
+                                    >
+                                      {codeContent}
+                                    </SyntaxHighlighter>
+                                  </div>
+                                ) : (
+                                  <code 
+                                    className={`${className} bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono break-all max-w-full overflow-hidden`} 
+                                    style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}
+                                    {...props}
+                                  >
+                                    {children}
+                                  </code>
+                                );
+                              },
+                              a({ node, href, children, ...props }) {
                                 return (
                                   <a
-                                    key={index}
                                     href={href}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-bio-blue hover:text-bio-blue/80 underline break-all"
+                                    style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}
+                                    {...props}
                                   >
-                                    {part}
+                                    {children}
                                   </a>
                                 );
+                              },
+                              p({ node, children, ...props }) {
+                                return (
+                                  <p 
+                                    className="mb-4 leading-relaxed break-words overflow-wrap-anywhere max-w-full" 
+                                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                                    {...props}
+                                  >
+                                    {children}
+                                  </p>
+                                );
+                              },
+                              div({ node, children, ...props }) {
+                                return (
+                                  <div 
+                                    className="max-w-full overflow-hidden"
+                                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                                    {...props}
+                                  >
+                                    {children}
+                                  </div>
+                                );
+                              },
+                              pre({ node, children, ...props }) {
+                                return (
+                                  <pre 
+                                    className="max-w-full overflow-x-auto bg-gray-100 dark:bg-gray-800 p-4 rounded-lg"
+                                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                                    {...props}
+                                  >
+                                    {children}
+                                  </pre>
+                                );
                               }
-                              return part;
-                            });
-                          };
-
-                          const processChildren = (children: any): any => {
-                            if (typeof children === 'string') {
-                              return processText(children);
-                            }
-                            if (Array.isArray(children)) {
-                              return children.map((child, index) => {
-                                if (typeof child === 'string') {
-                                  return <span key={index}>{processText(child)}</span>;
-                                }
-                                return child;
-                              });
-                            }
-                            return children;
-                          };
-
-                          return (
-                            <p className="mb-4 leading-relaxed break-words overflow-wrap-anywhere max-w-full" {...props}>
-                              {processChildren(children)}
-                            </p>
-                          );
-                        },
-                      }}
-                    >
-                      {(() => {
-                        // Handle different content types
-                        if (typeof message.content === 'string') {
-                          return message.content;
-                        } else if (message.content && typeof message.content === 'object') {
-                          // Extract content from nested objects
-                          if (message.content.content) {
-                            return message.content.content;
-                          } else if (message.content.text) {
-                            return message.content.text;
-                          } else {
-                            return JSON.stringify(message.content, null, 2);
-                          }
-                        } else {
-                          return String(message.content || '');
-                        }
-                      })()}
-                    </ReactMarkdown>
-                  </div>
+                            }}
+                          >
+                            {content}
+                          </ReactMarkdown>
+                        );
+                      } catch (error) {
+                        console.error('Markdown rendering error:', error);
+                        return (
+                          <div className="text-red-500 bg-red-50 p-3 rounded border">
+                            <p className="font-medium">Error rendering message</p>
+                            <details className="mt-2">
+                              <summary className="cursor-pointer text-sm">Show raw content</summary>
+                              <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-w-full">
+                                {JSON.stringify(message.content, null, 2)}
+                              </pre>
+                            </details>
+                          </div>
+                        );
+                      }
+                    })()}
                 ) : (
                   <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere">
                     {typeof message.content === 'string' ? 
