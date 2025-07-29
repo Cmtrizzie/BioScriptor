@@ -1,8 +1,18 @@
 import React from "react";
-import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown, BarChart3, Atom, TestTube } from "lucide-react";
+import { X, Plus, MessageSquare, Dna, Scissors, FlaskConical, BookOpen, ChevronDown, BarChart3, Atom, TestTube, CreditCard, Settings, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useChat } from "@/hooks/use-chat";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,9 +31,27 @@ export default function Sidebar({
   onSwitchSession,
   onSendMessage 
 }: SidebarProps) {
+  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   const handleQuickAction = (message: string) => {
     onSendMessage(message);
+    onClose();
+  };
+
+  const getUserInitials = (email?: string) => {
+    if (!email) return 'U';
+    return email.split('@')[0].slice(0, 2).toUpperCase();
+  };
+
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+    onClose();
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation('/auth');
     onClose();
   };
 
@@ -147,6 +175,91 @@ export default function Sidebar({
               )}
             </div>
           </ScrollArea>
+        </div>
+
+        {/* Profile Section at Bottom */}
+        <div className="border-t border-gray-200 p-4">
+          {user && (
+            <div className="space-y-3">
+              {/* User Tier Badge */}
+              <div className="flex items-center justify-center">
+                <Badge variant={
+                  user?.tier === 'enterprise' ? 'default' :
+                  user?.tier === 'premium' ? 'secondary' : 'outline'
+                } className="text-xs">
+                  {user?.tier === 'enterprise' ? '⚡ Enterprise' :
+                   user?.tier === 'premium' ? '🚀 Premium' : '⭐ Free'}
+                </Badge>
+              </div>
+
+              {/* Query Usage */}
+              <div className="text-center">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {user?.queryCount || 0} queries today
+                </span>
+              </div>
+
+              {/* Profile Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                      {getUserInitials(user?.email)}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {user?.displayName || user?.email?.split('@')[0] || 'User'}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user?.email}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => handleNavigation('/subscription')}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Subscription</span>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {user?.tier}
+                    </Badge>
+                  </DropdownMenuItem>
+
+                  {user?.tier === 'enterprise' && (
+                    <DropdownMenuItem onClick={() => handleNavigation('/admin')}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuItem onClick={() => handleNavigation('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          {!user && (
+            <Button 
+              onClick={() => handleNavigation('/auth')}
+              className="w-full"
+            >
+              Sign In
+            </Button>
+          )}
         </div>
       </div>
     </>
