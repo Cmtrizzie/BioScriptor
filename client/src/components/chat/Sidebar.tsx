@@ -269,31 +269,16 @@ export default function Sidebar({
                   </DropdownMenuItem>
                 )}
 
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="text-gray-100 hover:bg-gray-700">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
-                    <DropdownMenuItem 
-                      onClick={toggleTheme}
-                      className="text-gray-100 hover:bg-gray-700"
-                    >
-                      <span className="mr-2 text-base">{getThemeIcon()}</span>
-                      <span>Theme: {getThemeLabel()}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        console.log('Settings clicked, navigating to /settings');
-                        handleNavigation('/settings');
-                      }}
-                      className="text-gray-100 hover:bg-gray-700"
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Preferences</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    console.log('Settings clicked, navigating to /settings');
+                    handleNavigation('/settings');
+                  }}
+                  className="text-gray-100 hover:bg-gray-700"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="bg-gray-700" />
 
