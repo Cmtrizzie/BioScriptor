@@ -324,6 +324,8 @@
 .chatgpt-user-message {
   @apply max-w-2xl w-full rounded-2xl px-5 py-3 mb-3 text-base leading-relaxed relative;
   @apply shadow-sm transition-all duration-200 ease-in-out;
+  @apply bg-[var(--chat-user-bg-light)] dark:bg-[var(--chat-user-bg-dark)] text-gray-800 dark:text-white border-l-4 border-[var(--accent)];
+  @apply border border-gray-200 dark:border-gray-600;
   word-wrap: break-word;
   overflow-wrap: anywhere;
   word-break: break-word;

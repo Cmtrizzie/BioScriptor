@@ -151,7 +151,7 @@ export default function MessageList({
               <div
                 className={`max-w-[85%] min-w-0 group relative break-words overflow-wrap-anywhere ${
                   message.type === "user"
-                    ? "chatgpt-user-message ml-auto"
+                    ? "user-message ml-auto"
                     : "chatgpt-message"
                 }`}
                 style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
