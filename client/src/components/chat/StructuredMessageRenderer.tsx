@@ -305,12 +305,13 @@ const StructuredMessageRenderer: React.FC<StructuredMessageRendererProps> = ({
               return (
                 <div 
                   key={key} 
-                  className="mb-4 whitespace-pre-wrap leading-relaxed text-gray-700"
+                  className="mb-4 whitespace-pre-wrap leading-relaxed text-gray-700 break-words overflow-wrap-anywhere max-w-full"
+                  style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                   dangerouslySetInnerHTML={{ 
                     __html: section.content
                       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
                       .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-                      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
+                      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono break-all">$1</code>')
                       .replace(/\n/g, '<br>')
                   }}
                 />

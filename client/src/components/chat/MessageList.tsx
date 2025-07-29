@@ -124,27 +124,42 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                 {message.type === 'ai' ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed">
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
+                      className="markdown-content leading-relaxed break-words overflow-wrap-anywhere"
                       components={{
                         code({ node, inline, className, children, ...props }) {
                           const match = /language-(\w+)/.exec(className || '');
+                          const language = match ? match[1] : '';
+
                           return !inline && match ? (
-                            <div className="my-4 rounded-lg overflow-hidden bg-gray-900 dark:bg-gray-900">
-                              <div className="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-mono border-b border-gray-700">
-                                {match[1]}
-                              </div>
+                            <div className="relative mb-4 group max-w-full overflow-hidden">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                                }}
+                                className="absolute top-2 right-2 p-2 bg-gray-200 hover:bg-gray-300 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                title="Copy code"
+                              >
+                                Copy
+                              </button>
                               <SyntaxHighlighter
                                 style={tomorrow}
-                                language={match[1]}
+                                language={language}
                                 PreTag="div"
-                                className="!bg-gray-900 !p-4 !m-0 font-mono text-sm"
+                                customStyle={{
+                                  margin: 0,
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.875rem',
+                                  maxWidth: '100%',
+                                  overflow: 'auto',
+                                }}
+                                wrapLongLines={true}
                                 {...props}
                               >
                                 {String(children).replace(/\n$/, '')}
                               </SyntaxHighlighter>
                             </div>
                           ) : (
-                            <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono`} {...props}>
+                            <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono break-all`} {...props}>
                               {children}
                             </code>
                           );
@@ -170,14 +185,14 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
 
                             return parts.map((part, index) => {
                               if (urlRegex.test(part)) {
-                                const url = part.startsWith('http') ? part : `https://${part}`;
+                                const href = part.startsWith('http') ? part : `https://${part}`;
                                 return (
                                   <a
                                     key={index}
-                                    href={url}
+                                    href={href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-bio-blue hover:text-bio-blue/80 underline"
+                                    className="text-bio-blue hover:text-bio-blue/80 underline break-all"
                                   >
                                     {part}
                                   </a>
@@ -188,21 +203,22 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                           };
 
                           const processChildren = (children: any): any => {
-                            return React.Children.map(children, (child) => {
-                              if (typeof child === 'string') {
-                                return processText(child);
-                              }
-                              if (React.isValidElement(child) && child.props.children) {
-                                return React.cloneElement(child, {
-                                  children: processChildren(child.props.children)
-                                });
-                              }
-                              return child;
-                            });
+                            if (typeof children === 'string') {
+                              return processText(children);
+                            }
+                            if (Array.isArray(children)) {
+                              return children.map((child, index) => {
+                                if (typeof child === 'string') {
+                                  return <span key={index}>{processText(child)}</span>;
+                                }
+                                return child;
+                              });
+                            }
+                            return children;
                           };
 
                           return (
-                            <p className="mb-4 leading-relaxed" {...props}>
+                            <p className="mb-4 leading-relaxed break-words overflow-wrap-anywhere max-w-full" {...props}>
                               {processChildren(children)}
                             </p>
                           );
