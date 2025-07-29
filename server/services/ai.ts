@@ -461,7 +461,7 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
         // Ensure content is a string
         let enhancedContent = typeof aiResponse.content === 'string' 
             ? aiResponse.content 
-            : JSON.stringify(aiResponse.content);ontent;
+            : JSON.stringify(aiResponse.content);
 
         try {
             enhancedContent = await enhanceResponse(
