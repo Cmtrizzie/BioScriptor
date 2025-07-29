@@ -84,11 +84,7 @@ export default function Settings() {
   };
 
   const handleDataManagement = () => {
-    toast({
-      title: "Data Management",
-      description: "Data controls will help you manage your personal data and chat history.",
-    });
-    // Future: Open data management modal
+    setLocation('/data-controls');
   };
 
   const handleCheckForUpdates = async () => {
