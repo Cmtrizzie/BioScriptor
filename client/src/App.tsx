@@ -10,6 +10,7 @@ import Chat from "@/pages/chat";
 import Auth from "@/pages/auth";
 import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Settings from "@/pages/Settings";
 import { ThemeProvider } from "@/context/theme-context";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/chat/:sessionId" component={user ? Chat : Auth} />
       <Route path="/subscription" component={user ? Subscription : Auth} />
       <Route path="/admin" component={user ? AdminDashboard : Auth} />
+      <Route path="/settings" component={user ? Settings : Auth} />
       <Route component={NotFound} />
     </Switch>
   );
