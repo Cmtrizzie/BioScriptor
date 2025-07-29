@@ -175,7 +175,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 transition-colors",
+        "fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-4 transition-colors shadow-lg",
         isDragging && "bg-bio-blue/5 border-bio-blue"
       )}
       onDragOver={handleDragOver}
@@ -275,7 +275,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               placeholder="Ask biobuddy about DNA sequences, protein analysis, molecular biology... (Shift+Enter for new line)"
-              className="w-full pl-12 pr-14 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[52px] max-h-[200px] overflow-y-auto"
+              className="w-full pl-12 pr-14 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[52px] max-h-[200px] overflow-y-auto shadow-sm"
               rows={1}
               disabled={disabled}
             />
