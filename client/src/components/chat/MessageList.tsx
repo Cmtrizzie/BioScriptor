@@ -77,8 +77,8 @@ const CopyButton = ({ content }: { content: string }) => {
 
 // Theme-aware syntax highlighter
 const CodeBlock = ({ language, value }: { language: string; value: string }) => {
-  const { theme } = useTheme();
-  const style = theme === 'dark' ? vscDarkPlus : tomorrow;
+  const { isDark } = useTheme();
+  const style = isDark ? vscDarkPlus : tomorrow;
 
   return (
     <div className="relative mb-4 group max-w-full overflow-hidden rounded-lg border"

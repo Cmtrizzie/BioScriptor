@@ -45,9 +45,19 @@ function Router() {
 
 function App() {
   useEffect(() => {
+    // Prevent flash of unstyled content
+    document.body.classList.add('no-transition');
+    
     // Initialize theme
     const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Remove no-transition class after a brief delay
+    setTimeout(() => {
+      document.body.classList.remove('no-transition');
+    }, 100);
   }, []);
 
   return (

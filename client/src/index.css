@@ -14,6 +14,28 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   
+  /* Shadcn UI Variables */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  
   --code-background: #f8fafc;
   --code-foreground: #0f172a;
   --code-border: #e2e8f0;
@@ -34,7 +56,7 @@
   --message-user-border: #bfdbfe;
 }
 
-[data-theme="dark"] {
+[data-theme="dark"], .dark {
   /* Dark theme */
   --color-background: #0f172a;
   --color-foreground: #f1f5f9;
@@ -44,6 +66,27 @@
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-error: #f87171;
+  
+  /* Shadcn UI Dark Variables */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
   
   --code-background: #1e293b;
   --code-foreground: #e2e8f0;
@@ -68,7 +111,17 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Global theme transition */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Prevent transition on page load */
+.no-transition * {
+  transition: none !important;
 }
 
 @layer base {
@@ -378,12 +431,43 @@ body {
 
 /* Ensure markdown text is visible in both light and dark modes */
 .prose {
-  /* Force explicit colors instead of relying on CSS variables */
   color: #1f2937 !important;
+  transition: color 0.3s ease;
 }
 
 .dark .prose {
   color: #f9fafb !important;
+}
+
+/* Theme-responsive buttons and inputs */
+button, input, textarea, select {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Theme-responsive shadows */
+.shadow-sm, .shadow, .shadow-md, .shadow-lg {
+  transition: box-shadow 0.3s ease;
+}
+
+/* Theme-responsive borders */
+.border, .border-t, .border-b, .border-l, .border-r {
+  transition: border-color 0.3s ease;
+}
+
+/* Ensure all shadcn components are theme-aware */
+[data-theme="dark"] .bg-background,
+.dark .bg-background {
+  background-color: hsl(var(--background));
+}
+
+[data-theme="dark"] .text-foreground,
+.dark .text-foreground {
+  color: hsl(var(--foreground));
+}
+
+[data-theme="dark"] .border-border,
+.dark .border-border {
+  border-color: hsl(var(--border));
 }
 
 .prose p, .prose li, .prose td, .prose th, .prose div, .prose span {
