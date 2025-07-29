@@ -49,10 +49,18 @@ function App() {
     document.body.classList.add('no-transition');
     
     // Initialize theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    const getSystemTheme = () => {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return 'light';
+    };
+    
+    const actualTheme = savedTheme === 'system' ? getSystemTheme() : savedTheme;
     document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.classList.add(actualTheme);
+    document.documentElement.setAttribute('data-theme', actualTheme);
     
     // Remove no-transition class after a brief delay
     setTimeout(() => {

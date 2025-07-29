@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/context/theme-context";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,6 +33,33 @@ export default function Sidebar({
   onSwitchSession,
   onSendMessage 
 }: SidebarProps) {
+  const { theme, toggleTheme, isDark } = useTheme();
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'system':
+        return '🖥️';
+      case 'light':
+        return '☀️';
+      case 'dark':
+        return '🌙';
+      default:
+        return '🖥️';
+    }
+  };
+
+  const getThemeLabel = () => {
+    switch (theme) {
+      case 'system':
+        return 'System';
+      case 'light':
+        return 'Light';
+      case 'dark':
+        return 'Dark';
+      default:
+        return 'System';
+    }
+  };
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -268,6 +296,33 @@ export default function Sidebar({
             </Button>
           )}
         </div>
+        {/* Profile Section - Fixed at bottom */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-bio-blue to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                U
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  Demo User
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  demo@biobuddy.dev
+                </p>
+              </div>
+            </div>
+
+            {/* Theme Toggle */}
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs h-8 px-2"
+            >
+              <span className="text-base">{getThemeIcon()}</span>
+              <span>Theme: {getThemeLabel()}</span>
+            </Button>
+          </div>
       </div>
     </>
   );
