@@ -942,7 +942,46 @@ function generateSmallTalkResponse(userMessage: string): string {
       const responses = [
         "I don't experience weather, but hot days can definitely slow people down! Staying cool, I hope? 😄",
         "Can't feel the heat myself, but I know hot weather can be rough! Hope you're keeping hydrated! 🌡️",
-        "No weather sensors on my end, but hot days are no")) {
+        "No weather sensors on my end, but hot days are no fun! Stay cool! ❄️"
+      ];
+      return getRandomFromArray(responses) + "\n\nWhat can I help you with today?";
+    } else if (/(cold|cool|freezing)/i.test(lowerMessage)) {
+      const responses = [
+        "Brr! I don't feel cold, but I hope you're staying warm! ❄️",
+        "Cold weather can be tough! Stay cozy! 🧥",
+        "No temperature sensors here, but bundle up! ☃️"
+      ];
+      return getRandomFromArray(responses) + "\n\nAnything I can help you with while you warm up?";
+    } else {
+      return "Weather chat! ☀️ I don't experience weather myself, but I hope it's treating you well! What's on your mind today?";
+    }
+  }
+
+  // Feeling/mood talk
+  if (/(feeling|mood|how are you)/i.test(lowerMessage)) {
+    const responses = [
+      "I'm doing great! Ready to tackle any bioinformatics or coding challenges! 🚀",
+      "Feeling fantastic and ready to help! What's got your attention today? 😊",
+      "I'm in full problem-solving mode! What can we work on together? 💪"
+    ];
+    return getRandomFromArray(responses);
+  }
+
+  // General small talk
+  const responses = [
+    "Just chatting! I love a good conversation. What's on your mind? 😊",
+    "Always nice to connect! What brings you here today? 💬",
+    "Great to chat with you! Anything interesting happening in your world? 🌟"
+  ];
+  return getRandomFromArray(responses);
+}
+
+export function generateSmartFollowUps(intent: string, content: string, context: any): string {
+  const builderContext = detectBuilderMode(context.userMessage || '', context.previousResponses || []);
+  let followUps: string[] = [];
+
+  // Code-specific follow-ups
+  if (intent === 'code_request' || content.includes('```') || content.includes('function') || content.includes('class')) {
     const codeFollowUps = builderContext.isBuilderMode ? [
       "Want me to explain how this integrates with your overall project?",
       "Need help with testing and deployment strategies?",
