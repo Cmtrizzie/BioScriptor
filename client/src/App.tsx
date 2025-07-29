@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -11,6 +10,7 @@ import Chat from "@/pages/chat";
 import Auth from "@/pages/auth";
 import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
+import { ThemeProvider } from "@/context/theme-context";
 
 function Router() {
   const { user, loading } = useAuth();
@@ -51,12 +51,14 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

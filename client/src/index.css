@@ -2,6 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+:root {
+  /* Light theme */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-primary: #2563eb;
+  --color-secondary: #94a3b8;
+  --color-accent: #8b5cf6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  
+  --code-background: #f8fafc;
+  --code-foreground: #0f172a;
+  --code-border: #e2e8f0;
+  
+  --mermaid-bg: #ffffff;
+  --mermaid-text: #0f172a;
+  --mermaid-primary: #2563eb;
+  --mermaid-secondary: #cbd5e1;
+  --mermaid-accent: #8b5cf6;
+  
+  --copy-btn-bg: #f1f5f9;
+  --copy-btn-text: #64748b;
+  --copy-btn-hover: #e2e8f0;
+  
+  --message-ai-bg: #f8fafc;
+  --message-ai-border: #e2e8f0;
+  --message-user-bg: #f0f9ff;
+  --message-user-border: #bfdbfe;
+}
+
+[data-theme="dark"] {
+  /* Dark theme */
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
+  --color-primary: #60a5fa;
+  --color-secondary: #64748b;
+  --color-accent: #a78bfa;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  
+  --code-background: #1e293b;
+  --code-foreground: #e2e8f0;
+  --code-border: #334155;
+  
+  --mermaid-bg: #0f172a;
+  --mermaid-text: #e2e8f0;
+  --mermaid-primary: #60a5fa;
+  --mermaid-secondary: #475569;
+  --mermaid-accent: #a78bfa;
+  
+  --copy-btn-bg: #1e293b;
+  --copy-btn-text: #94a3b8;
+  --copy-btn-hover: #334155;
+  
+  --message-ai-bg: #1e293b;
+  --message-ai-border: #334155;
+  --message-user-bg: #312e81;
+  --message-user-border: #4338ca;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  transition: background-color 0.3s, color 0.3s;
+}
+
 @layer base {
   :root {
     --chat-bg-light: #f7f7f8;
