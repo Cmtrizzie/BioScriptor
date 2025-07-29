@@ -67,7 +67,7 @@ interface MessageListProps {
 
 export default function MessageList({ messages, isLoading, bottomRef }: MessageListProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: '100%', overflowY: 'auto' }}>
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 h-full">
       {messages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center">
           <div className="max-w-md mx-auto">
@@ -107,10 +107,10 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} w-full`}
             >
               <div
-                className={`max-w-[85%] group relative ${
+                className={`max-w-[85%] min-w-0 group relative break-words overflow-hidden ${
                   message.type === 'user'
                     ? 'chatgpt-user-message ml-auto'
                     : 'chatgpt-message'
@@ -228,7 +228,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap font-medium leading-relaxed">
+                  <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere">
                     {typeof message.content === 'string' ? 
                       message.content.split('\n\n').map((paragraph, index) => (
                         <div key={index} className={index > 0 ? 'mt-4' : ''}>

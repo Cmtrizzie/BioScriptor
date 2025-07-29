@@ -114,9 +114,57 @@ export function useChat() {
       const currentMessages = [...messages, userMessage, aiMessage];
       console.log('Updated messages:', currentMessages);
 
+      // Generate topic-based title
+      const generateTopicBasedTitle = (content: string): string => {
+        const bioinformaticsKeywords = [
+          'DNA', 'RNA', 'protein', 'gene', 'genome', 'sequence', 'PCR', 'CRISPR', 
+          'blast', 'alignment', 'phylogenetic', 'mutation', 'expression', 'analysis',
+          'bioinformatics', 'genomics', 'proteomics', 'transcriptomics'
+        ];
+        
+        const programmingKeywords = [
+          'python', 'javascript', 'code', 'function', 'algorithm', 'data', 'API',
+          'programming', 'script', 'analysis', 'visualization', 'database'
+        ];
+
+        const lowerContent = content.toLowerCase();
+        
+        // Check for bioinformatics topics
+        const bioTopics = bioinformaticsKeywords.filter(keyword => 
+          lowerContent.includes(keyword.toLowerCase())
+        );
+        
+        // Check for programming topics  
+        const progTopics = programmingKeywords.filter(keyword => 
+          lowerContent.includes(keyword.toLowerCase())
+        );
+
+        let title = '';
+        if (bioTopics.length > 0) {
+          title = `🧬 ${bioTopics[0].toUpperCase()}`;
+          if (bioTopics.length > 1) title += ` & ${bioTopics[1]}`;
+        } else if (progTopics.length > 0) {
+          title = `💻 ${progTopics[0].charAt(0).toUpperCase() + progTopics[0].slice(1)}`;
+          if (progTopics.length > 1) title += ` & ${progTopics[1]}`;
+        } else {
+          // Extract meaningful words for general topics
+          const words = content.split(' ').filter(word => 
+            word.length > 3 && !['what', 'how', 'can', 'you', 'help', 'with', 'about'].includes(word.toLowerCase())
+          );
+          if (words.length > 0) {
+            title = `💡 ${words[0].charAt(0).toUpperCase() + words[0].slice(1)}`;
+            if (words.length > 1) title += ` ${words[1]}`;
+          } else {
+            title = content.substring(0, 30);
+          }
+        }
+        
+        return title.length > 50 ? title.substring(0, 47) + '...' : title;
+      };
+
       // Create or update session
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+      const title = generateTopicBasedTitle(content);
 
       const newSession: ChatSession = {
         id: sessionId,

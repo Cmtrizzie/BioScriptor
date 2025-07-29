@@ -40,10 +40,10 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         onSendMessage={sendMessage}
       />
 
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 max-h-screen">
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <MessageList 
             messages={messages} 
             isLoading={isLoading}
@@ -51,10 +51,12 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
           />
         </div>
 
-        <MessageInput 
-          onSendMessage={sendMessage} 
-          isLoading={isLoading}
-        />
+        <div className="flex-shrink-0">
+          <MessageInput 
+            onSendMessage={sendMessage} 
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </div>
   );

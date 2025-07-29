@@ -45,6 +45,10 @@
 .chat-message {
   @apply max-w-2xl w-full rounded-2xl px-5 py-3 mb-3 text-base leading-relaxed relative;
   @apply shadow-sm transition-all duration-200 ease-in-out;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  min-width: 0;
 }
 
 .chatbot-message {
@@ -211,6 +215,27 @@
 
 .prose ul, .prose ol {
   @apply space-y-2;
+}
+
+/* Text overflow prevention utilities */
+.break-words {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+/* Ensure code blocks don't overflow */
+.prose pre {
+  @apply overflow-x-auto;
+  word-break: normal;
+  white-space: pre;
+}
+
+.prose code {
+  word-break: break-all;
 }
 
 /* Message copy button styling */
