@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, MessageSquare, Search, Library, Users, ChevronDown, CreditCard, Settings, Shield, LogOut } from "lucide-react";
+import { X, Plus, MessageSquare, Search, ChevronDown, CreditCard, Settings, Shield, LogOut, Library, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,9 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useChat } from "@/hooks/use-chat";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -58,7 +58,10 @@ export default function Sidebar({
   };
 
   const filteredSessions = sessions.filter(session => 
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+    session.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    session.messages?.some((msg: any) => 
+      msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   return (
@@ -66,17 +69,16 @@ export default function Sidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-gray-900 text-gray-100 
-        transform transition-transform duration-300 ease-in-out flex flex-col
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      <div className={cn(
+        "fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-gray-900 text-gray-100 transform transition-transform duration-300 ease-in-out flex flex-col",
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      )}>
         {/* Header with Search */}
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -267,7 +269,7 @@ export default function Sidebar({
                     onClick={() => onSwitchSession(session)}
                   >
                     <div className="truncate w-full">
-                      {session.title}
+                      {session.title || "Untitled Chat"}
                     </div>
                   </Button>
                 ))
@@ -304,7 +306,7 @@ export default function Sidebar({
                   <CreditCard className="mr-2 h-4 w-4" />
                   <span>Subscription</span>
                   <Badge variant="outline" className="ml-auto text-xs border-gray-600">
-                    {user?.tier}
+                    {user?.tier || 'free'}
                   </Badge>
                 </DropdownMenuItem>
 
