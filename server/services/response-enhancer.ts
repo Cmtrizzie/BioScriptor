@@ -662,6 +662,16 @@ export function detectUserIntent(query: string): string {
     return 'greeting';
   }
 
+    // Casual greeting patterns
+  if (/(yo|hey|wazup|wassup|what's up|sup)/i.test(lowerQuery)) {
+    return 'casual_greeting';
+  }
+
+    // Small talk patterns
+  if (/(weather|hot|cold|feeling|mood|today|how are you)/i.test(lowerQuery)) {
+    return 'small_talk';
+  }
+
   // Farewell patterns
   if (/(bye|goodbye|see you|thanks|thank you|that's all)/i.test(lowerQuery)) {
     return 'farewell';
@@ -739,12 +749,12 @@ const BUILDER_MODE_TRIGGERS = [
 export function detectBuilderMode(userMessage: string, conversationHistory: ChatMessage[]): BuilderContext {
   const lowerMessage = userMessage.toLowerCase();
   const recentMessages = conversationHistory.slice(-5).map(m => m.content.toLowerCase()).join(' ');
-  
+
   // Check for builder mode triggers
   const hasBuilderTriggers = BUILDER_MODE_TRIGGERS.some(trigger => 
     lowerMessage.includes(trigger) || recentMessages.includes(trigger)
   );
-  
+
   // Detect tech stack mentions
   const techStack: string[] = [];
   const techKeywords = {
@@ -754,13 +764,13 @@ export function detectBuilderMode(userMessage: string, conversationHistory: Chat
     'databases': ['postgresql', 'mysql', 'mongodb', 'redis', 'sqlite'],
     'cloud': ['aws', 'azure', 'gcp', 'docker', 'kubernetes', 'vercel', 'netlify']
   };
-  
+
   Object.entries(techKeywords).forEach(([tech, keywords]) => {
     if (keywords.some(keyword => lowerMessage.includes(keyword) || recentMessages.includes(keyword))) {
       techStack.push(tech);
     }
   });
-  
+
   // Detect experience level
   let experience: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
   if (lowerMessage.includes('beginner') || lowerMessage.includes('new to') || lowerMessage.includes('learning')) {
@@ -768,7 +778,7 @@ export function detectBuilderMode(userMessage: string, conversationHistory: Chat
   } else if (lowerMessage.includes('advanced') || lowerMessage.includes('expert') || lowerMessage.includes('professional')) {
     experience = 'advanced';
   }
-  
+
   return {
     isBuilderMode: hasBuilderTriggers,
     techStack,
@@ -778,7 +788,7 @@ export function detectBuilderMode(userMessage: string, conversationHistory: Chat
 
 export function generateFollowUpResponse(userMessage: string, builderContext: BuilderContext): string {
   const lowerMessage = userMessage.toLowerCase();
-  
+
   // Chatbot building triggers
   if (TRIGGER_PHRASES.chatbot.some(phrase => lowerMessage.includes(phrase))) {
     return `🤖 **That's amazing!** Building a chatbot is exciting! 
@@ -792,7 +802,7 @@ Do you have a specific use case in mind?
 
 I can help you pick the right tools and architecture based on your specific needs! What's your target use case?`;
   }
-  
+
   // Web app building triggers
   if (TRIGGER_PHRASES.webapp.some(phrase => lowerMessage.includes(phrase))) {
     return `🚀 **Awesome choice!** Let's build something great together!
@@ -806,7 +816,7 @@ What type of web application are you thinking about?
 
 Based on your choice, I'll recommend the perfect tech stack and guide you through the development process!`;
   }
-  
+
   // Analysis pipeline triggers
   if (TRIGGER_PHRASES.analysis.some(phrase => lowerMessage.includes(phrase))) {
     return `🔬 **Perfect!** Let's design a robust analysis pipeline!
@@ -820,7 +830,7 @@ What kind of data are you working with?
 
 I'll help you choose the right tools (Python/R, cloud platforms, visualization) and build an efficient workflow!`;
   }
-  
+
   // API building triggers
   if (TRIGGER_PHRASES.api.some(phrase => lowerMessage.includes(phrase))) {
     return `⚡ **Great idea!** APIs are the backbone of modern applications!
@@ -834,7 +844,7 @@ What type of API are you planning to build?
 
 I'll guide you through design patterns, authentication, scaling, and deployment on Replit!`;
   }
-  
+
   // Automation triggers
   if (TRIGGER_PHRASES.automation.some(phrase => lowerMessage.includes(phrase))) {
     return `🤖 **Smart thinking!** Automation saves time and reduces errors!
@@ -848,7 +858,7 @@ What would you like to automate?
 
 I'll help you build efficient scripts and workflows that run reliably!`;
   }
-  
+
   return "";
 }
 
@@ -856,15 +866,15 @@ I'll help you build efficient scripts and workflows that run reliably!`;
 export function generateConversationHook(intent: string, context: any, userMessage: string): string {
   // Check for builder mode first
   const builderContext = detectBuilderMode(userMessage, context.previousResponses || []);
-  
+
   if (builderContext.isBuilderMode) {
     const followUp = generateFollowUpResponse(userMessage, builderContext);
     if (followUp) return followUp;
-    
+
     // Builder mode general response
     return `🚀 **Builder Mode Activated!** 
 
-I can see you're interested in development! I'm here to help you build amazing things. Whether it's bioinformatics tools, web applications, APIs, or automation scripts - let's create something powerful together!
+I'm here to help you build amazing things. Whether it's bioinformatics tools, web applications, APIs, or automation scripts - let's create something powerful together!
 
 **My building expertise includes:**
 - 🧬 Bioinformatics pipelines and analysis tools
@@ -875,9 +885,13 @@ I can see you're interested in development! I'm here to help you build amazing t
 
 What would you like to build today?`;
   }
-  
+
   // Standard intent responses
   switch (intent) {
+    case 'casual_greeting':
+      return generateCasualGreetingResponse(userMessage);
+    case 'small_talk':
+      return generateSmallTalkResponse(userMessage);
     case 'greeting':
       return "Hello! I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing. How can I help you today?";
     case 'farewell':
@@ -891,35 +905,44 @@ What would you like to build today?`;
   }
 }
 
-export function generateSmartFollowUps(intent: string, content: string, context: any): string {
-  // Check if we're in builder mode
-  const builderContext = detectBuilderMode(context.userMessage || "", context.previousResponses || []);
-  
-  let followUps = [
-    "Would you like me to explain any part in more detail?",
-    "Need help implementing this in your specific use case?",
-    "Want to see additional examples or variations?",
-    "Should I walk through the next steps?",
-    "Any questions about the implementation?"
-  ];
+function generateCasualGreetingResponse(userMessage: string): string {
+  const lowerMessage = userMessage.toLowerCase();
 
-  // Builder mode follow-ups
-  if (builderContext.isBuilderMode) {
-    followUps = [
-      "Ready to start building? I can provide step-by-step guidance!",
-      "Want me to suggest the best tech stack for your project?",
-      "Need help with project architecture and planning?",
-      "Should we discuss deployment and scaling strategies?",
-      "Would you like to see a complete implementation roadmap?"
+  // Detect specific casual patterns
+  if (/(wazup|wassup|what's up|sup)/i.test(lowerMessage)) {
+    const responses = [
+      "Hey there! 😄 Not much happening on my end - just ready to help with some science or coding!",
+      "Yo! Just hanging out, ready to tackle some bioinformatics or data analysis with you!",
+      "Hey! Living that AI life, you know how it is! 😊 What's cooking in your world?",
+      "Sup! Just here being your friendly neighborhood bioinformatics assistant! What's on your mind?"
     ];
-    
-    if (builderContext.techStack.length > 0) {
-      followUps.unshift(`I noticed you're interested in ${builderContext.techStack.join(', ')}. Want specific guidance for these technologies?`);
-    }
+    return getRandomFromArray(responses) + "\n\nWhat can I help you with today?";
   }
 
-  // Code-specific follow-ups
-  if (content.includes("```")) {
+  if (/(yo|hey)/i.test(lowerMessage)) {
+    const responses = [
+      "Hey! 👋 Good to see you!",
+      "Yo! What's good?",
+      "Hey there! 😊",
+      "What's up! 🚀"
+    ];
+    return getRandomFromArray(responses) + " I'm BioScriptor, ready to help with science, coding, or just chat! What's on your mind?";
+  }
+
+  // Default casual response
+  return "Hey! 😊 I'm BioScriptor, your friendly AI assistant. I'm here for bioinformatics, coding, data analysis, or just having a good conversation! What's going on?";
+}
+
+function generateSmallTalkResponse(userMessage: string): string {
+  const lowerMessage = userMessage.toLowerCase();
+
+  // Weather talk
+  if (/(weather|hot|cold)/i.test(lowerMessage)) {
+    if (/(hot|warm|heat)/i.test(lowerMessage)) {
+      const responses = [
+        "I don't experience weather, but hot days can definitely slow people down! Staying cool, I hope? 😄",
+        "Can't feel the heat myself, but I know hot weather can be rough! Hope you're keeping hydrated! 🌡️",
+        "No weather sensors on my end, but hot days are no")) {
     const codeFollowUps = builderContext.isBuilderMode ? [
       "Want me to explain how this integrates with your overall project?",
       "Need help with testing and deployment strategies?",
@@ -929,7 +952,7 @@ export function generateSmartFollowUps(intent: string, content: string, context:
       "Need help adapting this for your specific data?",
       "Want to see how to handle edge cases?"
     ];
-    
+
     followUps = codeFollowUps;
   }
 
@@ -1029,7 +1052,7 @@ export async function enhanceResponse(
   const conversationContext = analyzeConversationContext(
     options.context.previousResponses || [],
   );
-  
+
   // Detect builder mode
   const builderContext = detectBuilderMode(options.userMessage, options.context.previousResponses || []);
 
@@ -1146,83 +1169,4 @@ export function formatCodeBlocks(content: string): string {
   return content
     .replace(/```(\w+)?\n/g, '\n```$1\n')
     .replace(/\n```/g, '\n```\n')
-    .replace(/```\n\n/g, '```\n');
-}
-
-export function formatSections(content: string): string {
-  // Add proper spacing between sections
-  return content
-    .replace(/\n##/g, '\n\n##')
-    .replace(/\n###/g, '\n\n###')
-    .replace(/\n\n\n+/g, '\n\n'); // Remove excessive line breaks
-}
-
-export function formatLists(content: string): string {
-  // Ensure consistent list formatting
-  return content
-    .replace(/\n-([^\n])/g, '\n- $1')
-    .replace(/\n\*([^\n])/g, '\n* $1')
-    .replace(/\n(\d+)\.([^\n])/g, '\n$1. $2');
-}
-
-export function enhanceMarkdownFormatting(content: string): string {
-  let formatted = content;
-
-  // Apply all formatting enhancements
-  formatted = formatCodeBlocks(formatted);
-  formatted = formatSections(formatted);
-  formatted = formatLists(formatted);
-
-  // Clean up extra whitespace
-  formatted = formatted
-    .replace(/[ \t]+\n/g, '\n')  // Remove trailing spaces
-    .replace(/\n{3,}/g, '\n\n')  // Max 2 consecutive newlines
-    .trim();
-
-  return formatted;
-}
-
-// ========== RESPONSE POST-PROCESSING ==========
-export function postProcessResponse(content: string, intent: string): string {
-  let processed = enhanceMarkdownFormatting(content);
-
-  // Add appropriate closing based on intent
-  if (intent === "code_request" && !processed.includes("Need help")) {
-    processed += "\n\nLet me know if you need any modifications or have questions about the implementation!";
-  } else if (intent === "technical_question" && !processed.includes("Would you like")) {
-    processed += "\n\nFeel free to ask if you'd like me to elaborate on any part of this explanation.";
-  }
-
-  return processed;
-}
-
-function extractTopics(text: string): string[] {
-        // Ensure text is a string
-        if (!text || typeof text !== 'string') {
-            return [];
-        }
-
-        const topics = new Set<string>();
-        const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
-        scientificTerms.forEach(term => topics.add(term.toLowerCase()));
-        return Array.from(topics);
-    }
-
-function extractEntities(text: string): string[] {
-        // Ensure text is a string
-        if (!text || typeof text !== 'string') {
-            return [];
-        }
-
-        const entities = new Set<string>();
-        const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
-        sequenceIds.forEach(id => entities.add(id));
-
-        const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
-        geneNames.forEach(gene => entities.add(gene));
-
-        const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
-        speciesNames.forEach(species => entities.add(species));
-
-        return Array.from(entities);
-    }
+    .replace(/```\n\n/g, '

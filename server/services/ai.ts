@@ -283,13 +283,23 @@ function detectUserIntent(query: string): string {
     }
     const lowerQuery = query.toLowerCase().trim();
 
-    // Greeting patterns
-    if (/(^(hi|hello|hey|good morning|good afternoon|good evening))|greetings/i.test(lowerQuery)) {
+    // Casual greetings and small talk
+    if (/(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy))|greetings|how are you|how's it going/i.test(lowerQuery)) {
+        return 'casual_greeting';
+    }
+
+    // Weather/feeling/emotion talk
+    if (/(weather|hot|cold|feeling|mood|today|good day|bad day|tired|excited)/i.test(lowerQuery)) {
+        return 'small_talk';
+    }
+
+    // Formal greetings
+    if (/(good morning|good afternoon|good evening)/i.test(lowerQuery)) {
         return 'greeting';
     }
 
     // Farewell patterns
-    if (/(bye|goodbye|see you|thanks|thank you|that's all)/i.test(lowerQuery)) {
+    if (/(bye|goodbye|see you|thanks|thank you|that's all|later|peace)/i.test(lowerQuery)) {
         return 'farewell';
     }
 
