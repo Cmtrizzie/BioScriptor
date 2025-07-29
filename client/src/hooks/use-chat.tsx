@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export interface Message {
   id: string;
-  type: 'user' | 'ai';
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
   file?: File;
@@ -54,7 +54,7 @@ export function useChat() {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user',
+      role: 'user',
       content,
       timestamp: new Date(),
       file,
@@ -106,7 +106,7 @@ export function useChat() {
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        type: 'ai',
+        role: 'assistant',
         content: responseContent,
         timestamp: new Date(),
       };

@@ -214,8 +214,13 @@ const MermaidDiagram = ({ content }: { content: string }) => {
   );
 };
 
+// Extend the Message type to include properties that might come from the server
+interface ExtendedMessage extends Message {
+  isStreaming?: boolean;
+}
+
 interface MessageListProps {
-  messages: Message[];
+  messages: ExtendedMessage[];
   isLoading: boolean;
   bottomRef: React.RefObject<HTMLDivElement>;
 }
@@ -312,7 +317,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                 {message.role === 'user' ? 'You' : 'BioScriptor'}
               </span>
               <span>•</span>
-              <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+              <span>{message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date(message.timestamp).toLocaleTimeString()}</span>
             </div>
 
             {/* Message Bubble */}
