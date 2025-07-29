@@ -1,6 +1,4 @@
-Fixing the React Markdown component by ensuring the content is always rendered as a string to prevent errors.
-```
-```replit_final_file
+
 import React, { useState, useEffect } from 'react';
 import { Message } from '@/hooks/use-chat';
 import { cn } from '@/lib/utils';
@@ -121,7 +119,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
               >
                 {/* Copy button - positioned absolutely in top right */}
                 <div className="absolute top-2 right-2 z-10">
-                  <CopyButton content={message.content} />
+                  <CopyButton content={typeof message.content === 'string' ? message.content : JSON.stringify(message.content)} />
                 </div>
                 {message.type === 'ai' ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed">
@@ -216,15 +214,17 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                   </div>
                 ) : (
                   <div className="whitespace-pre-wrap font-medium leading-relaxed">
-                    {message.content.split('\n\n').map((paragraph, index) => (
-                      <div key={index} className={index > 0 ? 'mt-4' : ''}>
-                        {paragraph.split('\n').map((line, lineIndex) => (
-                          <div key={lineIndex} className={lineIndex > 0 ? 'mt-2' : ''}>
-                            {line}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
+                    {typeof message.content === 'string' ? 
+                      message.content.split('\n\n').map((paragraph, index) => (
+                        <div key={index} className={index > 0 ? 'mt-4' : ''}>
+                          {paragraph.split('\n').map((line, lineIndex) => (
+                            <div key={lineIndex} className={lineIndex > 0 ? 'mt-2' : ''}>
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+                      )) : JSON.stringify(message.content)
+                    }
                   </div>
                 )}
                 <div className={`text-xs mt-3 opacity-70`}>
