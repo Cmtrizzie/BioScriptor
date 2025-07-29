@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow, tomorrowNight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { tomorrow, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -78,7 +78,7 @@ const CopyButton = ({ content }: { content: string }) => {
 // Theme-aware syntax highlighter
 const CodeBlock = ({ language, value }: { language: string; value: string }) => {
   const { theme } = useTheme();
-  const style = theme === 'dark' ? tomorrowNight : tomorrow;
+  const style = theme === 'dark' ? vscDarkPlus : tomorrow;
 
   return (
     <div className="relative mb-4 group max-w-full overflow-hidden rounded-lg border"
