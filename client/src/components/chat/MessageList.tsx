@@ -209,12 +209,20 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                       }}
                     >
                       {(() => {
+                        // Handle different content types
                         if (typeof message.content === 'string') {
                           return message.content;
-                        } else if (message.content && typeof message.content === 'object' && message.content.content) {
-                          return message.content.content;
+                        } else if (message.content && typeof message.content === 'object') {
+                          // Extract content from nested objects
+                          if (message.content.content) {
+                            return message.content.content;
+                          } else if (message.content.text) {
+                            return message.content.text;
+                          } else {
+                            return JSON.stringify(message.content, null, 2);
+                          }
                         } else {
-                          return JSON.stringify(message.content);
+                          return String(message.content || '');
                         }
                       })()}
                     </ReactMarkdown>

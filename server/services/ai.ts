@@ -458,8 +458,10 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
 
         const processingTime = Date.now() - startTime;
 
-        // Enhance the response
-        let enhancedContent = aiResponse.content;
+        // Ensure content is a string
+        let enhancedContent = typeof aiResponse.content === 'string' 
+            ? aiResponse.content 
+            : JSON.stringify(aiResponse.content);ontent;
 
         try {
             enhancedContent = await enhanceResponse(
