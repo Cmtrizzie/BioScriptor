@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreditCard, Settings, Shield, ChevronDown } from "lucide-react";
+import { CreditCard, Settings, Shield, ChevronDown, Menu } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 
