@@ -10,7 +10,7 @@ import Chat from "@/pages/chat";
 import Auth from "@/pages/auth";
 import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
-import Settings from "@/pages/Settings';
+import Settings from "@/pages/Settings";
 import DataControls from '@/pages/DataControls';
 import { ThemeProvider } from "@/context/theme-context";
 
