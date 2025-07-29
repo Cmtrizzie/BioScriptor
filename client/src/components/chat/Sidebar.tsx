@@ -78,10 +78,9 @@ export default function Sidebar({
         transform transition-transform duration-300 ease-in-out flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Header with Search */}
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">BioScriptor</h2>
+        {/* Top Section - Search Bar */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
             <Button
               variant="ghost"
               size="sm"
@@ -93,79 +92,78 @@ export default function Sidebar({
           </div>
 
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400 focus:border-gray-600"
+              className="w-full pl-10 bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400 focus:border-gray-600 rounded-full"
             />
           </div>
         </div>
 
         {/* Navigation Items */}
-        <div className="px-4 space-y-2">
+        <div className="px-4 space-y-1">
           {/* New Chat */}
           <Button 
             onClick={onNewChat}
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
+            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal py-3 px-3 rounded-lg"
             variant="ghost"
           >
-            <Plus className="h-4 w-4 mr-3" />
+            <Plus className="h-5 w-5 mr-3" />
             New chat
           </Button>
 
           {/* Library */}
           <Button 
             variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
+            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal py-3 px-3 rounded-lg"
             onClick={() => handleNavigation('/library')}
           >
-            <Library className="h-4 w-4 mr-3" />
+            <Library className="h-5 w-5 mr-3" />
             Library
           </Button>
 
           {/* GPTs */}
           <Button 
             variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
+            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal py-3 px-3 rounded-lg"
             onClick={() => handleNavigation('/gpts')}
           >
-            <Users className="h-4 w-4 mr-3" />
+            <Users className="h-5 w-5 mr-3" />
             GPTs
           </Button>
 
           {/* Chats */}
           <Button 
             variant="ghost"
-            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal"
+            className="w-full justify-start bg-transparent hover:bg-gray-800 text-gray-100 font-normal py-3 px-3 rounded-lg"
           >
-            <MessageSquare className="h-4 w-4 mr-3" />
+            <MessageSquare className="h-5 w-5 mr-3" />
             Chats
           </Button>
         </div>
 
-        {/* Chat History */}
-        <div className="flex-1 flex flex-col min-h-0 mt-6">
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-1">
+        {/* Chat History - Takes up remaining space */}
+        <div className="flex-1 flex flex-col min-h-0 mt-6 px-4">
+          <ScrollArea className="flex-1">
+            <div className="space-y-2">
               {filteredSessions.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
+                <div className="text-sm text-gray-500 text-center py-8">
                   {searchQuery ? 'No matching sessions' : 'No recent sessions'}
-                </p>
+                </div>
               ) : (
                 filteredSessions.map((session) => (
-                  <Button
+                  <div
                     key={session.id}
-                    variant="ghost"
-                    className="w-full justify-start text-left h-auto p-3 text-sm font-normal bg-transparent hover:bg-gray-800 text-gray-300 hover:text-white"
+                    className="text-sm text-gray-300 hover:text-white hover:bg-gray-800 p-3 rounded-lg cursor-pointer transition-colors"
                     onClick={() => onSwitchSession(session)}
                   >
-                    <div className="truncate w-full">
+                    <div className="truncate">
                       {session.title}
                     </div>
-                  </Button>
+                  </div>
                 ))
               )}
             </div>
@@ -173,8 +171,8 @@ export default function Sidebar({
         </div>
 
         {/* Profile Section at Bottom */}
-        <div className="border-t border-gray-800 p-4">
-          {user && (
+        <div className="p-4 border-t border-gray-800">
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -186,7 +184,7 @@ export default function Sidebar({
                   </div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium text-white truncate">
-                      {user?.displayName || user?.email?.split('@')[0] || 'User'}
+                      {user?.displayName || user?.email?.split('@')[0] || 'Mark comrade'}
                     </div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-gray-400" />
@@ -233,9 +231,7 @@ export default function Sidebar({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-
-          {!user && (
+          ) : (
             <Button 
               onClick={() => handleNavigation('/auth')}
               className="w-full bg-blue-600 hover:bg-blue-700"
