@@ -136,33 +136,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Test web search endpoint
-  app.get("/api/test/search", requireAuth, async (req: any, res) => {
-    try {
-      const query = req.query.q as string || 'latest AI research';
-      const startTime = Date.now();
-      const results = await webSearchService.search(query, { maxResults: 3 });
-      
-      res.json({
-        query,
-        results: results.results,
-        searchTime: results.searchTime,
-        totalTime: Date.now() - startTime,
-        working: results.results.length > 0,
-        status: results.results.length > 0 ? 'success' : 'no_results',
-        fallback_used: results.results[0]?.url?.includes('example.com') ? 'mock' : 'real',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        error: 'Search test failed', 
-        details: error.message,
-        query: req.query.q || 'test search',
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
   // Chat routes
   app.post("/api/chat/message", requireAuth, upload.single('file'), async (req: any, res) => {
     try {
@@ -880,6 +853,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment Webhook Routes
+  Removing web search functionality.
+```javascript
   app.post("/api/webhooks/paypal", async (req, res) => {
     try {
       const event = req.body;

@@ -154,8 +154,4 @@ console.log('- Groq API Key:', !!process.env.GROQ_API_KEY ? 'Set' : 'Missing');
 console.log('- Together API Key:', !!process.env.TOGETHER_API_KEY ? 'Set' : 'Missing');
 console.log('- OpenRouter API Key:', !!process.env.OPENROUTER_API_KEY ? 'Set' : 'Missing');
 
-// Web Search Configuration
-console.log('Search Service Configuration:');
-const searxngUrl = process.env.SEARXNG_URL || 'https://searx.be';
-console.log(`✅ SearXNG configured: ${searxngUrl}`);
-console.log('🔍 Web search powered by SearXNG (privacy-focused meta search engine)');
+// Configuration completeed by SearXNG (privacy-focused meta search engine)');

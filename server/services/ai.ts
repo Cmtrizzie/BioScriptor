@@ -163,11 +163,7 @@ console.log(`- Together API Key: ${aiConfig.together.apiKey ? 'Set' : 'Missing'}
 console.log(`- OpenRouter API Key: ${aiConfig.openrouter.apiKey ? 'Set' : 'Missing'}`);
 console.log(`- Cohere API Key: ${aiConfig.cohere.apiKey ? 'Set' : 'Missing'}`);
 
-// Check SearXNG configuration
-console.log('Search Service Configuration:');
-const searxngUrl = process.env.SEARXNG_URL || 'http://0.0.0.0:8080';
-console.log(`✅ SearXNG configured: ${searxngUrl}`);
-console.log('🔍 Web search powered by SearXNG (privacy-focused meta search engine)');
+
 
 const faultTolerantAI = new FaultTolerantAI(aiConfig);
 const conversationManager = new ConversationManager();
