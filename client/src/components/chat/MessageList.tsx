@@ -263,6 +263,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                         );
                       }
                     })()}
+                  </div>
                 ) : (
                   <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere">
                     {typeof message.content === 'string' ? 
