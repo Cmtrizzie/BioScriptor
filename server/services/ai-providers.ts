@@ -440,10 +440,6 @@ I'm here to help with **bioinformatics tasks**! Please provide more specific det
 
 *Could you please describe your specific research question or task?*`;
   }
-}ecent", or "2024"
-
-*Could you please describe your specific research question or task?*`;
-  }
 }
 
 // Type definitions
