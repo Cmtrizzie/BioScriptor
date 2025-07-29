@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useTheme } from '@/context/theme-context';
 import { Message } from '@/hooks/use-chat';
@@ -126,7 +125,7 @@ const MermaidDiagram = ({ content }: { content: string }) => {
           const { theme } = document.documentElement.getAttribute('data-theme') === 'dark' 
             ? { theme: 'dark' } 
             : { theme: 'default' };
-          
+
           mermaid.initialize({
             startOnLoad: false,
             theme,
@@ -176,7 +175,69 @@ interface MessageListProps {
 
 export default function MessageList({ messages, isLoading, bottomRef }: MessageListProps) {
   const { theme } = useTheme();
-  
+
+  // Show welcome screen when no messages exist
+  if (messages.length === 0 && !isLoading) {
+    return (
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 h-full flex items-center justify-center"
+        style={{
+          backgroundColor: 'var(--color-background)',
+          color: 'var(--color-foreground)'
+        }}
+      >
+        <div className="text-center space-y-6 max-w-md mx-auto px-6">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-bio-blue/10 dark:bg-bio-teal/10 rounded-2xl flex items-center justify-center">
+              <Logo size="small" variant={theme === 'dark' ? 'dark' : 'light'} />
+            </div>
+          </div>
+
+          {/* Greeting */}
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold" style={{ color: 'var(--color-foreground)' }}>
+              Hi, I'm BioScriptor.
+            </h1>
+            <p style={{ color: 'var(--color-foreground)' }}>
+              How can I help you today?
+            </p>
+          </div>
+
+          {/* Optional: Quick action buttons */}
+          {/* <div className="grid grid-cols-1 gap-3 mt-8">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                Analyze DNA Sequence
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Upload FASTA files or paste sequences for analysis
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                CRISPR Guide Design
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Generate guide RNAs for your target sequences
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                Protein Analysis
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Analyze protein structures and functions
+              </div>
+            </div>
+          </div> */}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="flex-1 overflow-y-auto p-4 space-y-4 h-full"
@@ -224,7 +285,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                 ? 'var(--message-user-border)' 
                 : 'var(--message-ai-border)'
             }}>
-              
+
               {/* Copy button for entire message */}
               <div className="absolute top-2 right-2">
                 <CopyButton content={message.content} />
@@ -349,7 +410,7 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                             style={{ 
                               borderColor: 'var(--code-border)',
                               backgroundColor: 'var(--code-background)',
-                              color: 'var(--color-foreground)'
+                              color: 'var(--code-foreground)'
                             }} {...props}>
                             {children}
                           </th>

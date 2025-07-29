@@ -175,7 +175,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-4 transition-colors shadow-lg",
+        "fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 transition-colors",
         isDragging && "bg-bio-blue/5 border-bio-blue"
       )}
       onDragOver={handleDragOver}
@@ -274,8 +274,8 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               onKeyDown={handleKeyDown}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
-              placeholder="Ask biobuddy about DNA sequences, protein analysis, molecular biology... (Shift+Enter for new line)"
-              className="w-full pl-12 pr-14 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[52px] max-h-[200px] overflow-y-auto shadow-sm"
+              placeholder="Message BioScriptor"
+              className="w-full pl-12 pr-14 py-4 border border-gray-300 dark:border-gray-600 rounded-3xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[56px] max-h-[200px] overflow-y-auto shadow-sm text-base"
               rows={1}
               disabled={disabled}
             />
@@ -317,18 +317,8 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         </div>
 
         {/* Input Help Text */}
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
-          <div className="flex items-center space-x-4 flex-wrap">
-            <span>Enter to send • Shift+Enter for new line</span>
-            <span className="flex items-center space-x-1">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              <span>Drag & drop files • Paste images</span>
-            </span>
-            <span className="hidden sm:inline">Web search available</span>
-          </div>
-          <span className="text-bio-teal font-medium">Free Tier</span>
+        <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+          <span>BioScriptor can make mistakes. Check important info.</span>
         </div>
       </div>
     </div>
