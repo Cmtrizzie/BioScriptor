@@ -51,8 +51,6 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
             bottomRef={bottomRef} 
           />
         </div>
-
-      {/* Fixed input container positioned outside main content */}
       </div>
       
       {/* Fixed MessageInput at bottom */}
@@ -61,7 +59,6 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
           onSendMessage={sendMessage} 
           disabled={isLoading}
         />
-      </div>
       </div>
     </div>
   );
