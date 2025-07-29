@@ -146,11 +146,22 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                           return <div className="text-gray-500 italic">Invalid message content</div>;
                         }
 
-                        return (
-                          <ReactMarkdown
-                            className="markdown-content leading-relaxed break-words overflow-wrap-anywhere max-w-full"
-                            remarkPlugins={[remarkGfm]}
-                            components={{
+                        // Sanitize content to prevent markdown parsing errors
+                        content = content.replace(/\x00/g, '').trim();
+                        
+                        // Check if content is still valid after sanitization
+                        if (!content) {
+                          return <div className="text-gray-500 italic">Empty message content</div>;
+                        }
+
+                        // Render with error boundary
+                        try {
+                          return (
+                            <div className="markdown-wrapper">
+                              <ReactMarkdown
+                                className="markdown-content leading-relaxed break-words overflow-wrap-anywhere max-w-full"
+                                remarkPlugins={[remarkGfm]}
+                                components={{
                               code({ node, inline, className, children, ...props }) {
                                 const match = /language-(\w+)/.exec(className || '');
                                 const language = match ? match[1] : '';
@@ -245,8 +256,23 @@ export default function MessageList({ messages, isLoading, bottomRef }: MessageL
                               }
                             }}
                           >
-                            {content}
-                          </ReactMarkdown>
+                                {content}
+                              </ReactMarkdown>
+                            </div>
+                          );
+                        } catch (markdownError) {
+                          console.error('ReactMarkdown rendering error:', markdownError);
+                          return (
+                            <div className="fallback-content bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                ⚠️ Markdown rendering failed, showing plain text:
+                              </div>
+                              <pre className="whitespace-pre-wrap text-sm font-mono break-words overflow-wrap-anywhere">
+                                {content}
+                              </pre>
+                            </div>
+                          );
+                        }
                         );
                       } catch (error) {
                         console.error('Markdown rendering error:', error);
