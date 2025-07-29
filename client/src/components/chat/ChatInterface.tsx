@@ -42,21 +42,26 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
       <div className="flex-1 flex flex-col min-h-0 max-h-screen">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-
-        <div className="flex-1 min-h-0 overflow-hidden pb-24">
-          <div className="pb-32">
-            <MessageList 
-              messages={messages} 
-              isLoading={isLoading} 
-              bottomRef={bottomRef} 
-            />
-          </div>
+        
+        {/* Improved scrolling container with padding for fixed input */}
+        <div className="flex-1 overflow-y-auto pb-32">
+          <MessageList 
+            messages={messages} 
+            isLoading={isLoading} 
+            bottomRef={bottomRef} 
+          />
         </div>
 
+      {/* Fixed input container positioned outside main content */}
+      </div>
+      
+      {/* Fixed MessageInput at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
         <MessageInput 
           onSendMessage={sendMessage} 
           disabled={isLoading}
         />
+      </div>
       </div>
     </div>
   );

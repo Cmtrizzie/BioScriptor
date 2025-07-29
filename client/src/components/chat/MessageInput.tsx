@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +22,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -202,7 +203,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
     }
   }, [message]);
 
@@ -219,149 +220,147 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 transition-colors",
-        isDragging && "bg-bio-blue/5 border-bio-blue"
+        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 transition-colors",
+        isDragging && "bg-bio-blue/10 border-bio-blue"
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="max-w-4xl mx-auto p-4 pb-6">
-        {/* Drag overlay */}
-        {isDragging && (
-          <div className="absolute inset-0 bg-bio-blue/10 border-2 border-dashed border-bio-blue rounded-lg flex items-center justify-center z-10">
-            <div className="text-center">
-              <svg className="w-12 h-12 text-bio-blue mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p className="text-bio-blue font-medium">Drop files here</p>
-              <p className="text-sm text-gray-500">Supports .fasta, .gb, .pdb, .csv, images</p>
-            </div>
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-bio-blue/10 border-2 border-dashed border-bio-blue rounded-lg flex items-center justify-center z-10">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-bio-blue mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p className="text-bio-blue font-medium">Drop files here</p>
+            <p className="text-sm text-gray-500">Supports .fasta, .gb, .pdb, .csv, images</p>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* File previews */}
-        {files.length > 0 && (
-          <div className="mb-3 space-y-2">
-            {files.map((filePreview, index) => (
-              <div key={index} className="flex items-start justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                <div className="flex items-start space-x-3 flex-1 min-w-0">
-                  {/* File type icon */}
-                  <div className="flex-shrink-0">
-                    {filePreview.type === 'image' ? (
-                      <img src={filePreview.preview} alt="Preview" className="w-12 h-12 rounded object-cover" />
-                    ) : (
-                      <div className={cn(
-                        "w-12 h-12 rounded flex items-center justify-center",
-                        filePreview.type === 'bio' ? "bg-bio-teal/10 text-bio-teal" : "bg-blue-100 text-blue-600"
-                      )}>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* File details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium truncate">{filePreview.file.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {filePreview.type}
-                      </Badge>
-                      <span className="text-xs text-gray-500">
-                        {(filePreview.file.size / 1024).toFixed(1)} KB
-                      </span>
+      {/* File previews */}
+      {files.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {files.map((filePreview, index) => (
+            <div key={index} className="flex items-start justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+              <div className="flex items-start space-x-3 flex-1 min-w-0">
+                {/* File type icon */}
+                <div className="flex-shrink-0">
+                  {filePreview.type === 'image' ? (
+                    <img src={filePreview.preview} alt="Preview" className="w-12 h-12 rounded object-cover" />
+                  ) : (
+                    <div className={cn(
+                      "w-12 h-12 rounded flex items-center justify-center",
+                      filePreview.type === 'bio' ? "bg-bio-teal/10 text-bio-teal" : "bg-blue-100 text-blue-600"
+                    )}>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
-                    {filePreview.preview && filePreview.type !== 'image' && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-mono leading-relaxed">
-                        {filePreview.preview}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Remove button */}
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="flex-shrink-0 ml-2 text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                {/* File details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium truncate">{filePreview.file.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {filePreview.type}
+                    </Badge>
+                    <span className="text-xs text-gray-500">
+                      {(filePreview.file.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                  {filePreview.preview && filePreview.type !== 'image' && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-mono leading-relaxed">
+                      {filePreview.preview}
+                    </p>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        <div className="flex items-end space-x-2">
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".fasta,.fa,.fastq,.fq,.gb,.pdb,.csv,.tsv,.vcf,.gtf,.gff,.txt,.png,.jpg,.jpeg,.gif,.webp"
-            onChange={handleFileChange}
-            multiple
-            className="hidden"
+              {/* Remove button */}
+              <button
+                onClick={() => handleRemoveFile(index)}
+                className="flex-shrink-0 ml-2 text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-end space-x-2">
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".fasta,.fa,.fastq,.fq,.gb,.pdb,.csv,.tsv,.vcf,.gtf,.gff,.txt,.png,.jpg,.jpeg,.gif,.webp"
+          onChange={handleFileChange}
+          multiple
+          className="hidden"
+        />
+
+        {/* Message Input Container */}
+        <div className="flex-1 relative">
+          <Textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            placeholder="Message BioScriptor"
+            className="w-full pl-12 pr-14 py-4 border border-gray-300 dark:border-gray-600 rounded-3xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[56px] max-h-[150px] overflow-y-auto shadow-sm text-base"
+            rows={1}
+            disabled={disabled}
           />
 
-          {/* Message Input Container */}
-          <div className="flex-1 relative">
-            <Textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
-              placeholder="Message BioScriptor"
-              className="w-full pl-12 pr-14 py-4 border border-gray-300 dark:border-gray-600 rounded-3xl resize-none focus:outline-none focus:ring-2 focus:ring-bio-blue dark:focus:ring-bio-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[56px] max-h-[200px] overflow-y-auto shadow-sm text-base"
-              rows={1}
-              disabled={disabled}
-            />
+          {/* File Upload Button - Inside Input */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            className="absolute left-2 bottom-2 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal h-8 w-8"
+            title="Upload file (.fasta, .gb, .pdb, .csv, images)"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </Button>
 
-            {/* File Upload Button - Inside Input */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled}
-              className="absolute left-2 bottom-2 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal h-8 w-8"
-              title="Upload file (.fasta, .gb, .pdb, .csv, images)"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          {/* Send Button */}
+          <Button
+            onClick={handleSend}
+            disabled={(!message.trim() && files.length === 0) || disabled || isComposing}
+            size="icon"
+            className="absolute right-2 bottom-2 bg-bio-blue hover:bg-bio-blue/90 disabled:bg-gray-300 text-white rounded-xl transition-colors h-8 w-8"
+            title="Send message (Enter)"
+          >
+            {disabled ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-            </Button>
-
-            {/* Send Button */}
-            <Button
-              onClick={handleSend}
-              disabled={(!message.trim() && files.length === 0) || disabled || isComposing}
-              size="icon"
-              className="absolute right-2 bottom-2 bg-bio-blue hover:bg-bio-blue/90 disabled:bg-gray-300 text-white rounded-xl transition-colors h-8 w-8"
-              title="Send message (Enter)"
-            >
-              {disabled ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              )}
-            </Button>
-          </div>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            )}
+          </Button>
         </div>
+      </div>
 
-        {/* Input Help Text */}
-        <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-          <span>BioScriptor can make mistakes. Check important info.</span>
-        </div>
+      {/* Input Help Text */}
+      <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+        <span>BioScriptor can make mistakes. Check important info.</span>
       </div>
     </div>
   );
