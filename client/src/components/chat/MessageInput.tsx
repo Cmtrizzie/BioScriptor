@@ -219,7 +219,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 transition-colors",
+        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-3 transition-colors",
         isDragging && "bg-bio-blue/10 border-bio-blue"
       )}
       onDragOver={handleDragOver}
@@ -357,10 +357,6 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         </div>
       </div>
 
-      {/* Input Help Text */}
-      <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-        <span>BioScriptor can make mistakes. Check important info.</span>
       </div>
-    </div>
   );
 }
