@@ -145,7 +145,9 @@ const MermaidDiagram = ({ content }: { content: string }) => {
           diagramRef.current.innerHTML = svg;
         } catch (error) {
           console.error('Error rendering Mermaid diagram:', error);
-          diagramRef.current.innerHTML = `<pre>${content}</pre>`;
+          if (diagramRef.current) {
+            diagramRef.current.innerHTML = `<pre>${content}</pre>`;
+          }
         }
       }
     };
