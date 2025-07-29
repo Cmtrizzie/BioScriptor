@@ -283,7 +283,10 @@ export default function Sidebar({
                       <span>Theme: {getThemeLabel()}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => handleNavigation('/settings')}
+                      onClick={() => {
+                        console.log('Settings clicked, navigating to /settings');
+                        handleNavigation('/settings');
+                      }}
                       className="text-gray-100 hover:bg-gray-700"
                     >
                       <Settings className="mr-2 h-4 w-4" />

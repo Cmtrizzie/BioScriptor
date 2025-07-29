@@ -11,6 +11,7 @@ import { useTheme } from '@/context/theme-context';
 import { useLocation } from 'wouter';
 
 export default function Settings() {
+  console.log('Settings component rendering');
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [, setLocation] = useLocation();

@@ -46,10 +46,12 @@ function Router() {
 }
 
 function App() {
+  console.log('App component rendering');
+
   useEffect(() => {
     // Prevent flash of unstyled content
     document.body.classList.add('no-transition');
-    
+
     // Initialize theme
     const savedTheme = localStorage.getItem('theme') || 'system';
     const getSystemTheme = () => {
@@ -58,12 +60,12 @@ function App() {
       }
       return 'light';
     };
-    
+
     const actualTheme = savedTheme === 'system' ? getSystemTheme() : savedTheme;
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(actualTheme);
     document.documentElement.setAttribute('data-theme', actualTheme);
-    
+
     // Remove no-transition class after a brief delay
     setTimeout(() => {
       document.body.classList.remove('no-transition');
