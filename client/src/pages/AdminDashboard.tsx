@@ -983,7 +983,6 @@ export default function AdminDashboard() {
                                       {status ? 'Disable' : 'Enable'}
                                     </Button>
                                   </div>
-                                </div>
                               </CardHeader>
                               <CardContent>
                                 <div className="space-y-2 text-sm">
@@ -1334,10 +1333,10 @@ export default function AdminDashboard() {
                   <TabsContent value="plans">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {[
-                        { tier: 'free', color: 'slate', icon: '🆓' },
-                        { tier: 'premium', color: 'blue', icon: '⭐' },
-                        { tier: 'enterprise', color: 'purple', icon: '👑' }
-                      ].map(({ tier, color, icon }) => (
+                        { tier: 'free', color: 'slate', icon: '🆓', price: 0 },
+                        { tier: 'premium', color: 'blue', icon: '⭐', price: 9.99 },
+                        { tier: 'enterprise', color: 'purple', icon: '👑', price: 49.99 }
+                      ].map(({ tier, color, icon, price }) => (
                         <Card key={tier} className={`border-2 border-${color}-200 dark:border-${color}-700`}>
                           <CardHeader className={`bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`}>
                             <CardTitle className="capitalize flex items-center gap-2">
@@ -1347,6 +1346,10 @@ export default function AdminDashboard() {
                           </CardHeader>
                           <CardContent className="p-4 space-y-3">
                             <div className="text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span className="font-medium">Price:</span>
+                                <span>${price}/month</span>
+                              </div>
                               <div className="flex justify-between">
                                 <span className="font-medium">Max Queries:</span>
                                 <span>{tier === 'free' ? '10' : tier === 'premium' ? '1,000' : 'Unlimited'}</span>
@@ -1508,168 +1511,56 @@ export default function AdminDashboard() {
 
         {/* Plan Edit Modal */}
         {editingPlan && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md mx-4">
-              <CardHeader>
-                <CardTitle>
-                  {editingPlan.tier ? `Edit ${editingPlan.tier} Plan` : 'Create New Plan'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Edit {editingPlan.tier} Plan</h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Plan Tier</label>
-                  <input
-                    type="text"
-                    value={editingPlan.tier}
-                    onChange={(e) => setEditingPlan({...editingPlan, tier: e.target.value})}
-                    className="w-full mt-1 p-2 border rounded-md"
-                    placeholder="e.g., premium"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Max Queries (-1 for unlimited)</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Max Queries</label>
                   <input
                     type="number"
-                    value={editingPlan.maxQueries}
-                    onChange={(e) => setEditingPlan({...editingPlan, maxQueries: parseInt(e.target.value)})}
-                    className="w-full mt-1 p-2 border rounded-md"
+                    value={editingPlan.maxQueries === -1 ? '' : editingPlan.maxQueries}
+                    onChange={(e) => setEditingPlan({
+                      ...editingPlan,
+                      maxQueries: e.target.value === '' ? -1 : parseInt(e.target.value)
+                    })}
+                    placeholder="Unlimited (-1)"
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Max File Size (MB)</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Max File Size (MB)</label>
                   <input
                     type="number"
                     value={editingPlan.maxFileSize}
-                    onChange={(e) => setEditingPlan({...editingPlan, maxFileSize: parseInt(e.target.value)})}
-                    className="w-full mt-1 p-2 border rounded-md"
+                    onChange={(e) => setEditingPlan({
+                      ...editingPlan,
+                      maxFileSize: parseInt(e.target.value)
+                    })}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Features</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100">Features</h4>
+                  {Object.entries(editingPlan.features).map(([feature, enabled]) => (
+                    <label key={feature} className="flex items-center space-x-3 p-2 bg-slate-50 dark:bg-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={editingPlan.features.apiAccess || false}
+                        checked={enabled}
                         onChange={(e) => setEditingPlan({
                           ...editingPlan,
-                          features: {...editingPlan.features, apiAccess: e.target.checked}
+                          features: {
+                            ...editingPlan.features,
+                            [feature]: e.target.checked
+                          }
                         })}
+                        className="rounded w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
                       />
-                      <span className="text-sm">API Access</span>
+                      <span className="text-sm capitalize text-slate-900 dark:text-slate-100">{feature.replace(/([A-Z])/g, ' $1').trim()}</span>
                     </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={editingPlan.features.prioritySupport || false}
-                        onChange={(e) => setEditingPlan({
-                          ...editingPlan,
-                          features: {...editingPlan.features, prioritySupport: e.target.checked}
-                        })}
-                      />
-                      <span className="text-sm">Priority Support</span>
-                    </label>
-                  </div>
+                  ))}
                 </div>
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    onClick={() => setEditingPlan(null)}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      // Handle save plan logic here
-                      setEditingPlan(null);
-                      toast({
-                        title: "Success",
-                        description: "Plan saved successfully.",
-                      });                    }}
-                    className="flex-1"
-                  >
-                    Save Plan
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Promo Code Creation Modal */}
-        {creatingPromo && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md mx-4">
-              <CardHeader>
-                <CardTitle>Create Promo Code</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Promo Code</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., SAVE20"
-                    className="w-full mt-1 p-2 border rounded-md uppercase"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Discount Type</label>
-                  <select className="w-full mt-1 p-2 border rounded-md">
-                    <option value="percentage">Percentage</option>
-                    <option value="fixed">Fixed Amount</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Discount Value</label>
-                  <input
-                    type="number"
-                    placeholder="20"
-                    className="w-full mt-1 p-2 border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Max Uses (optional)</label>
-                  <input
-                    type="number"
-                    placeholder="100"
-                    className="w-full mt-1 p-2 border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Expires At (optional)</label>
-                  <input
-                    type="date"
-                    className="w-full mt-1 p-2 border rounded-md"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    onClick={() => setCreatingPromo(false)}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      // Handle create promo logic here
-                      setCreatingPromo(false);
-                      toast({
-                        title: "Success",
-                        description: "Promo code created successfully.",
-                      });
-                    }}
-                    className="flex-1"
-                  >
-                    Create Promo
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                
+                
+                
+                <div className="flex justify-end space-x-2 mt-6">
