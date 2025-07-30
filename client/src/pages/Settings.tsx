@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Mail, Database, Globe, Palette, Type, Info, FileText, MessageCircle, LogOut, Download, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +59,7 @@ export default function Settings() {
   const handleFontSizeChange = (newFontSize: string) => {
     setFontSize(newFontSize);
     localStorage.setItem('fontSize', newFontSize);
-    
+
     // Apply font size to document root
     const root = document.documentElement;
     switch (newFontSize) {
@@ -74,7 +73,7 @@ export default function Settings() {
         root.style.fontSize = '16px';
         break;
     }
-    
+
     toast({
       title: "Font size updated",
       description: `Font size changed to ${newFontSize}`,
