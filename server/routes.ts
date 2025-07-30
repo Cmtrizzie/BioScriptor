@@ -704,7 +704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // In a real implementation, this would update the pricing in your payment processor (PayPal, Stripe, etc.)
       // For now, we'll simulate the update
-      
+
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'update_plan_price',

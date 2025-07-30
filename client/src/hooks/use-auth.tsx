@@ -22,7 +22,7 @@ export function useAuth() {
           localStorage.setItem('demo_user', JSON.stringify(newDemoUser));
           demoUser = JSON.stringify(newDemoUser);
         }
-        
+
         const parsedUser = JSON.parse(demoUser);
         setUser({
           uid: parsedUser.uid,
@@ -53,8 +53,22 @@ export function useAuth() {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userData = await getOrCreateUser(firebaseUser);
+          // Check if user is admin
+          if (userData.email === 'admin@bioscriptor.com' || userData.tier === 'admin') {
+            userData.isAdmin = true;
+          }
+          setUser(userData);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -77,7 +91,7 @@ export function useAuth() {
         window.location.reload();
         return;
       }
-      
+
       await firebaseLogout();
     } catch (error) {
       console.error('Logout error:', error);

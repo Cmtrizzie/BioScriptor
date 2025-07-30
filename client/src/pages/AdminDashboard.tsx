@@ -147,61 +147,56 @@ export default function AdminDashboard() {
   const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery<AdminAnalytics>({
     queryKey: ['adminAnalytics'],
     queryFn: async () => {
-      return {
-        totalUsers: 1242,
-        activeUsers: 893,
-        usersByTier: { free: 642, premium: 423, enterprise: 177 },
-        totalSubscriptions: 600,
-        activeSubscriptions: 542,
-        queriesLast24h: 2847,
-        monthlyRevenue: 8423.50,
-        conversionRate: 14.3,
-        recentActivity: [
-          { id: 1, adminUserId: 1, action: 'User Upgraded', targetResource: 'User #123', details: 'Upgraded to Premium', timestamp: new Date().toISOString() },
-          { id: 2, adminUserId: 1, action: 'Plan Edited', targetResource: 'Enterprise Plan', details: 'Increased file size limit', timestamp: new Date().toISOString() }
-        ],
-        apiStatus: apiStatusData,
-        systemStatus: {
-          database: true,
-          cache: true,
-          security: true,
-          rateLimiting: true,
-          auditLogs: true
+      const response = await fetch('/api/admin/analytics', {
+        headers: {
+          'X-User-Email': user?.email || ''
         }
-      };
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      
+      return response.json();
     }
   });
 
   const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useQuery<User[]>({
-    queryKey: ['adminUsers'],
+    queryKey: ['adminUsers', searchQuery, planFilter],
     queryFn: async () => {
-      return Array.from({ length: 25 }, (_, i) => ({
-        id: i + 1,
-        email: `user${i + 1}@example.com`,
-        displayName: `User ${i + 1}`,
-        tier: i % 3 === 0 ? 'free' : i % 3 === 1 ? 'premium' : 'enterprise',
-        queryCount: Math.floor(Math.random() * 500),
-        createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        status: i % 10 === 0 ? 'banned' : 'active',
-        lastActive: new Date(Date.now() - Math.floor(Math.random() * 24) * 3600000).toISOString(),
-        credits: Math.floor(Math.random() * 100)
-      }));
+      const params = new URLSearchParams({
+        search: searchQuery,
+        tier: planFilter
+      });
+      
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      
+      return response.json();
     }
   });
 
   const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery<Subscription[]>({
     queryKey: ['adminSubscriptions'],
     queryFn: async () => {
-      return Array.from({ length: 10 }, (_, i) => ({
-        id: i + 1,
-        userId: i + 1,
-        paypalSubscriptionId: `SUB-${Math.random().toString(36).substr(2, 14)}`,
-        status: ['active', 'cancelled', 'pending'][Math.floor(Math.random() * 3)],
-        tier: i % 3 === 0 ? 'free' : i % 3 === 1 ? 'premium' : 'enterprise',
-        startDate: new Date(Date.now() - Math.floor(Math.random() * 90) * 86400000).toISOString(),
-        revenue: i % 3 === 0 ? 0 : i % 3 === 1 ? 9.99 : 49.99
-      }));
+      const response = await fetch('/api/admin/subscriptions', {
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscriptions');
+      }
+      
+      return response.json();
     }
   });
 
@@ -224,6 +219,18 @@ export default function AdminDashboard() {
   // Handle actions
   const handleResetUserLimit = async (userId: number) => {
     try {
+      const response = await fetch(`/api/admin/users/${userId}/reset-limit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset user limit');
+      }
+
       toast({
         title: "Success",
         description: "User daily limit has been reset.",
@@ -240,6 +247,19 @@ export default function AdminDashboard() {
 
   const handleBanUser = async (userId: number, banned: boolean, reason?: string) => {
     try {
+      const response = await fetch(`/api/admin/users/${userId}/ban`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify({ banned, reason })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user status');
+      }
+
       toast({
         title: "Success",
         description: `User ${banned ? 'banned' : 'unbanned'} successfully.`,
@@ -256,6 +276,19 @@ export default function AdminDashboard() {
 
   const handleUpgradeUser = async (userId: number, tier: string) => {
     try {
+      const response = await fetch(`/api/admin/users/${userId}/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify({ tier })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upgrade user');
+      }
+
       toast({
         title: "Success",
         description: `User upgraded to ${tier} successfully.`,
@@ -272,6 +305,19 @@ export default function AdminDashboard() {
 
   const handleAddCredits = async (userId: number, credits: number) => {
     try {
+      const response = await fetch(`/api/admin/users/${userId}/add-credits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify({ credits })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add credits');
+      }
+
       toast({
         title: "Success",
         description: `Added ${credits} credits successfully.`,
