@@ -52,7 +52,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   }, [messages.length, welcomeShown, sessionId]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -62,12 +62,12 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         onSendMessage={sendMessage}
       />
 
-      <div className="flex-1 flex flex-col min-h-0 max-h-screen">
-        {/* Menu button for mobile */}
-        <div className="lg:hidden p-4">
+      <div className="flex-1 flex flex-col min-h-0 relative">
+        {/* Menu button for mobile - Always visible */}
+        <div className="lg:hidden p-4 bg-white dark:bg-gray-800 border-b">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -75,32 +75,32 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
           </button>
         </div>
         
-        {/* Improved scrolling container with padding for fixed input */}
-        <div className="flex-1 overflow-y-auto pb-40 max-w-full">
-          <MessageList 
-            messages={messages} 
-            isLoading={isLoading}
-            isTyping={isTyping}
-            bottomRef={bottomRef} 
+        {/* Main content area */}
+        <div className="flex-1 overflow-hidden relative">
+          <div className="h-full overflow-y-auto pb-40">
+            <MessageList 
+              messages={messages} 
+              isLoading={isLoading}
+              isTyping={isTyping}
+              bottomRef={bottomRef} 
+            />
+          </div>
+        </div>
+        
+        {/* Fixed MessageInput at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6">
+          {/* Creative suggestions */}
+          <div className="px-4 mb-4">
+            <CreativeSuggestions 
+              onSelect={sendMessage} 
+              visible={messages.length <= 1 && !isLoading && !isTyping}
+            />
+          </div>
+          <MessageInput 
+            onSendMessage={sendMessage} 
+            disabled={isLoading || isTyping}
           />
         </div>
-      </div>
-      
-      {/* Fixed MessageInput at bottom with creative suggestions */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6 transition-transform duration-300 lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-full lg:translate-x-0' : 'translate-x-0'
-      }`}>
-        {/* Show suggestions when there are no messages or only welcome message */}
-        <div className="px-4">
-          <CreativeSuggestions 
-            onSelect={sendMessage} 
-            visible={messages.length <= 1 && !isLoading && !isTyping}
-          />
-        </div>
-        <MessageInput 
-          onSendMessage={sendMessage} 
-          disabled={isLoading || isTyping}
-        />
       </div>
     </div>
   );

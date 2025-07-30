@@ -19,7 +19,21 @@ body {
 
 html, body, #root {
   height: 100%;
+  width: 100%;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure content is always visible */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Debug styles - temporary */
+.debug-border {
+  border: 2px solid red !important;
 }
 
 /* Debug visibility */

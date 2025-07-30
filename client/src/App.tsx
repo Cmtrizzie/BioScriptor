@@ -22,14 +22,18 @@ import NotFound from "@/pages/not-found";
 function AppRouter() {
   const { user, loading } = useAuth();
 
-  // Always show chat interface, even during loading
+  // For development, don't block on loading - show the chat interface
   if (loading) {
+    // Still render the chat but with a loading overlay
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
-            <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
+      <div className="relative min-h-screen">
+        <Chat />
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
+              <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
+            </div>
           </div>
         </div>
       </div>
