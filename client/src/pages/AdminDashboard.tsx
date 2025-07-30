@@ -983,6 +983,7 @@ export default function AdminDashboard() {
                                       {status ? 'Disable' : 'Enable'}
                                     </Button>
                                   </div>
+                                </div>
                               </CardHeader>
                               <CardContent>
                                 <div className="space-y-2 text-sm">
@@ -1094,30 +1095,33 @@ export default function AdminDashboard() {
                               <label className="text-sm font-medium">Retry Attempts</label>
                               <input
                                 type="number"
-                                value="3"
+                                defaultValue="3"
                                 className="w-full mt-1 p-2 border rounded-md"
                                 min="1"
                                 max="5"
+                                onChange={(e) => console.log('Retry attempts:', e.target.value)}
                               />
                             </div>
                             <div>
                               <label className="text-sm font-medium">Timeout (seconds)</label>
                               <input
                                 type="number"
-                                value="30"
+                                defaultValue="30"
                                 className="w-full mt-1 p-2 border rounded-md"
                                 min="5"
                                 max="120"
+                                onChange={(e) => console.log('Timeout:', e.target.value)}
                               />
                             </div>
                             <div>
                               <label className="text-sm font-medium">Rate Limit (req/min)</label>
                               <input
                                 type="number"
-                                value="100"
+                                defaultValue="100"
                                 className="w-full mt-1 p-2 border rounded-md"
                                 min="10"
                                 max="1000"
+                                onChange={(e) => console.log('Rate limit:', e.target.value)}
                               />
                             </div>
                           </div>
@@ -1152,22 +1156,609 @@ export default function AdminDashboard() {
                                     onChange={(e) => console.log(`${provider} API key updated`)}
                                   />
                                   <Button size="sm" variant="outline">Test</Button>
+                                  </div>
                                 </div>
-                              </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
                               <div>
-                                <label className="text-sm font-medium">Endpoint URL</label>
-                                <input
-                                  type="url"
-                                  placeholder={`Default ${provider} endpoint`}
-                                  className="w-full mt-1 p-2 border rounded-md"
-                                  onChange={(e) => console.log(`${provider} endpoint:`, e.target.value)}
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button size="sm" className="flex-1">Update Key</Button>
-                                <Button size="sm" variant="destructive">Remove</Button>
-                              </div>
-                            </CardContent>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium">API Key</label>
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    type="password"
+                                    defaultValue={status ? "••••••••••••••••" : ""}
+                                    placeholder="Enter API key..."
+                                    className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
+                                  />
+                                  <Button size="sm" variant="outline">Test</Button>
+                                  </div>
+                                </div>
+                              </CardContent>
                           </Card>
                         ))}
                       </div>
@@ -1560,7 +2151,88 @@ export default function AdminDashboard() {
                     </label>
                   ))}
                 </div>
-                
-                
-                
+
+
+
                 <div className="flex justify-end space-x-2 mt-6">
+                  <Button variant="ghost" onClick={() => setEditingPlan(null)}>Cancel</Button>
+                  <Button onClick={() => {
+                    // TODO: Save the plan
+                    setEditingPlan(null);
+                    toast({
+                      title: "Success",
+                      description: "Plan updated successfully.",
+                    });
+                  }}>Save Changes</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Promo Edit Modal */}
+        {creatingPromo && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Create New Promo Code</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Code</label>
+                  <input
+                    type="text"
+                    placeholder="WELCOME20"
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Type</label>
+                  <select
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Value</label>
+                  <input
+                    type="number"
+                    placeholder="20"
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Max Uses (optional)</label>
+                  <input
+                    type="number"
+                    placeholder="100"
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-900 dark:text-slate-100">Expires At (optional)</label>
+                  <input
+                    type="date"
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button variant="ghost" onClick={() => setCreatingPromo(false)}>Cancel</Button>
+                  <Button onClick={() => {
+                    // TODO: Save the promo
+                    setCreatingPromo(false);
+                    toast({
+                      title: "Success",
+                      description: "Promo code created successfully.",
+                    });
+                  }}>Create Promo</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
