@@ -219,7 +219,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     <div 
       ref={dropZoneRef}
       className={cn(
-        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm py-3 px-2 transition-colors",
+        "w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm py-3 transition-colors",
         isDragging && "bg-bio-blue/10 border-bio-blue"
       )}
       onDragOver={handleDragOver}
@@ -242,7 +242,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
 
       {/* File previews */}
       {files.length > 0 && (
-        <div className="mb-3 mx-2 space-y-2">
+        <div className="mb-3 space-y-2">
           {files.map((filePreview, index) => (
             <div key={index} className="flex items-start justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
               <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -295,7 +295,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         </div>
       )}
 
-      <div className="flex items-end space-x-2">
+      <div className="flex items-end">
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
