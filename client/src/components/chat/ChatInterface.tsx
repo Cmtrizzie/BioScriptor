@@ -87,14 +87,16 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
       </div>
       
       {/* Fixed MessageInput at bottom with creative suggestions */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6 px-4 transition-transform duration-300 lg:translate-x-0 ${
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6 transition-transform duration-300 lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-full lg:translate-x-0' : 'translate-x-0'
       }`}>
         {/* Show suggestions when there are no messages or only welcome message */}
-        <CreativeSuggestions 
-          onSelect={sendMessage} 
-          visible={messages.length <= 1 && !isLoading && !isTyping}
-        />
+        <div className="px-4">
+          <CreativeSuggestions 
+            onSelect={sendMessage} 
+            visible={messages.length <= 1 && !isLoading && !isTyping}
+          />
+        </div>
         <MessageInput 
           onSendMessage={sendMessage} 
           disabled={isLoading || isTyping}
