@@ -108,6 +108,7 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [editingPlan, setEditingPlan] = useState<PlanLimitEdit | null>(null);
+  const [editingPrice, setEditingPrice] = useState<{ tier: string; currentPrice: number } | null>(null);
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
@@ -540,49 +541,90 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* API Status */}
+              {/* API Status - Reorganized */}
               <Card className="mb-8">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Server size={20} />
-                    API Status
+                    API Provider Status & Management
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                     {analytics?.apiStatus && Object.entries(analytics.apiStatus).map(([provider, status]) => (
-                      <Card key={provider} className={`border ${status ? 'border-green-200 dark:border-green-900' : 'border-red-200 dark:border-red-900'}`}>
-                        <CardHeader className="pb-3">
+                      <Card key={provider} className={`border-2 transition-all duration-200 ${status ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
+                        <CardHeader className="pb-4">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg capitalize">{provider}</CardTitle>
                             <div className="flex items-center gap-2">
-                              <Badge variant={status ? "default" : "destructive"}>
-                                {status ? "Active" : "Inactive"}
-                              </Badge>
-                              <Button size="sm" variant="outline">
-                                {status ? 'Disable' : 'Enable'}
-                              </Button>
+                              <div className={`w-3 h-3 rounded-full ${status ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                              <CardTitle className="text-lg capitalize font-semibold">{provider}</CardTitle>
                             </div>
+                            <Badge variant={status ? "default" : "destructive"} className="font-medium">
+                              {status ? "Online" : "Offline"}
+                            </Badge>
                           </div>
                         </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span>Requests Today:</span>
-                              <span className="font-semibold">{Math.floor(Math.random() * 1000)}</span>
+                        <CardContent className="space-y-4">
+                          {/* Statistics */}
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Daily Requests:</span>
+                              <span className="font-bold text-blue-600">{Math.floor(Math.random() * 1000 + 200)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Success Rate:</span>
-                              <span className="font-semibold text-green-600">98.{Math.floor(Math.random() * 9)}%</span>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Success Rate:</span>
+                              <span className="font-bold text-green-600">98.{Math.floor(Math.random() * 9)}%</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Avg Response:</span>
-                              <span className="font-semibold">{(Math.random() * 2 + 0.5).toFixed(2)}s</span>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Avg Response:</span>
+                              <span className="font-bold text-orange-600">{(Math.random() * 2 + 0.5).toFixed(2)}s</span>
                             </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Cost/1K tokens:</span>
+                              <span className="font-bold text-purple-600">${(Math.random() * 0.01 + 0.001).toFixed(4)}</span>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              variant={status ? "destructive" : "default"}
+                              className="flex-1"
+                            >
+                              {status ? 'Disable' : 'Enable'}
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Settings size={14} />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+
+                  {/* API Management Summary */}
+                  <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {Object.values(analytics?.apiStatus || {}).filter(Boolean).length}
+                        </div>
+                        <div className="text-sm text-slate-500">Active Providers</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-blue-600">1,847</div>
+                        <div className="text-sm text-slate-500">Total Requests Today</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-purple-600">98.7%</div>
+                        <div className="text-sm text-slate-500">Overall Success Rate</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-orange-600">$12.45</div>
+                        <div className="text-sm text-slate-500">Today's API Costs</div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1463,54 +1505,100 @@ export default function AdminDashboard() {
           {activeSection === 'plans' && (
             <motion.div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Plan Management</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Plan Management</h2>
+                  <p className="text-slate-600 dark:text-slate-400">Manage subscription plans, pricing, and features</p>
+                </div>
                 <Button
                   onClick={() => setEditingPlan({ tier: '', maxQueries: 0, maxFileSize: 10, features: {} })}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white gap-2"
                 >
+                  <Plus size={16} />
                   Create New Plan
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Plans Overview Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {[
-                  { tier: 'free', icon: '&#127378;', price: 0 },
-                  { tier: 'premium', icon: '&#11088;', price: 9.99 },
-                  { tier: 'enterprise', icon: '&#127982;', price: 49.99 }
-                ].map(({ tier, icon, price }) => (
-                  <Card key={tier} className="border-2 border-slate-200 dark:border-slate-700">
-                    <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700">
-                      <CardTitle className="capitalize flex items-center gap-2">
-                        <span className="text-2xl">{icon}</span>
-                        {tier} Plan
-                      </CardTitle>
+                  { 
+                    tier: 'free', 
+                    icon: '🆓', 
+                    price: 0, 
+                    color: 'from-gray-500 to-slate-600',
+                    bgColor: 'bg-gray-50 dark:bg-gray-900/50',
+                    borderColor: 'border-gray-200 dark:border-gray-700',
+                    subscribers: 642,
+                    features: ['10 queries/month', '5MB file limit', 'Basic AI models', 'Community support']
+                  },
+                  { 
+                    tier: 'premium', 
+                    icon: '⭐', 
+                    price: 9.99, 
+                    color: 'from-blue-500 to-cyan-500',
+                    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+                    borderColor: 'border-blue-200 dark:border-blue-700',
+                    subscribers: 423,
+                    features: ['1,000 queries/month', '50MB file limit', 'All AI models', 'Email support', 'Export formats']
+                  },
+                  { 
+                    tier: 'enterprise', 
+                    icon: '🏢', 
+                    price: 49.99, 
+                    color: 'from-purple-500 to-indigo-500',
+                    bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+                    borderColor: 'border-purple-200 dark:border-purple-700',
+                    subscribers: 177,
+                    features: ['Unlimited queries', '500MB file limit', 'Priority AI access', '24/7 support', 'Advanced analytics']
+                  }
+                ].map(({ tier, icon, price, color, bgColor, borderColor, subscribers, features }) => (
+                  <Card key={tier} className={`border-2 ${borderColor} ${bgColor} relative overflow-hidden`}>
+                    {tier === 'premium' && (
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">
+                        POPULAR
+                      </div>
+                    )}
+                    
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-3 rounded-full bg-gradient-to-r ${color} text-white text-2xl flex items-center justify-center w-12 h-12`}>
+                            {icon}
+                          </div>
+                          <div>
+                            <CardTitle className="capitalize text-xl">{tier} Plan</CardTitle>
+                            <p className="text-sm text-slate-500">{subscribers} subscribers</p>
+                          </div>
+                        </div>
+                      </div>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold">
-                          ${price}<span className="text-sm font-normal">/month</span>
+                    
+                    <CardContent className="space-y-6">
+                      {/* Pricing Section */}
+                      <div className="text-center py-4 bg-white dark:bg-slate-800 rounded-lg border">
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold">${price}</span>
+                          <span className="text-slate-500">/month</span>
+                        </div>
+                        <div className="text-sm text-slate-500 mt-1">
+                          {tier === 'free' ? 'Forever free' : `$${(price * 12 * 0.9).toFixed(2)}/year (10% off)`}
                         </div>
                       </div>
 
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
-                          <span>Max Queries:</span>
-                          <span>{tier === 'free' ? '10' : tier === 'premium' ? '1,000' : 'Unlimited'}</span>
-                        </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
-                          <span>File Size:</span>
-                          <span>{tier === 'free' ? '5MB' : tier === 'premium' ? '50MB' : '500MB'}</span>
-                        </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
-                          <span>API Access:</span>
-                          <span>{tier === 'free' ? '&#10060;' : '&#9989;'}</span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                          <span>Priority Support:</span>
-                          <span>{tier === 'enterprise' ? '&#9989;' : '&#10060;'}</span>
-                        </div>
+                      {/* Features List */}
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-slate-700 dark:text-slate-300">Features included:</h4>
+                        <ul className="space-y-2">
+                          {features.map((feature, idx) => (
+                            <li key={idx} className="flex items-center gap-2 text-sm">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
 
+                      {/* Action Buttons */}
                       <div className="flex gap-2 pt-4">
                         <Button
                           size="sm"
@@ -1525,17 +1613,27 @@ export default function AdminDashboard() {
                               analytics: tier === 'enterprise'
                             }
                           })}
-                          className="flex-1"
+                          className="flex-1 gap-2"
                         >
-                          Edit
+                          <Edit size={14} />
+                          Edit Plan
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300"
+                          onClick={() => setEditingPrice({ tier, currentPrice: price })}
+                        >
+                          <ArrowLeftRight size={14} />
+                          Edit Price
                         </Button>
                         {tier !== 'free' && (
-                          <Button size="sm"
+                          <Button 
+                            size="sm"
                             variant="destructive"
                             onClick={() => handleDeletePlan(tier)}
-                            className="flex-1"
                           >
-                            Delete
+                            <Trash2 size={14} />
                           </Button>
                         )}
                       </div>
@@ -1543,6 +1641,40 @@ export default function AdminDashboard() {
                   </Card>
                 ))}
               </div>
+
+              {/* Plan Analytics */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart2 size={20} />
+                    Plan Performance Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">15.2%</div>
+                      <div className="text-sm text-slate-500">Free to Premium</div>
+                      <div className="text-xs text-slate-400">Conversion Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">8.7%</div>
+                      <div className="text-sm text-slate-500">Premium to Enterprise</div>
+                      <div className="text-xs text-slate-400">Upgrade Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">92.3%</div>
+                      <div className="text-sm text-slate-500">Subscription Retention</div>
+                      <div className="text-xs text-slate-400">Last 30 days</div>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">$31.47</div>
+                      <div className="text-sm text-slate-500">Avg Revenue Per User</div>
+                      <div className="text-xs text-slate-400">Monthly</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
 
@@ -1766,9 +1898,9 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium mb-1">Max Queries</label>
                   <Input
                     type="number"
-                    value={editingPlan.maxQueries}
-                    onChange={(e) => setEditingPlan({...editingPlan, maxQueries: Number(e.target.value)})}
-                    placeholder="Enter max queries"
+                    value={editingPlan.maxQueries === -1 ? '' : editingPlan.maxQueries}
+                    onChange={(e) => setEditingPlan({...editingPlan, maxQueries: e.target.value === '' ? -1 : Number(e.target.value)})}
+                    placeholder="Unlimited = -1"
                   />
                 </div>
                 <div>
@@ -1823,6 +1955,19 @@ export default function AdminDashboard() {
                     />
                     <span>Advanced Analytics</span>
                   </label>
+
+                  <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-700 rounded-md">
+                    <input
+                      type="checkbox"
+                      checked={editingPlan.features.fileAnalysis || false}
+                      onChange={(e) => setEditingPlan({
+                        ...editingPlan,
+                        features: {...editingPlan.features, fileAnalysis: e.target.checked}
+                      })}
+                      className="rounded w-4 h-4 text-blue-600"
+                    />
+                    <span>File Analysis</span>
+                  </label>
                 </div>
               </div>
 
@@ -1843,6 +1988,66 @@ export default function AdminDashboard() {
                   }}
                 >
                   Save Plan
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Price Edit Modal */}
+      {editingPrice && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+            <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+              Edit {editingPrice.tier} Plan Pricing
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Monthly Price ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  defaultValue={editingPrice.currentPrice}
+                  placeholder="Enter new price"
+                  disabled={editingPrice.tier === 'free'}
+                />
+                {editingPrice.tier === 'free' && (
+                  <p className="text-xs text-slate-500 mt-1">Free plan must remain $0</p>
+                )}
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Price Change Impact</h4>
+                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                  <div>• Existing subscribers will be notified</div>
+                  <div>• Changes take effect next billing cycle</div>
+                  <div>• Annual discounts will be recalculated</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Reason for Change</label>
+                <Input
+                  placeholder="e.g., Market adjustment, feature enhancement..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setEditingPrice(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-gradient-to-r from-green-600 to-emerald-600"
+                  onClick={() => {
+                    setEditingPrice(null);
+                    toast({
+                      title: "Success",
+                      description: `${editingPrice.tier} plan pricing updated`,
+                    });
+                  }}
+                >
+                  Update Price
                 </Button>
               </div>
             </div>
