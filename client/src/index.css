@@ -172,7 +172,7 @@ html, body, #root {
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  
+
   /* Shadcn UI Variables */
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
@@ -194,21 +194,21 @@ html, body, #root {
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
-  
+
   --code-background: #f8fafc;
   --code-foreground: #0f172a;
   --code-border: #e2e8f0;
-  
+
   --mermaid-bg: #ffffff;
   --mermaid-text: #0f172a;
   --mermaid-primary: #2563eb;
   --mermaid-secondary: #cbd5e1;
   --mermaid-accent: #8b5cf6;
-  
+
   --copy-btn-bg: #f1f5f9;
   --copy-btn-text: #64748b;
   --copy-btn-hover: #e2e8f0;
-  
+
   --message-ai-bg: #f8fafc;
   --message-ai-border: #e2e8f0;
   --message-user-bg: #f0f9ff;
@@ -225,7 +225,7 @@ html, body, #root {
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-error: #f87171;
-  
+
   /* Shadcn UI Dark Variables */
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
@@ -246,25 +246,45 @@ html, body, #root {
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
   --ring: 224.3 76.3% 94.1%;
-  
+
   --code-background: #1e293b;
   --code-foreground: #e2e8f0;
   --code-border: #334155;
-  
+
   --mermaid-bg: #0f172a;
   --mermaid-text: #e2e8f0;
   --mermaid-primary: #60a5fa;
   --mermaid-secondary: #475569;
   --mermaid-accent: #a78bfa;
-  
+
   --copy-btn-bg: #1e293b;
   --copy-btn-text: #94a3b8;
   --copy-btn-hover: #334155;
-  
+
   --message-ai-bg: #1e293b;
   --message-ai-border: #334155;
   --message-user-bg: #312e81;
   --message-user-border: #4338ca;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  position: relative;
+  overflow: auto;
 }
 
 body {
@@ -491,33 +511,33 @@ body {
     font-size: 14px !important;
     line-height: 1.5 !important;
   }
-  
+
   .prose h1 {
     font-size: 1.25rem !important;
   }
-  
+
   .prose h2 {
     font-size: 1.125rem !important;
   }
-  
+
   .prose h3 {
     font-size: 1rem !important;
   }
-  
+
   /* Force text wrapping on all elements */
   .prose * {
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
     max-width: 100% !important;
   }
-  
+
   /* Code blocks responsive */
   .prose pre {
     overflow-x: auto !important;
     max-width: 100% !important;
     white-space: pre-wrap !important;
   }
-  
+
   .prose code {
     white-space: pre-wrap !important;
     word-break: break-all !important;

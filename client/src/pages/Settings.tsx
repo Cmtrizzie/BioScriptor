@@ -126,9 +126,9 @@ Please describe your issue below:
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-auto">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button
@@ -147,7 +147,7 @@ Please describe your issue below:
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-20">
         {/* Profile Section */}
         <Card className="bg-white dark:bg-gray-800">
           <CardHeader>

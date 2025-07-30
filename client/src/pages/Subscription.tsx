@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Zap, Crown, Shield, Star } from 'lucide-react';
+import { Check, Zap, Crown, Shield, Star, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 interface PlanFeatures {
   maxQueries: number;
@@ -53,6 +54,11 @@ export default function Subscription() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const handleBack = () => {
+    setLocation('/chat');
+  };
 
   const { data: currentSubscription } = useQuery({
     queryKey: ['/api/subscription/current'],
@@ -252,8 +258,27 @@ export default function Subscription() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto p-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-auto">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Subscription Plans
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto p-6 pb-20">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Choose Your BioScriptor Plan
