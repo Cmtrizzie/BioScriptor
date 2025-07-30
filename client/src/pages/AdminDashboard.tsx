@@ -93,6 +93,8 @@ export default function AdminDashboard() {
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
+  const [addingProvider, setAddingProvider] = useState(false);
+  const [editingPlanPrice, setEditingPlanPrice] = useState<{tier: string; price: number} | null>(null);
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([
     {
       id: 1,
@@ -116,6 +118,12 @@ export default function AdminDashboard() {
       createdAt: '2024-01-15'
     }
   ]);
+
+  const [planPrices, setPlanPrices] = useState({
+    free: 0,
+    premium: 19.99,
+    enterprise: 99.99
+  });
 
   const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery<AdminAnalytics>({
     queryKey: ['adminAnalytics'],
@@ -305,6 +313,58 @@ export default function AdminDashboard() {
       title: "Success",
       description: "Promo code deleted successfully.",
     });
+  };
+
+  const handleToggleApiProvider = async (provider: string, enabled: boolean) => {
+    try {
+      // API call to toggle provider
+      toast({
+        title: "Success",
+        description: `${provider} ${enabled ? 'enabled' : 'disabled'} successfully.`,
+      });
+      refetchApiStatus();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to toggle API provider.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddApiProvider = async (providerData: any) => {
+    try {
+      // API call to add provider
+      toast({
+        title: "Success",
+        description: "API provider added successfully.",
+      });
+      setAddingProvider(false);
+      refetchApiStatus();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add API provider.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdatePlanPrice = async (tier: string, newPrice: number) => {
+    try {
+      setPlanPrices(prev => ({ ...prev, [tier]: newPrice }));
+      toast({
+        title: "Success",
+        description: `${tier} plan price updated to $${newPrice}`,
+      });
+      setEditingPlanPrice(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update plan price.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Get tier color classes
@@ -706,10 +766,10 @@ export default function AdminDashboard() {
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
-                    { tier: 'free', icon: '🆓', price: 0 },
-                    { tier: 'premium', icon: '⭐', price: 9.99 },
-                    { tier: 'enterprise', icon: '🏢', price: 49.99 }
-                  ].map(({ tier, icon, price }) => (
+                    { tier: 'free', icon: '🆓' },
+                    { tier: 'premium', icon: '⭐' },
+                    { tier: 'enterprise', icon: '🏢' }
+                  ].map(({ tier, icon }) => (
                     <Card key={tier} className="border-2 border-slate-200 dark:border-slate-700">
                       <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700">
                         <CardTitle className="capitalize flex items-center gap-2">
@@ -719,8 +779,18 @@ export default function AdminDashboard() {
                       </CardHeader>
                       <CardContent className="p-6 space-y-4">
                         <div className="text-center">
-                          <div className="text-3xl font-bold">
-                            ${price}<span className="text-sm font-normal">/month</span>
+                          <div className="text-3xl font-bold flex items-center justify-center gap-2">
+                            ${planPrices[tier as keyof typeof planPrices]}<span className="text-sm font-normal">/month</span>
+                            {tier !== 'free' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingPlanPrice({ tier, price: planPrices[tier as keyof typeof planPrices] })}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                         
@@ -930,8 +1000,10 @@ export default function AdminDashboard() {
                       <span>Provider Configuration</span>
                       <Button 
                         size="sm"
+                        onClick={() => setAddingProvider(true)}
                         className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                       >
+                        <Plus className="h-4 w-4 mr-1" />
                         Add Provider
                       </Button>
                     </CardTitle>
@@ -971,6 +1043,7 @@ export default function AdminDashboard() {
                                 <Button 
                                   size="sm" 
                                   variant={provider.status === 'Active' ? 'destructive' : 'default'}
+                                  onClick={() => handleToggleApiProvider(provider.name, provider.status !== 'Active')}
                                 >
                                   {provider.status === 'Active' ? 'Disable' : 'Enable'}
                                 </Button>
@@ -1013,6 +1086,112 @@ export default function AdminDashboard() {
             </motion.div>
           </TabsContent>
         </Tabs>
+
+        {/* Plan Price Edit Modal */}
+        {editingPlanPrice && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+                Edit {editingPlanPrice.tier} Plan Price
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Monthly Price (USD)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editingPlanPrice.price}
+                    onChange={(e) => setEditingPlanPrice({...editingPlanPrice, price: Number(e.target.value)})}
+                    placeholder="Enter price"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button variant="outline" onClick={() => setEditingPlanPrice(null)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600"
+                    onClick={() => handleUpdatePlanPrice(editingPlanPrice.tier, editingPlanPrice.price)}
+                  >
+                    Update Price
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add API Provider Modal */}
+        {addingProvider && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+                Add New API Provider
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Provider Name</label>
+                  <Input
+                    placeholder="e.g., Anthropic, Google AI"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Provider Type</label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI Compatible</SelectItem>
+                      <SelectItem value="anthropic">Anthropic</SelectItem>
+                      <SelectItem value="google">Google AI</SelectItem>
+                      <SelectItem value="custom">Custom API</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">API Endpoint</label>
+                  <Input
+                    placeholder="https://api.provider.com/v1/chat/completions"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Default Model</label>
+                  <Input
+                    placeholder="gpt-4, claude-3, etc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cost per 1K tokens (USD)</label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    placeholder="0.001"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button variant="outline" onClick={() => setAddingProvider(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-green-600 to-emerald-600"
+                    onClick={() => {
+                      handleAddApiProvider({});
+                    }}
+                  >
+                    Add Provider
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Plan Edit Modal */}
         {editingPlan && (

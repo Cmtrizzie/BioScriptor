@@ -689,6 +689,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/plans/:tier/price", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { tier } = req.params;
+      const { price } = req.body;
+
+      if (typeof price !== 'number' || price < 0) {
+        return res.status(400).json({ error: 'Valid price is required' });
+      }
+
+      if (tier === 'free' && price !== 0) {
+        return res.status(400).json({ error: 'Free plan must have price of 0' });
+      }
+
+      // In a real implementation, this would update the pricing in your payment processor (PayPal, Stripe, etc.)
+      // For now, we'll simulate the update
+      
+      await storage.createAdminLog({
+        adminUserId: req.user.id,
+        action: 'update_plan_price',
+        targetResource: `plan:${tier}`,
+        details: `Updated ${tier} plan price to $${price}`
+      });
+
+      res.json({ success: true, tier, price });
+    } catch (error) {
+      console.error('Plan price update error:', error);
+      res.status(500).json({ error: 'Failed to update plan price' });
+    }
+  });
+
   // Promo Code Management Routes
   app.get("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
     try {
@@ -780,19 +810,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Management Routes
   app.post("/api/admin/api-providers", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      const { name, type, apiKey, endpoint, enabled } = req.body;
+      const { name, type, endpoint, model, costPer1kTokens } = req.body;
 
-      // Store API provider configuration
-      // This would typically be stored in a database
+      if (!name || !type || !endpoint) {
+        return res.status(400).json({ error: 'Name, type, and endpoint are required' });
+      }
+
+      // In a real implementation, this would be stored in a database
+      // For now, we'll simulate the creation
+      const newProvider = {
+        id: Date.now(),
+        name: name.toLowerCase().replace(/\s+/g, '_'),
+        displayName: name,
+        type,
+        endpoint,
+        model: model || 'default',
+        costPer1kTokens: parseFloat(costPer1kTokens) || 0.001,
+        enabled: true,
+        createdAt: new Date().toISOString()
+      };
 
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'add_api_provider',
-        targetResource: `api:${name}`,
-        details: `Added new API provider: ${name} (${type})`
+        targetResource: `api:${newProvider.name}`,
+        details: `Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}`
       });
 
-      res.json({ success: true, message: 'API provider added successfully' });
+      res.json({ success: true, provider: newProvider });
     } catch (error) {
       console.error('API provider creation error:', error);
       res.status(500).json({ error: 'Failed to add API provider' });
@@ -805,7 +850,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { enabled } = req.body;
 
       // Toggle API provider status
-      // This would update the provider configuration
+      // In a real implementation, this would update environment variables or configuration
+      // For now, we'll simulate the toggle and return success
 
       await storage.createAdminLog({
         adminUserId: req.user.id,
@@ -814,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}`
       });
 
-      res.json({ success: true, enabled });
+      res.json({ success: true, enabled, provider });
     } catch (error) {
       console.error('API provider toggle error:', error);
       res.status(500).json({ error: 'Failed to toggle API provider' });
