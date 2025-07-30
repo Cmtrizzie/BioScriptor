@@ -718,60 +718,59 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    {apiProviders && apiProviders.map((provider) => (
+                      <Card key={provider.id} className={`border-2 transition-all duration-200 ${provider.enabled ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${provider.enabled ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                              <CardTitle className="text-lg capitalize font-semibold">{provider.name}</CardTitle>
+                            </div>
+                            <Badge variant={provider.enabled ? "default" : "destructive"} className="font-medium">
+                              {provider.enabled ? "Online" : "Offline"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {/* Statistics */}
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Daily Requests:</span>
+                              <span className="font-bold text-blue-600">{provider.stats?.requestsToday || 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Success Rate:</span>
+                              <span className="font-bold text-green-600">{provider.stats?.successRate?.toFixed(1) || '0.0'}%</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Avg Response:</span>
+                              <span className="font-bold text-orange-600">{provider.stats?.avgResponse || '0.0'}s</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Priority:</span>
+                              <span className="font-bold text-purple-600">#{provider.priority}</span>
+                            </div>
+                          </div>
 
-<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                {apiProviders && apiProviders.map((provider) => (
-<Card key={provider.id} className={`border-2 transition-all duration-200 ${provider.enabled ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${provider.enabled ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                          <CardTitle className="text-lg capitalize font-semibold">{provider.name}</CardTitle>
-                        </div>
-                        <Badge variant={provider.enabled ? "default" : "destructive"} className="font-medium">
-                          {provider.enabled ? "Online" : "Offline"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Statistics */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Daily Requests:</span>
-                          <span className="font-bold text-blue-600">{provider.stats?.requestsToday || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Success Rate:</span>
-                          <span className="font-bold text-green-600">{provider.stats?.successRate?.toFixed(1) || '0.0'}%</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Avg Response:</span>
-                          <span className="font-bold text-orange-600">{provider.stats?.avgResponse || '0.0'}s</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Priority:</span>
-                          <span className="font-bold text-purple-600">#{provider.priority}</span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-2">
-                        <Button 
-                          size="sm" 
-                          variant={provider.enabled ? "destructive" : "default"}
-                          className="flex-1"
-                          onClick={() => handleToggleApiProvider(provider.id, !provider.enabled)}
-                        >
-                          {provider.enabled ? 'Disable' : 'Enable'}
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Settings size={14} />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-)}
-</div>
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              variant={provider.enabled ? "destructive" : "default"}
+                              className="flex-1"
+                              onClick={() => handleToggleApiProvider(provider.id, !provider.enabled)}
+                            >
+                              {provider.enabled ? 'Disable' : 'Enable'}
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Settings size={14} />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
 
                   {/* API Management Summary */}
                   <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
