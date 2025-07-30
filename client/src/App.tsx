@@ -1,21 +1,22 @@
 import React, { useEffect } from "react";
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { Router, Route, Redirect } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/use-auth";
-import NotFound from "@/pages/not-found";
-import Chat from "@/pages/chat";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/context/theme-context";
+import { queryClient } from "@/lib/queryClient";
+
+// Pages
 import Auth from "@/pages/auth";
+import Chat from "@/pages/chat";
+import Settings from "@/pages/Settings";
 import Subscription from "@/pages/Subscription";
 import AdminDashboard from "@/pages/AdminDashboard";
-import Settings from "@/pages/Settings";
-import DataControls from '@/pages/DataControls';
-import ServiceAgreement from '@/pages/ServiceAgreement';
-import TermsOfUse from '@/pages/TermsOfUse';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import { ThemeProvider } from "@/context/theme-context";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfUse from "@/pages/TermsOfUse";
+import ServiceAgreement from "@/pages/ServiceAgreement";
+import DataControls from "@/pages/DataControls";
+import NotFound from "@/pages/not-found";
 
 function Router() {
   const { user, loading } = useAuth();

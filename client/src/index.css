@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure the app is visible */
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Debug visibility */
+.debug-visible {
+  background-color: red !important;
+  color: white !important;
+  border: 2px solid blue !important;
+}
+
 /* Smooth transitions for all elements */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
