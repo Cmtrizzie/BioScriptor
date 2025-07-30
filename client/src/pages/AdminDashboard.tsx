@@ -1,6 +1,3 @@
-I will update the API management section with real data, update the API provider cards, update the error logs section, update the error log display, and update the promo codes display to reflect the intended functionality and data handling.
-```
-```replit_final_file
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
