@@ -24,14 +24,10 @@ function AppRouter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse flex items-center space-x-3">
-          <div className="w-8 h-8 bg-bio-blue/20 rounded-full animate-spin">
-            <svg className="w-8 h-8 text-bio-blue" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L13.5 4.5L15 2L16.5 4.5L18 2L19.5 4.5L21 2V4L19.5 6.5L18 4L16.5 6.5L15 4L13.5 6.5L12 4L10.5 6.5L9 4L7.5 6.5L6 4L4.5 6.5L3 4V2L4.5 4.5L6 2L7.5 4.5L9 2L10.5 4.5L12 2Z"/>
-            </svg>
-          </div>
-          <span className="text-lg font-medium">biobuddy</span>
+          <div className="w-8 h-8 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
+          <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
         </div>
       </div>
     );
