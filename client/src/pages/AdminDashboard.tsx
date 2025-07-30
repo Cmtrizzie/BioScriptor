@@ -334,18 +334,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="container mx-auto p-3 sm:p-6 max-w-7xl">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-          <div className="flex items-center gap-4 mb-4 lg:mb-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
-              <ShieldCheck className="h-6 w-6 text-white" />
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl border border-white/20">
+          <div className="flex items-center gap-3 sm:gap-4 mb-4 lg:mb-0 w-full lg:w-auto">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent mb-1">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent mb-1 leading-tight">
                 BioScriptor Admin
               </h1>
-              <p className="text-slate-600 dark:text-slate-400 font-medium">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium leading-tight">
                 System performance & user management center
               </p>
             </div>
@@ -366,80 +366,80 @@ export default function AdminDashboard() {
 
         {/* Analytics Cards */}
         {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-10">
             <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Total Users</CardTitle>
-                <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center shadow-md">
-                  <Users className="h-5 w-5 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 leading-tight">Total Users</CardTitle>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200">{analytics.totalUsers}</div>
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold text-emerald-800 dark:text-emerald-200">{analytics.totalUsers}</div>
+                <p className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 mt-1">
                   {analytics.activeUsers} active users
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">Subscriptions</CardTitle>
-                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-md">
-                  <CreditCard className="h-5 w-5 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 leading-tight">Subscriptions</CardTitle>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{analytics.activeSubscriptions}</div>
-                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-800 dark:text-blue-200">{analytics.activeSubscriptions}</div>
+                <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 mt-1">
                   {analytics.totalSubscriptions} total plans
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-semibold text-purple-700 dark:text-purple-300">Queries (24h)</CardTitle>
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-md">
-                  <Activity className="h-5 w-5 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300 leading-tight">Queries (24h)</CardTitle>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">{analytics.queriesLast24h}</div>
-                <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold text-purple-800 dark:text-purple-200">{analytics.queriesLast24h}</div>
+                <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400 mt-1">
                   AI queries processed
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-semibold text-amber-700 dark:text-amber-300">Revenue</CardTitle>
-                <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
-                  <CreditCard className="h-5 w-5 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 leading-tight">Revenue</CardTitle>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-amber-800 dark:text-amber-200">${analytics.monthlyRevenue?.toFixed(2) || '0.00'}</div>
-                <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold text-amber-800 dark:text-amber-200">${analytics.monthlyRevenue?.toFixed(2) || '0.00'}</div>
+                <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400 mt-1">
                   Monthly earnings
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Status</CardTitle>
-                <div className="w-10 h-10 bg-slate-500 rounded-lg flex items-center justify-center shadow-md">
-                  <Settings className="h-5 w-5 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">API Status</CardTitle>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="space-y-1 sm:space-y-2">
                   {apiStatus && Object.entries(apiStatus).map(([provider, status]) => (
                     <div key={provider} className="flex justify-between items-center">
-                      <span className="text-xs font-medium capitalize text-slate-600 dark:text-slate-400">{provider}</span>
-                      <Badge variant={status ? "default" : "destructive"} className="text-xs">
+                      <span className="text-xs font-medium capitalize text-slate-600 dark:text-slate-400 leading-tight">{provider}</span>
+                      <Badge variant={status ? "default" : "destructive"} className="text-xs h-5">
                         {status ? "✓" : "✗"}
                       </Badge>
                     </div>
@@ -451,24 +451,24 @@ export default function AdminDashboard() {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-white/20">
-            <TabsTrigger value="users" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+        <Tabs defaultValue="users" className="space-y-4 sm:space-y-8">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-white/20 gap-1 sm:gap-0">
+            <TabsTrigger value="users" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2">
               Users
             </TabsTrigger>
-            <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+            <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2 sm:block hidden">
               Payments
             </TabsTrigger>
-            <TabsTrigger value="apis" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
-              API Routes
+            <TabsTrigger value="apis" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2">
+              APIs
             </TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+            <TabsTrigger value="activity" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2 sm:block hidden">
               Logs
             </TabsTrigger>
-            <TabsTrigger value="plans" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+            <TabsTrigger value="plans" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2">
               Plans
             </TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white">
+            <TabsTrigger value="settings" className="rounded-lg font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-4 py-2 sm:block hidden">
               Settings
             </TabsTrigger>
           </TabsList>
@@ -548,27 +548,30 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <Table className="min-w-full">
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Email</TableHead>
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Display Name</TableHead>
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Tier</TableHead>
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Query Count</TableHead>
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Created</TableHead>
-                          <TableHead className="font-bold text-slate-700 dark:text-slate-300">Actions</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4">Email</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4 hidden sm:table-cell">Display Name</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4">Tier</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4 hidden md:table-cell">Query Count</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4 hidden lg:table-cell">Created</TableHead>
+                          <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user: User) => (
                           <TableRow key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
-                            <TableCell className="font-medium text-slate-800 dark:text-slate-200">{user.email}</TableCell>
-                            <TableCell className="text-slate-600 dark:text-slate-400">{user.displayName || 'N/A'}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium text-slate-800 dark:text-slate-200 text-xs sm:text-sm px-2 sm:px-4">
+                              <div className="max-w-[120px] sm:max-w-none truncate">{user.email}</div>
+                              <div className="sm:hidden text-xs text-slate-500 mt-1">{user.displayName || 'No name'}</div>
+                            </TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm px-2 sm:px-4 hidden sm:table-cell">{user.displayName || 'N/A'}</TableCell>
+                            <TableCell className="px-2 sm:px-4">
                               <Badge 
                                 variant={user.tier === 'enterprise' ? 'default' : user.tier === 'premium' ? 'secondary' : 'outline'}
-                                className={`font-semibold ${
+                                className={`font-semibold text-xs ${
                                   user.tier === 'enterprise' ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white' :
                                   user.tier === 'premium' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
                                   'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
@@ -576,25 +579,26 @@ export default function AdminDashboard() {
                               >
                                 {user.tier}
                               </Badge>
+                              <div className="md:hidden text-xs text-slate-500 mt-1">{user.queryCount} queries</div>
                             </TableCell>
-                            <TableCell className="font-mono text-slate-700 dark:text-slate-300">{user.queryCount}</TableCell>
-                            <TableCell className="text-slate-600 dark:text-slate-400">
+                            <TableCell className="font-mono text-slate-700 dark:text-slate-300 text-xs sm:text-sm px-2 sm:px-4 hidden md:table-cell">{user.queryCount}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm px-2 sm:px-4 hidden lg:table-cell">
                               {new Date(user.createdAt).toLocaleDateString()}
                             </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
+                            <TableCell className="px-2 sm:px-4">
+                              <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleResetUserLimit(user.id)}
-                                  className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                                  className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors text-xs h-7 sm:h-8"
                                 >
                                   Reset
                                 </Button>
                                 <Button
                                   size="sm"
                                   onClick={() => handleUpgradeUser(user.id, 'premium')}
-                                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs h-7 sm:h-8"
                                 >
                                   Upgrade
                                 </Button>
@@ -602,7 +606,7 @@ export default function AdminDashboard() {
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => handleBanUser(user.id, true, 'Admin action')}
-                                  className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
+                                  className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-xs h-7 sm:h-8"
                                 >
                                   Ban
                                 </Button>

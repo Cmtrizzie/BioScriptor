@@ -559,6 +559,50 @@ body {
   }
 }
 
+/* Admin dashboard mobile improvements */
+@media (max-width: 768px) {
+  /* Ensure tables don't break layout */
+  .table-container {
+    min-width: 0;
+    overflow-x: auto;
+  }
+  
+  /* Better button spacing on mobile */
+  .admin-actions {
+    gap: 0.25rem !important;
+  }
+  
+  /* Compact card headers */
+  .admin-card-header {
+    padding: 0.75rem !important;
+  }
+  
+  /* Better text truncation */
+  .admin-text-truncate {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .admin-dashboard {
+    --border-opacity: 1;
+    --shadow-opacity: 0.3;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Simple bullet point styling */
 .prose ul li {
   @apply mb-2;
