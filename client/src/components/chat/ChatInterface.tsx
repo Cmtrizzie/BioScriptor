@@ -76,18 +76,18 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
           </div>
         </div>
         
-        {/* Fixed MessageInput at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6">
+        {/* Fixed MessageInput at bottom - hidden when sidebar is open */}
+        <div className={`absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 pt-6 pb-6 transition-opacity duration-300 ${sidebarOpen ? 'lg:opacity-100 opacity-0 pointer-events-none lg:pointer-events-auto' : 'opacity-100 pointer-events-auto'}`}>
           {/* Creative suggestions */}
           <div className="px-4 mb-4">
             <CreativeSuggestions 
               onSelect={sendMessage} 
-              visible={messages.length <= 1 && !isLoading && !isTyping}
+              visible={messages.length <= 1 && !isLoading && !isTyping && !sidebarOpen}
             />
           </div>
           <MessageInput 
             onSendMessage={sendMessage} 
-            disabled={isLoading || isTyping}
+            disabled={isLoading || isTyping || sidebarOpen}
           />
         </div>
       </div>
