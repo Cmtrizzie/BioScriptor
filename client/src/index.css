@@ -584,6 +584,49 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  
+  /* Mobile-first admin dashboard improvements */
+  .admin-grid-mobile {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .admin-card-mobile {
+    padding: 1rem !important;
+    margin: 0.5rem 0 !important;
+  }
+  
+  .admin-button-mobile {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .admin-table-mobile {
+    font-size: 0.75rem !important;
+  }
+  
+  .admin-table-mobile td,
+  .admin-table-mobile th {
+    padding: 0.5rem !important;
+  }
+  
+  /* Better form spacing on mobile */
+  .admin-form-mobile input,
+  .admin-form-mobile select,
+  .admin-form-mobile textarea {
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Responsive tabs */
+  .admin-tabs-mobile {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+  
+  .admin-tabs-mobile > * {
+    min-width: max-content !important;
+  }
 }
 
 /* High contrast mode support */

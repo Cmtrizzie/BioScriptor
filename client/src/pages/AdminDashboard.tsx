@@ -129,15 +129,15 @@ export default function AdminDashboard() {
   // Filter users based on search and plan filter
   const filteredUsers = useMemo(() => {
     if (!users) return [];
-    
+
     return users.filter((user: User) => {
       const matchesSearch = searchQuery === '' || 
         user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.id.toString().includes(searchQuery);
-      
+
       const matchesPlan = planFilter === 'all' || user.tier === planFilter;
-      
+
       return matchesSearch && matchesPlan;
     });
   }, [users, searchQuery, planFilter]);
@@ -481,7 +481,7 @@ export default function AdminDashboard() {
                     <Users className="h-6 w-6 text-blue-600" />
                     User Management
                   </CardTitle>
-                  
+
                   {/* Search and Filter Controls */}
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
@@ -506,7 +506,7 @@ export default function AdminDashboard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {/* Results Summary */}
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     Showing {filteredUsers.length} of {users?.length || 0} users
@@ -626,6 +626,7 @@ export default function AdminDashboard() {
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+```python
                   <CreditCard className="h-6 w-6 text-blue-600" />
                   Payments & Subscriptions
                 </CardTitle>
@@ -1186,30 +1187,36 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">API Type</label>
-                              <select className="w-full mt-1 p-2 border rounded-md">
-                                <option value="openai">OpenAI Compatible</option>
-                                <option value="anthropic">Anthropic</option>
-                                <option value="cohere">Cohere</option>
-                                <option value="custom">Custom</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">API Key</label>
-                              <input
-                                type="password"
-                                placeholder="Enter API key..."
-                                className="w-full mt-1 p-2 border rounded-md"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Endpoint URL</label>
-                              <input
-                                type="url"
-                                placeholder="https://api.example.com/v1/chat"
-                                className="w-full mt-1 p-2 border rounded-md"
-                              />
-                            </div>
+                                    <label className="text-sm font-medium">API Type</label>
+                                    <select 
+                                      className="w-full mt-1 p-2 border rounded-md"
+                                      defaultValue="openai"
+                                      onChange={(e) => console.log('API type:', e.target.value)}
+                                    >
+                                      <option value="openai">OpenAI Compatible</option>
+                                      <option value="anthropic">Anthropic</option>
+                                      <option value="cohere">Cohere</option>
+                                      <option value="custom">Custom</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">API Key</label>
+                                    <input
+                                      type="password"
+                                      placeholder="Enter API key..."
+                                      className="w-full mt-1 p-2 border rounded-md"
+                                      onChange={(e) => console.log('API key updated')}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Endpoint URL</label>
+                                    <input
+                                      type="url"
+                                      placeholder="https://api.example.com/v1/chat"
+                                      className="w-full mt-1 p-2 border rounded-md"
+                                      onChange={(e) => console.log('Endpoint URL:', e.target.value)}
+                                    />
+                                  </div>
                           </div>
                           <Button>Add API Provider</Button>
                         </CardContent>
@@ -1384,7 +1391,7 @@ export default function AdminDashboard() {
                                 </Button>
                               )}
                             </div>
-                          </CardContent>
+                          </CardContent>```python
                         </Card>
                       ))}
                     </div>

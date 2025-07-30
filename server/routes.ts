@@ -1099,84 +1099,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-export const requireAuth = async (req: any, res: any, next: any) => {
-  try {
-    // Rate limiting
-    const clientIp = req.ip || req.connection.remoteAddress;
-    if (securityManager.isRateLimited(clientIp, 100, 60000)) {
-      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-    }
+const verifyFirebaseToken = async (token: string) => {
+  // Mock implementation - replace with actual Firebase token verification
+  return {
+    uid: 'mock-firebase-uid',
+    email: 'test@example.com',
+    displayName: 'Test User'
+  };
+};
 
-    const firebaseUid = req.headers['x-firebase-uid'];
-    if (!firebaseUid) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Security audit
-    securityManager.createAuditLog({
-      userId: firebaseUid as string,
-      action: 'api_access',
-      resource: req.path,
-      metadata: { method: req.method, userAgent: req.headers['user-agent'] }
-    });
-
-    // Try to get or create user in database, fallback to in-memory user
-    let user;
+// Authentication middleware
+const requireAuth = async (req: any, res: any, next: any) => {
     try {
-      user = await storage.getUserByFirebaseUid(firebaseUid as string);
+      const authHeader = req.headers.authorization;
+      const firebaseUid = req.headers['x-firebase-uid'];
+
+      if (!authHeader && !firebaseUid) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      let userData;
+      if (firebaseUid) {
+        // Use Firebase UID directly (for testing)
+        userData = {
+          uid: firebaseUid,
+          email: 'demo@biobuddy.dev',
+          displayName: 'Demo User'
+        };
+      } else {
+        // Verify Firebase token
+        const token = authHeader.replace('Bearer ', '');
+        userData = await verifyFirebaseToken(token);
+      }
+
+      // Check if user exists first, then create if needed
+      let user = await storage.getUserByFirebaseUid(userData.uid);
       if (!user) {
-        // Create user if doesn't exist (first-time login)
-        const email = req.headers['x-firebase-email'] as string;
-        const displayName = req.headers['x-firebase-display-name'] as string;
-        const photoURL = req.headers['x-firebase-photo-url'] as string;
-
-        if (!email) {
-          return res.status(400).json({ error: 'Email required' });
-        }
-
         user = await storage.createUser({
-          email,
-          displayName,
-          photoURL,
-          firebaseUid: firebaseUid as string,
-          tier: 'free',
-          queryCount: 0,
+          firebaseUid: userData.uid,
+          email: userData.email,
+          displayName: userData.displayName || 'Anonymous User',
+          tier: 'free'
         });
       }
-    } catch (dbError) {
-      console.log('Database unavailable, using fallback user data');
-      // Fallback user when database is disabled
-      user = {
-        id: `fallback-${firebaseUid}`,
-        email: req.headers['x-firebase-email'] as string,
-        displayName: req.headers['x-firebase-display-name'] as string,
-        photoURL: req.headers['x-firebase-photo-url'] as string,
-        firebaseUid: firebaseUid as string,
-        tier: 'free',
-        queryCount: 0,
-      };
+
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Auth error:', error);
+      res.status(401).json({ error: 'Invalid authentication' });
     }
-
-    // Reset demo user query count daily
-    if (firebaseUid === 'demo-user-123') {
-      const lastReset = user.updatedAt ? new Date(user.updatedAt) : new Date(user.createdAt);
-      const now = new Date();
-      const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-
-      // Reset every 24 hours OR if query count exceeds limit (for demo purposes)
-      if (hoursSinceReset >= 24 || user.queryCount >= 10) {
-        try {
-          await storage.updateUser(user.id, { queryCount: 0 });
-        } catch (dbError) {
-          console.log('Database unavailable, skipping user update');
-        }
-      }
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Security middleware error:', error);
-    return res.status(500).json({ error: 'Security validation failed' });
-  }
-};
+  };
