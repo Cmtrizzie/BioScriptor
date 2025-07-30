@@ -1,7 +1,7 @@
 
 import express from 'express';
 import { db } from '../storage';
-import { users, conversations, subscriptions } from '../../shared/schema';
+import { users, conversations, subscriptions, apiProviders, apiErrorLogs, adminLogs, planLimits, promoCodes } from '../../shared/schema';
 import { eq, desc, count, sql } from 'drizzle-orm';
 
 const router = express.Router();
@@ -281,18 +281,308 @@ router.post('/plans/:tier/pricing', async (req, res) => {
   }
 });
 
-// API provider management
-router.post('/api-providers/:provider/toggle', async (req, res) => {
+// Get API providers
+router.get('/api-providers', async (req, res) => {
   try {
-    const { provider } = req.params;
+    const providers = await db.select().from(apiProviders).orderBy(apiProviders.priority);
+    
+    // Add status and statistics (mock data for now)
+    const providersWithStats = providers.map(provider => ({
+      ...provider,
+      status: provider.enabled,
+      stats: {
+        requestsToday: Math.floor(Math.random() * 1000 + 200),
+        successRate: 98 + Math.random() * 2,
+        avgResponse: (Math.random() * 2 + 0.5).toFixed(2),
+        costPer1k: (Math.random() * 0.01 + 0.001).toFixed(4)
+      }
+    }));
+
+    res.json(providersWithStats);
+  } catch (error) {
+    console.error('Get providers error:', error);
+    res.status(500).json({ error: 'Failed to fetch API providers' });
+  }
+});
+
+// Toggle API provider
+router.post('/api-providers/:providerId/toggle', async (req, res) => {
+  try {
+    const { providerId } = req.params;
     const { enabled } = req.body;
     
-    console.log(`API provider ${provider} ${enabled ? 'enabled' : 'disabled'}`);
-    
-    res.json({ success: true, message: `${provider} ${enabled ? 'enabled' : 'disabled'} successfully` });
+    const provider = await db.select().from(apiProviders).where(eq(apiProviders.id, Number(providerId))).limit(1);
+    if (!provider.length) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    await db
+      .update(apiProviders)
+      .set({ 
+        enabled,
+        updatedAt: new Date()
+      })
+      .where(eq(apiProviders.id, Number(providerId)));
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'toggle_api_provider',
+      targetResource: `api:${provider[0].name}`,
+      details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider[0].name}`
+    });
+
+    res.json({ success: true, enabled, provider: provider[0].name });
   } catch (error) {
     console.error('Toggle provider error:', error);
     res.status(500).json({ error: 'Failed to toggle provider' });
+  }
+});
+
+// Update API provider settings
+router.put('/api-providers/:providerId', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { apiKey, endpoint, priority, maxRetries, timeout, rateLimit, planAccess } = req.body;
+
+    const provider = await db.select().from(apiProviders).where(eq(apiProviders.id, Number(providerId))).limit(1);
+    if (!provider.length) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    const updateData: any = { updatedAt: new Date() };
+    if (apiKey !== undefined) updateData.apiKey = apiKey;
+    if (endpoint !== undefined) updateData.endpoint = endpoint;
+    if (priority !== undefined) updateData.priority = priority;
+    if (maxRetries !== undefined) updateData.maxRetries = maxRetries;
+    if (timeout !== undefined) updateData.timeout = timeout;
+    if (rateLimit !== undefined) updateData.rateLimit = rateLimit;
+    if (planAccess !== undefined) updateData.planAccess = planAccess;
+
+    await db
+      .update(apiProviders)
+      .set(updateData)
+      .where(eq(apiProviders.id, Number(providerId)));
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'update_api_provider',
+      targetResource: `api:${provider[0].name}`,
+      details: `Updated API provider settings: ${provider[0].name}`
+    });
+
+    res.json({ success: true, message: 'Provider updated successfully' });
+  } catch (error) {
+    console.error('Update provider error:', error);
+    res.status(500).json({ error: 'Failed to update provider' });
+  }
+});
+
+// Add new API provider
+router.post('/api-providers', async (req, res) => {
+  try {
+    const { name, type, endpoint, apiKey, planAccess = ['free', 'premium', 'enterprise'] } = req.body;
+
+    if (!name || !type || !endpoint) {
+      return res.status(400).json({ error: 'Name, type, and endpoint are required' });
+    }
+
+    const newProvider = await db.insert(apiProviders).values({
+      name: name.toLowerCase().replace(/\s+/g, '_'),
+      type,
+      endpoint,
+      apiKey: apiKey || '',
+      planAccess,
+      priority: 10 // Default low priority for new providers
+    }).returning();
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'add_api_provider',
+      targetResource: `api:${newProvider[0].name}`,
+      details: `Added new API provider: ${name} (${type})`
+    });
+
+    res.json({ success: true, provider: newProvider[0] });
+  } catch (error) {
+    console.error('Add provider error:', error);
+    res.status(500).json({ error: 'Failed to add API provider' });
+  }
+});
+
+// Get API error logs
+router.get('/api-errors', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    const errors = await db
+      .select()
+      .from(apiErrorLogs)
+      .orderBy(desc(apiErrorLogs.timestamp))
+      .limit(limit);
+
+    res.json(errors);
+  } catch (error) {
+    console.error('Get API errors error:', error);
+    res.status(500).json({ error: 'Failed to fetch API errors' });
+  }
+});
+
+// Create or update plan limits
+router.post('/plans/:tier', async (req, res) => {
+  try {
+    const { tier } = req.params;
+    const { maxQueries, maxFileSize, features, price } = req.body;
+
+    // Check if plan exists
+    const existingPlan = await db.select().from(planLimits).where(eq(planLimits.tier, tier)).limit(1);
+
+    if (existingPlan.length > 0) {
+      // Update existing plan
+      await db
+        .update(planLimits)
+        .set({
+          maxQueries,
+          maxFileSize,
+          features
+        })
+        .where(eq(planLimits.tier, tier));
+    } else {
+      // Create new plan
+      await db.insert(planLimits).values({
+        tier,
+        maxQueries,
+        maxFileSize,
+        features
+      });
+    }
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'update_plan',
+      targetResource: `plan:${tier}`,
+      details: `Updated plan: ${tier} - maxQueries: ${maxQueries}, maxFileSize: ${maxFileSize}MB`
+    });
+
+    res.json({ success: true, message: `${tier} plan updated successfully` });
+  } catch (error) {
+    console.error('Update plan error:', error);
+    res.status(500).json({ error: 'Failed to update plan' });
+  }
+});
+
+// Get plan limits
+router.get('/plans', async (req, res) => {
+  try {
+    const plans = await db.select().from(planLimits);
+    res.json(plans);
+  } catch (error) {
+    console.error('Get plans error:', error);
+    res.status(500).json({ error: 'Failed to fetch plans' });
+  }
+});
+
+// Create promo code
+router.post('/promo-codes', async (req, res) => {
+  try {
+    const { code, type, value, maxUses, expiresAt } = req.body;
+
+    if (!code || !type || !value) {
+      return res.status(400).json({ error: 'Code, type, and value are required' });
+    }
+
+    const newPromo = await db.insert(promoCodes).values({
+      code: code.toUpperCase(),
+      type,
+      value,
+      maxUses,
+      expiresAt: expiresAt ? new Date(expiresAt) : null
+    }).returning();
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'create_promo_code',
+      targetResource: `promo:${newPromo[0].code}`,
+      details: `Created promo code: ${code} (${type}: ${value})`
+    });
+
+    res.json({ success: true, promoCode: newPromo[0] });
+  } catch (error) {
+    console.error('Create promo error:', error);
+    res.status(500).json({ error: 'Failed to create promo code' });
+  }
+});
+
+// Get promo codes
+router.get('/promo-codes', async (req, res) => {
+  try {
+    const promos = await db.select().from(promoCodes).orderBy(desc(promoCodes.createdAt));
+    res.json(promos);
+  } catch (error) {
+    console.error('Get promos error:', error);
+    res.status(500).json({ error: 'Failed to fetch promo codes' });
+  }
+});
+
+// Toggle promo code
+router.post('/promo-codes/:promoId/toggle', async (req, res) => {
+  try {
+    const { promoId } = req.params;
+    const { active } = req.body;
+
+    const promo = await db.select().from(promoCodes).where(eq(promoCodes.id, Number(promoId))).limit(1);
+    if (!promo.length) {
+      return res.status(404).json({ error: 'Promo code not found' });
+    }
+
+    await db
+      .update(promoCodes)
+      .set({ active })
+      .where(eq(promoCodes.id, Number(promoId)));
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'toggle_promo_code',
+      targetResource: `promo:${promo[0].code}`,
+      details: `${active ? 'Activated' : 'Deactivated'} promo code: ${promo[0].code}`
+    });
+
+    res.json({ success: true, active });
+  } catch (error) {
+    console.error('Toggle promo error:', error);
+    res.status(500).json({ error: 'Failed to toggle promo code' });
+  }
+});
+
+// Delete promo code
+router.delete('/promo-codes/:promoId', async (req, res) => {
+  try {
+    const { promoId } = req.params;
+
+    const promo = await db.select().from(promoCodes).where(eq(promoCodes.id, Number(promoId))).limit(1);
+    if (!promo.length) {
+      return res.status(404).json({ error: 'Promo code not found' });
+    }
+
+    await db.delete(promoCodes).where(eq(promoCodes.id, Number(promoId)));
+
+    // Log the action
+    await db.insert(adminLogs).values({
+      adminUserId: req.adminUser.id,
+      action: 'delete_promo_code',
+      targetResource: `promo:${promo[0].code}`,
+      details: `Deleted promo code: ${promo[0].code}`
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete promo error:', error);
+    res.status(500).json({ error: 'Failed to delete promo code' });
   }
 });
 
