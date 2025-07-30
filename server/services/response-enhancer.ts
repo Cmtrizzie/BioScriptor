@@ -1504,8 +1504,256 @@ function postProcessResponse(content: string, intent: string): string {
     .trim();
 }
 
+// ========== CONTINUOUS LEARNING SYSTEM ==========
+interface FeedbackData {
+  messageId: string;
+  feedbackType: 'creativity' | 'tone' | 'helpfulness' | 'accuracy';
+  rating: number; // 1-5 scale
+  comment?: string;
+  timestamp: number;
+}
+
+interface LearningMetrics {
+  creativityScore: number;
+  toneAccuracy: number;
+  userSatisfaction: number;
+  adaptationLevel: number;
+}
+
+const CREATIVITY_FEEDBACK = [
+  "That was creative!",
+  "Think more conventionally", 
+  "Too abstract - simplify",
+  "More metaphors please",
+  "Perfect balance of creativity and clarity",
+  "Need more innovative approaches",
+  "Great use of analogies",
+  "More practical examples needed"
+];
+
+const TONE_FEEDBACK = [
+  "Tone matched perfectly",
+  "Too formal for casual request",
+  "Too casual for technical query", 
+  "Great emotional understanding",
+  "Missed the urgency",
+  "Perfect empathy level",
+  "More enthusiasm needed",
+  "Just the right professionalism"
+];
+
+class ContinuousLearningEngine {
+  private feedbackHistory: Map<string, FeedbackData[]> = new Map();
+  private learningMetrics: LearningMetrics = {
+    creativityScore: 0.7,
+    toneAccuracy: 0.8,
+    userSatisfaction: 0.75,
+    adaptationLevel: 0.6
+  };
+
+  addFeedback(feedback: FeedbackData): void {
+    const existing = this.feedbackHistory.get(feedback.messageId) || [];
+    existing.push(feedback);
+    this.feedbackHistory.set(feedback.messageId, existing);
+    this.updateMetrics(feedback);
+  }
+
+  private updateMetrics(feedback: FeedbackData): void {
+    const weight = 0.1; // Learning rate
+    const normalizedRating = feedback.rating / 5.0;
+
+    switch (feedback.feedbackType) {
+      case 'creativity':
+        this.learningMetrics.creativityScore = 
+          this.learningMetrics.creativityScore * (1 - weight) + normalizedRating * weight;
+        break;
+      case 'tone':
+        this.learningMetrics.toneAccuracy = 
+          this.learningMetrics.toneAccuracy * (1 - weight) + normalizedRating * weight;
+        break;
+      case 'helpfulness':
+        this.learningMetrics.userSatisfaction = 
+          this.learningMetrics.userSatisfaction * (1 - weight) + normalizedRating * weight;
+        break;
+    }
+
+    this.learningMetrics.adaptationLevel = 
+      (this.learningMetrics.creativityScore + this.learningMetrics.toneAccuracy + this.learningMetrics.userSatisfaction) / 3;
+  }
+
+  getAdaptedPersonality(userMessage: string, basePersonality: PersonalityConfig): PersonalityConfig {
+    const adaptedPersonality = { ...basePersonality };
+    
+    // Adjust based on learning metrics
+    if (this.learningMetrics.creativityScore > 0.8) {
+      adaptedPersonality.tone = "imaginative and creative";
+      adaptedPersonality.explanation_style = "metaphorical with rich examples";
+    } else if (this.learningMetrics.creativityScore < 0.4) {
+      adaptedPersonality.tone = "direct and practical";
+      adaptedPersonality.explanation_style = "straightforward with clear steps";
+    }
+
+    if (this.learningMetrics.toneAccuracy > 0.8) {
+      // Maintain current tone adaptation strategy
+    } else {
+      // Increase sensitivity to user tone cues
+      adaptedPersonality.tone = this.detectEnhancedUserTone(userMessage);
+    }
+
+    return adaptedPersonality;
+  }
+
+  private detectEnhancedUserTone(userMessage: string): string {
+    const lowerMessage = userMessage.toLowerCase();
+    const words = lowerMessage.split(/\W+/);
+    
+    // Enhanced tone detection with emotional context
+    const toneIndicators = {
+      excited: ['amazing', 'awesome', 'wow', 'incredible', 'fantastic', '!', 'love', 'excited'],
+      frustrated: ['help', 'stuck', 'error', 'problem', 'issue', 'wrong', 'not working', 'frustrated'],
+      curious: ['how', 'why', 'what', 'explain', 'understand', 'learn', 'curious', 'wonder'],
+      urgent: ['urgent', 'asap', 'quickly', 'immediate', 'now', 'emergency', 'deadline'],
+      casual: ['hey', 'yo', 'sup', 'cool', 'dude', 'buddy', 'lol', 'haha'],
+      professional: ['please', 'kindly', 'would you', 'could you', 'appreciate', 'thank you'],
+      confused: ['confused', 'lost', 'unclear', 'dont understand', "don't get", 'what does'],
+      confident: ['know', 'sure', 'certain', 'definitely', 'obviously', 'clearly']
+    };
+
+    let maxScore = 0;
+    let detectedTone = 'neutral';
+
+    Object.entries(toneIndicators).forEach(([tone, indicators]) => {
+      const score = indicators.reduce((count, indicator) => {
+        return count + (lowerMessage.includes(indicator) ? 1 : 0);
+      }, 0);
+
+      if (score > maxScore) {
+        maxScore = score;
+        detectedTone = tone;
+      }
+    });
+
+    // Contextual tone mapping
+    const toneMap: Record<string, string> = {
+      excited: "enthusiastic and energetic",
+      frustrated: "patient and supportive", 
+      curious: "educational and encouraging",
+      urgent: "focused and efficient",
+      casual: "friendly and relaxed",
+      professional: "respectful and thorough",
+      confused: "clear and step-by-step",
+      confident: "collaborative and advanced"
+    };
+
+    return toneMap[detectedTone] || "supportive and helpful";
+  }
+
+  generateAdaptiveFeedback(): string {
+    const creativity = Math.random() < this.learningMetrics.creativityScore;
+    const feedbackPool = creativity ? CREATIVITY_FEEDBACK : TONE_FEEDBACK;
+    
+    return getRandomFromArray(feedbackPool);
+  }
+
+  getMetrics(): LearningMetrics {
+    return { ...this.learningMetrics };
+  }
+}
+
+// Global learning engine instance
+const learningEngine = new ContinuousLearningEngine();
+
+// ========== ENHANCED TONE UNDERSTANDING ==========
+export function analyzeUserIntent(userMessage: string): {
+  primaryIntent: string;
+  emotionalState: string;
+  urgencyLevel: number;
+  complexityPreference: string;
+  communicationStyle: string;
+} {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Emotional state detection
+  const emotionalMarkers = {
+    excited: ['excited', 'amazing', 'awesome', 'love', 'fantastic', '!', '🎉', '🚀'],
+    stressed: ['urgent', 'deadline', 'help', 'stuck', 'problem', 'error', 'issue'],
+    curious: ['curious', 'wonder', 'interesting', 'how', 'why', 'what if'],
+    confident: ['know', 'sure', 'definitely', 'obviously', 'clearly'],
+    uncertain: ['maybe', 'think', 'possibly', 'not sure', 'confused', 'unclear'],
+    focused: ['need', 'want', 'require', 'must', 'should', 'looking for']
+  };
+
+  let emotionalState = 'neutral';
+  let maxEmotionScore = 0;
+
+  Object.entries(emotionalMarkers).forEach(([emotion, markers]) => {
+    const score = markers.reduce((count, marker) => {
+      return count + (lowerMessage.includes(marker) ? 1 : 0);
+    }, 0);
+
+    if (score > maxEmotionScore) {
+      maxEmotionScore = score;
+      emotionalState = emotion;
+    }
+  });
+
+  // Urgency detection
+  const urgencyKeywords = ['urgent', 'asap', 'quickly', 'immediate', 'now', 'deadline', 'emergency'];
+  const urgencyLevel = urgencyKeywords.reduce((score, keyword) => {
+    return score + (lowerMessage.includes(keyword) ? 1 : 0);
+  }, 0) / urgencyKeywords.length;
+
+  // Complexity preference
+  const complexityMarkers = {
+    simple: ['simple', 'basic', 'easy', 'quick', 'brief', 'short'],
+    detailed: ['detailed', 'comprehensive', 'thorough', 'complete', 'in-depth', 'explain']
+  };
+
+  let complexityPreference = 'moderate';
+  if (complexityMarkers.simple.some(marker => lowerMessage.includes(marker))) {
+    complexityPreference = 'simple';
+  } else if (complexityMarkers.detailed.some(marker => lowerMessage.includes(marker))) {
+    complexityPreference = 'detailed';
+  }
+
+  // Communication style
+  const styleMarkers = {
+    casual: ['hey', 'yo', 'sup', 'cool', 'dude', 'lol', 'haha'],
+    formal: ['please', 'kindly', 'would you', 'could you', 'appreciate'],
+    technical: ['implement', 'algorithm', 'optimize', 'architecture', 'performance'],
+    creative: ['creative', 'innovative', 'unique', 'original', 'artistic']
+  };
+
+  let communicationStyle = 'balanced';
+  Object.entries(styleMarkers).forEach(([style, markers]) => {
+    if (markers.some(marker => lowerMessage.includes(marker))) {
+      communicationStyle = style;
+    }
+  });
+
+  return {
+    primaryIntent: detectUserIntent(userMessage),
+    emotionalState,
+    urgencyLevel: Math.min(urgencyLevel * 5, 5), // Scale to 0-5
+    complexityPreference,
+    communicationStyle
+  };
+}
+
 // ========== CREATIVE ENHANCEMENT UTILITIES ==========
 function creativeFallback(userMessage: string): string {
+  const userAnalysis = analyzeUserIntent(userMessage);
+  
+  if (userAnalysis.emotionalState === 'excited') {
+    return `🚀 **Incredible Possibilities Ahead!** \n\n` +
+           `Your excitement is contagious! Let's explore ${userMessage.replace(/\?/g, '')} with boundless creativity:\n` +
+           `- What revolutionary approach could we pioneer?\n` +
+           `- How might this transform entire industries?\n` +
+           `- What unexpected synergies could emerge?\n` +
+           `- Which paradigms are ready to be shattered?\n\n` +
+           `Let's turn this vision into reality! ✨`;
+  }
+  
   return `🧠 **Thought Experiment**\n\n` +
          `Let's imagine a world where ${userMessage.replace(/\?/g, '')} works differently:\n` +
          `- What would be the fundamental principles?\n` +
@@ -1594,7 +1842,9 @@ export async function enhanceResponse(
 ): Promise<ChatMessage> {
   if (!options.userMessage) return message;
 
-  const intent = detectUserIntent(options.userMessage);
+  // Enhanced user analysis with emotional intelligence
+  const userAnalysis = analyzeUserIntent(options.userMessage);
+  const intent = userAnalysis.primaryIntent;
   const conversationContext = analyzeConversationContext(
     options.context.previousResponses || [],
   );
@@ -1692,8 +1942,37 @@ export async function enhanceResponse(
     enhancedContent = structuredContent || message.content;
   }
 
-  // Apply creative enhancements based on context
-  const personality = getPersonalityForContext(options.userMessage, options.context.previousResponses || []);
+  // Apply adaptive personality based on continuous learning
+  const basePersonality = getPersonalityForContext(options.userMessage, options.context.previousResponses || []);
+  const personality = learningEngine.getAdaptedPersonality(options.userMessage, basePersonality);
+  
+  // Tone-aware content adaptation
+  if (userAnalysis.emotionalState === 'excited') {
+    enhancedContent = `🎉 **${getRandomFromArray(['Fantastic!', 'Amazing!', 'Incredible!'])}** \n\n` + enhancedContent;
+  } else if (userAnalysis.emotionalState === 'stressed') {
+    enhancedContent = `🤝 **I'm here to help!** Let's solve this step by step.\n\n` + enhancedContent;
+  } else if (userAnalysis.emotionalState === 'curious') {
+    enhancedContent = `🔍 **Great question!** Let's explore this together.\n\n` + enhancedContent;
+  }
+
+  // Urgency-based response adaptation
+  if (userAnalysis.urgencyLevel > 3) {
+    enhancedContent = `⚡ **Quick Solution** (responding to your urgent request):\n\n` + enhancedContent;
+  }
+
+  // Complexity preference adaptation
+  if (userAnalysis.complexityPreference === 'simple') {
+    // Simplify response structure
+    enhancedContent = enhancedContent
+      .replace(/### /g, '**')
+      .replace(/## /g, '# ')
+      .split('\n\n').slice(0, 3).join('\n\n'); // Limit sections
+  } else if (userAnalysis.complexityPreference === 'detailed') {
+    // Add more comprehensive content
+    if (!enhancedContent.includes('### Advanced')) {
+      enhancedContent += `\n\n### Advanced Considerations\n- Implementation best practices\n- Performance optimization tips\n- Common pitfalls to avoid`;
+    }
+  }
   
   // Add creative prompts for high creativity contexts
   if (conversationContext.creativityLevel === 'high' && personality.name === 'Creative Thinker') {
@@ -1759,6 +2038,9 @@ export async function enhanceResponse(
       builderContext,
       responseStyle: "chatgpt",
       structuredResponse: structuredResponse, // Include structured data for frontend
+      userAnalysis, // Include enhanced user analysis
+      adaptiveFeedback: learningEngine.generateAdaptiveFeedback(),
+      learningMetrics: learningEngine.getMetrics(),
       embedding: {
         vector: generateSimpleEmbedding(tokenizeText(options.userMessage)),
         model: "simple_bow",

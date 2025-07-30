@@ -1135,3 +1135,50 @@ export const requireAuth = async (req: any, res: any, next: any) => {
     return res.status(500).json({ error: 'Security validation failed' });
   }
 };
+<file_path>server/routes.ts</file_path>
+<change_summary>Add feedback endpoint for continuous learning</change_summary>
+<line_number>200</line_number>
+// Feedback endpoint for continuous learning
+app.post('/api/feedback', requireAuth, async (req, res) => {
+  try {
+    const { messageId, feedbackType, rating, comment } = req.body;
+    
+    if (!messageId || !feedbackType || !rating) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: messageId, feedbackType, rating' 
+      });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ 
+        error: 'Rating must be between 1 and 5' 
+      });
+    }
+
+    // Store feedback in database (you can implement this based on your storage system)
+    const feedback = {
+      messageId,
+      feedbackType,
+      rating: parseInt(rating),
+      comment: comment || null,
+      userId: req.user?.uid || 'anonymous',
+      timestamp: Date.now()
+    };
+
+    // In a real implementation, save to database
+    console.log('Feedback received:', feedback);
+
+    res.json({ 
+      success: true, 
+      message: 'Feedback recorded successfully',
+      adaptiveFeedback: 'Thank you! Your feedback helps me learn and improve.' 
+    });
+
+  } catch (error) {
+    console.error('Feedback error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process feedback',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});

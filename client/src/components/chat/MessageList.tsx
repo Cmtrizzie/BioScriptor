@@ -217,6 +217,12 @@ const MermaidDiagram = ({ content }: { content: string }) => {
 // Extend the Message type to include properties that might come from the server
 interface ExtendedMessage extends Message {
   isStreaming?: boolean;
+  metadata?: {
+    model?: string;
+    userAnalysis?: {
+      emotionalState?: string;
+    };
+  };
 }
 
 interface MessageListProps {
@@ -224,9 +230,17 @@ interface MessageListProps {
   isLoading: boolean;
   isTyping?: boolean;
   bottomRef: React.RefObject<HTMLDivElement>;
+  handleFeedback: (messageId: string, type: string, value: number) => void;
 }
 
-export default function MessageList({ messages, isLoading, isTyping, bottomRef }: MessageListProps) {
+const CREATIVITY_FEEDBACK = [
+  "That was creative!",
+  "Think more conventionally",
+  "Too abstract - simplify",
+  "More metaphors please"
+];
+
+export default function MessageList({ messages, isLoading, isTyping, bottomRef, handleFeedback }: MessageListProps) {
   const { theme } = useTheme();
 
   // Show welcome screen when no messages exist
@@ -488,6 +502,50 @@ export default function MessageList({ messages, isLoading, isTyping, bottomRef }
                 </div>
               )}
             </div>
+            <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">
+                        {message.metadata?.model && `via ${message.metadata.model}`}
+                      </span>
+                      {message.metadata?.userAnalysis?.emotionalState && (
+                        <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+                          {message.metadata.userAnalysis.emotionalState}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Feedback buttons */}
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleFeedback(message.id, 'helpfulness', 5)}
+                        className="p-1 hover:bg-green-100 dark:hover:bg-green-900 rounded text-green-600 dark:text-green-400"
+                        title="Helpful response"
+                      >
+                        👍
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(message.id, 'helpfulness', 2)}
+                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600 dark:text-red-400"
+                        title="Not helpful"
+                      >
+                        👎
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(message.id, 'creativity', 5)}
+                        className="p-1 hover:bg-purple-100 dark:hover:bg-purple-900 rounded text-purple-600 dark:text-purple-400"
+                        title="Creative response"
+                      >
+                        ✨
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(message.id, 'tone', 5)}
+                        className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded text-blue-600 dark:text-blue-400"
+                        title="Perfect tone"
+                      >
+                        🎯
+                      </button>
+                    </div>
+                  </div>
           </div>
         </div>
       ))}
