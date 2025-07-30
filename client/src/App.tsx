@@ -46,15 +46,13 @@ function AppRouter() {
       <Route path="/auth" component={Auth} />
       <Route path="/chat" component={Chat} />
       <Route path="/chat/:sessionId" component={Chat} />
-      <Route path="/subscription" component={user ? Subscription : Auth} />
-      <Route path="/admin" component={user ? AdminDashboard : Auth} />
       <Route path="/settings" component={Settings} />
       <Route path="/data-controls" component={DataControls} />
       <Route path="/service-agreement" component={ServiceAgreement} />
       <Route path="/terms-of-use" component={TermsOfUse} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/subscription" component={Subscription} />
-      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/subscription" component={user ? Subscription : Auth} />
+      <Route path="/admin" component={user ? AdminDashboard : Auth} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -36,18 +36,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   // Show creative welcome message on first load
   useEffect(() => {
     if (!welcomeShown && messages.length === 0 && !sessionId) {
-      setTimeout(() => {
-        const welcomeMessage = {
-          id: 'welcome-' + Date.now(),
-          content: getRandom(greetings),
-          role: "assistant" as const,
-          timestamp: Date.now(),
-          status: 'complete' as const
-        };
-        
-        // Add welcome message without triggering API
-        setWelcomeShown(true);
-      }, 1000);
+      setWelcomeShown(true);
     }
   }, [messages.length, welcomeShown, sessionId]);
 
