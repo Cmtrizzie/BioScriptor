@@ -56,6 +56,8 @@ export default function Subscription() {
   const [loading, setLoading] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
+  console.log('Subscription component - User:', user);
+
   const handleBack = () => {
     setLocation('/chat');
   };
@@ -65,17 +67,17 @@ export default function Subscription() {
     enabled: !!user
   });
 
-  const { data: freePlan } = useQuery({
+  const { data: freePlan, isLoading: freeLoading } = useQuery({
     queryKey: ['/api/plan-limits/free'],
     enabled: !!user
   });
 
-  const { data: premiumPlan } = useQuery({
+  const { data: premiumPlan, isLoading: premiumLoading } = useQuery({
     queryKey: ['/api/plan-limits/premium'],
     enabled: !!user
   });
 
-  const { data: enterprisePlan } = useQuery({
+  const { data: enterprisePlan, isLoading: enterpriseLoading } = useQuery({
     queryKey: ['/api/plan-limits/enterprise'],
     enabled: !!user
   });
@@ -136,6 +138,7 @@ export default function Subscription() {
   };
 
   const PlanCard = ({ plan, tier }: { plan: PlanLimit; tier: 'free' | 'premium' | 'enterprise' }) => {
+    console.log(`Rendering ${tier} plan:`, plan);
     const Icon = planIcons[tier];
     const pricing = planPricing[tier];
     const isCurrentPlan = user?.tier === tier;
@@ -319,9 +322,23 @@ export default function Subscription() {
 
         {/* Pricing Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {freePlan && <PlanCard plan={freePlan} tier="free" />}
-          {premiumPlan && <PlanCard plan={premiumPlan} tier="premium" />}
-          {enterprisePlan && <PlanCard plan={enterprisePlan} tier="enterprise" />}
+          {(freeLoading || premiumLoading || enterpriseLoading) ? (
+            <div className="col-span-full text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Loading subscription plans...</p>
+            </div>
+          ) : (
+            <>
+              {freePlan && <PlanCard plan={freePlan} tier="free" />}
+              {premiumPlan && <PlanCard plan={premiumPlan} tier="premium" />}
+              {enterprisePlan && <PlanCard plan={enterprisePlan} tier="enterprise" />}
+              {!freePlan && !premiumPlan && !enterprisePlan && (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-muted-foreground">No subscription plans available at the moment.</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Usage Information */}
