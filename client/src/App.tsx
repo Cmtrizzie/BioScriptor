@@ -22,18 +22,14 @@ import NotFound from "@/pages/not-found";
 function AppRouter() {
   const { user, loading } = useAuth();
 
-  // For development, don't block on loading - show the chat interface
-  if (loading) {
-    // Still render the chat but with a loading overlay
+  // In development, always show the app - don't block on auth loading
+  if (loading && import.meta.env.PROD) {
     return (
-      <div className="relative min-h-screen">
-        <Chat />
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
-              <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white rounded-lg p-6 shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="w-6 h-6 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
+            <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
           </div>
         </div>
       </div>
@@ -56,6 +52,46 @@ function AppRouter() {
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Error boundary caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="bg-white rounded-lg p-6 shadow-lg max-w-md">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">Please refresh the page to try again.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 function App() {
@@ -101,14 +137,16 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <AppRouter />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <AppRouter />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

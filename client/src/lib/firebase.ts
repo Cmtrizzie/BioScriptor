@@ -1,29 +1,28 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Firebase configuration with development fallbacks
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBioScriptorDevKey123456789",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "bioscriptor-dev.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "bioscriptor-dev",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "bioscriptor-dev.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:dev123456789"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase with error handling
-let app;
-let auth;
+let app: any = null;
+let auth: any = null;
 
 try {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  console.log("Firebase initialized successfully");
+  if (firebaseConfig.apiKey) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    console.log('Firebase initialized successfully');
+  } else {
+    console.log('Firebase config missing - running in demo mode');
+  }
 } catch (error) {
-  console.warn("Firebase initialization failed, using mock auth:", error);
-  // Create mock auth for development
-  auth = null;
+  console.error('Firebase initialization failed:', error);
 }
 
-export { auth };
-export default app;
+export { app, auth };

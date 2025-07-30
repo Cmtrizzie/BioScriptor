@@ -46,149 +46,164 @@ export function useChat() {
   const sendMessage = useCallback(async (content: string, file?: File) => {
     if (isLoading) return; // Prevent multiple sends
 
-    const activeUser = user || {
-      uid: 'demo-user-123',
-      email: 'demo@example.com',
-      displayName: 'Demo User',
-      photoURL: null
-    };
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      timestamp: new Date(),
-      file,
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
-    setIsTyping(true);
-
     try {
-      let responseContent = 'Simulated AI response.';
-
-      if (file) {
-        const formData = new FormData();
-        formData.append('message', content);
-        formData.append('file', file);
-
-        const response = await fetch('/api/chat/message', {
-          method: 'POST',
-          headers: {
-            'x-firebase-uid': activeUser.uid,
-            'x-firebase-email': activeUser.email,
-            'x-firebase-display-name': activeUser.displayName || '',
-            'x-firebase-photo-url': activeUser.photoURL || '',
-          },
-          body: formData,
-          credentials: 'include',
-        });
-
-        if (!response.ok) throw new Error('Failed to send message');
-        const data = await response.json();
-        responseContent = data.response?.content || data.response?.response || 'AI response';
-      } else {
-        const response = await fetch('/api/chat/message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-firebase-uid': activeUser.uid,
-            'x-firebase-email': activeUser.email,
-            'x-firebase-display-name': activeUser.displayName || '',
-            'x-firebase-photo-url': activeUser.photoURL || '',
-          },
-          body: JSON.stringify({ message: content }),
-        });
-
-        if (!response.ok) throw new Error('Failed to send message');
-        const data = await response.json();
-        responseContent = data.response?.content || data.response?.response || 'AI response';
-      }
-
-      // Enhance response with personality and context
-      let enhancedContent = enhanceResponse(responseContent);
-      enhancedContent = enhanceWithContext(enhancedContent, content);
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: enhancedContent,
-        timestamp: new Date(),
+      const activeUser = user || {
+        uid: 'demo-user-123',
+        email: 'demo@example.com',
+        displayName: 'Demo User',
+        photoURL: null
       };
 
-      const currentMessages = [...messages, userMessage, aiMessage];
-      console.log('Updated messages:', currentMessages);
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content,
+        timestamp: new Date(),
+        file,
+      };
 
-      // Generate topic-based title
-      const generateTopicBasedTitle = (content: string): string => {
-        const bioinformaticsKeywords = [
-          'DNA', 'RNA', 'protein', 'gene', 'genome', 'sequence', 'PCR', 'CRISPR', 
-          'blast', 'alignment', 'phylogenetic', 'mutation', 'expression', 'analysis',
-          'bioinformatics', 'genomics', 'proteomics', 'transcriptomics'
-        ];
+      setMessages(prev => [...prev, userMessage]);
+      setIsLoading(true);
+      setIsTyping(true);
 
-        const programmingKeywords = [
-          'python', 'javascript', 'code', 'function', 'algorithm', 'data', 'API',
-          'programming', 'script', 'analysis', 'visualization', 'database'
-        ];
+      try {
+        let responseContent = 'Simulated AI response.';
 
-        const lowerContent = content.toLowerCase();
+        if (file) {
+          const formData = new FormData();
+          formData.append('message', content);
+          formData.append('file', file);
 
-        // Check for bioinformatics topics
-        const bioTopics = bioinformaticsKeywords.filter(keyword => 
-          lowerContent.includes(keyword.toLowerCase())
-        );
+          const response = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: {
+              'x-firebase-uid': activeUser.uid,
+              'x-firebase-email': activeUser.email,
+              'x-firebase-display-name': activeUser.displayName || '',
+              'x-firebase-photo-url': activeUser.photoURL || '',
+            },
+            body: formData,
+            credentials: 'include',
+          });
 
-        // Check for programming topics  
-        const progTopics = programmingKeywords.filter(keyword => 
-          lowerContent.includes(keyword.toLowerCase())
-        );
-
-        let title = '';
-        if (bioTopics.length > 0) {
-          title = `🧬 ${bioTopics[0].toUpperCase()}`;
-          if (bioTopics.length > 1) title += ` & ${bioTopics[1]}`;
-        } else if (progTopics.length > 0) {
-          title = `💻 ${progTopics[0].charAt(0).toUpperCase() + progTopics[0].slice(1)}`;
-          if (progTopics.length > 1) title += ` & ${progTopics[1]}`;
+          if (!response.ok) throw new Error('Failed to send message');
+          const data = await response.json();
+          responseContent = data.response?.content || data.response?.response || 'AI response';
         } else {
-          // Extract meaningful words for general topics
-          const words = content.split(' ').filter(word => 
-            word.length > 3 && !['what', 'how', 'can', 'you', 'help', 'with', 'about'].includes(word.toLowerCase())
-          );
-          if (words.length > 0) {
-            title = `💡 ${words[0].charAt(0).toUpperCase() + words[0].slice(1)}`;
-            if (words.length > 1) title += ` ${words[1]}`;
-          } else {
-            title = content.substring(0, 30);
-          }
+          const response = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-firebase-uid': activeUser.uid,
+              'x-firebase-email': activeUser.email,
+              'x-firebase-display-name': activeUser.displayName || '',
+              'x-firebase-photo-url': activeUser.photoURL || '',
+            },
+            body: JSON.stringify({ message: content }),
+          });
+
+          if (!response.ok) throw new Error('Failed to send message');
+          const data = await response.json();
+          responseContent = data.response?.content || data.response?.response || 'AI response';
         }
 
-        return title.length > 50 ? title.substring(0, 47) + '...' : title;
-      };
+        // Enhance response with personality and context
+        let enhancedContent = enhanceResponse(responseContent);
+        enhancedContent = enhanceWithContext(enhancedContent, content);
 
-      // Create or update session
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const title = generateTopicBasedTitle(content);
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: enhancedContent,
+          timestamp: new Date(),
+        };
 
-      const newSession: ChatSession = {
-        id: sessionId,
-        title,
-        timestamp: new Date().toLocaleDateString(),
-        messages: currentMessages,
-      };
+        const currentMessages = [...messages, userMessage, aiMessage];
+        console.log('Updated messages:', currentMessages);
 
-      const updatedSessions = [newSession, ...sessions.filter(s => s.id !== sessionId)];
-      localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
-      setSessions(updatedSessions);
-      setMessages(currentMessages);
+        // Generate topic-based title
+        const generateTopicBasedTitle = (content: string): string => {
+          const bioinformaticsKeywords = [
+            'DNA', 'RNA', 'protein', 'gene', 'genome', 'sequence', 'PCR', 'CRISPR', 
+            'blast', 'alignment', 'phylogenetic', 'mutation', 'expression', 'analysis',
+            'bioinformatics', 'genomics', 'proteomics', 'transcriptomics'
+          ];
 
-      // Navigate to new session
-      navigate(`/chat/${sessionId}`);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
+          const programmingKeywords = [
+            'python', 'javascript', 'code', 'function', 'algorithm', 'data', 'API',
+            'programming', 'script', 'analysis', 'visualization', 'database'
+          ];
+
+          const lowerContent = content.toLowerCase();
+
+          // Check for bioinformatics topics
+          const bioTopics = bioinformaticsKeywords.filter(keyword => 
+            lowerContent.includes(keyword.toLowerCase())
+          );
+
+          // Check for programming topics  
+          const progTopics = programmingKeywords.filter(keyword => 
+            lowerContent.includes(keyword.toLowerCase())
+          );
+
+          let title = '';
+          if (bioTopics.length > 0) {
+            title = `🧬 ${bioTopics[0].toUpperCase()}`;
+            if (bioTopics.length > 1) title += ` & ${bioTopics[1]}`;
+          } else if (progTopics.length > 0) {
+            title = `💻 ${progTopics[0].charAt(0).toUpperCase() + progTopics[0].slice(1)}`;
+            if (progTopics.length > 1) title += ` & ${progTopics[1]}`;
+          } else {
+            // Extract meaningful words for general topics
+            const words = content.split(' ').filter(word => 
+              word.length > 3 && !['what', 'how', 'can', 'you', 'help', 'with', 'about'].includes(word.toLowerCase())
+            );
+            if (words.length > 0) {
+              title = `💡 ${words[0].charAt(0).toUpperCase() + words[0].slice(1)}`;
+              if (words.length > 1) title += ` ${words[1]}`;
+            } else {
+              title = content.substring(0, 30);
+            }
+          }
+
+          return title.length > 50 ? title.substring(0, 47) + '...' : title;
+        };
+
+        // Create or update session
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const title = generateTopicBasedTitle(content);
+
+        const newSession: ChatSession = {
+          id: sessionId,
+          title,
+          timestamp: new Date().toLocaleDateString(),
+          messages: currentMessages,
+        };
+
+        const updatedSessions = [newSession, ...sessions.filter(s => s.id !== sessionId)];
+        localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
+        setSessions(updatedSessions);
+        setMessages(currentMessages);
+
+        // Navigate to new session
+        navigate(`/chat/${sessionId}`);
+      } catch (error) {
+        console.error('Error sending message:', error);
+
+        const errorMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          role: 'assistant',
+          content: 'Sorry, there was an error processing your message. Please try again.',
+          timestamp: new Date(),
+        };
+
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+        setIsTyping(false);
+      }
+    } catch (outerError) {
+      console.error('Critical error in sendMessage:', outerError);
       setIsLoading(false);
       setIsTyping(false);
     }

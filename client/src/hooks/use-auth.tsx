@@ -10,27 +10,33 @@ export function useAuth() {
   useEffect(() => {
     // In development mode, auto-create demo user if Firebase is not configured
     if (import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY) {
-      let demoUser = localStorage.getItem('demo_user');
-      if (!demoUser) {
-        const newDemoUser = {
-          uid: 'demo-user-12345',
-          email: 'demo@biobuddy.dev',
-          displayName: 'Demo User',
-          photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0ea5e9&color=fff'
-        };
-        localStorage.setItem('demo_user', JSON.stringify(newDemoUser));
-        demoUser = JSON.stringify(newDemoUser);
+      try {
+        let demoUser = localStorage.getItem('demo_user');
+        if (!demoUser) {
+          const newDemoUser = {
+            uid: 'demo-user-12345',
+            email: 'demo@biobuddy.dev',
+            displayName: 'Demo User',
+            photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0ea5e9&color=fff'
+          };
+          localStorage.setItem('demo_user', JSON.stringify(newDemoUser));
+          demoUser = JSON.stringify(newDemoUser);
+        }
+        
+        const parsedUser = JSON.parse(demoUser);
+        setUser({
+          uid: parsedUser.uid,
+          email: parsedUser.email,
+          displayName: parsedUser.displayName,
+          photoURL: parsedUser.photoURL,
+        } as User);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Demo user creation failed:', error);
+        setLoading(false);
+        return;
       }
-      
-      const parsedUser = JSON.parse(demoUser);
-      setUser({
-        uid: parsedUser.uid,
-        email: parsedUser.email,
-        displayName: parsedUser.displayName,
-        photoURL: parsedUser.photoURL,
-      } as User);
-      setLoading(false);
-      return;
     }
 
     // Check for existing demo user
