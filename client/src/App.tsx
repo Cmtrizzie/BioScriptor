@@ -22,12 +22,15 @@ import NotFound from "@/pages/not-found";
 function AppRouter() {
   const { user, loading } = useAuth();
 
+  // Always show chat interface, even during loading
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
+      <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-pulse flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-500/20 rounded-full animate-spin border-2 border-blue-500 border-t-transparent"></div>
+            <span className="text-lg font-medium text-gray-700">Loading BioScriptor...</span>
+          </div>
         </div>
       </div>
     );
@@ -35,10 +38,10 @@ function AppRouter() {
 
   return (
     <Switch>
-      <Route path="/" component={user ? Chat : Auth} />
+      <Route path="/" component={Chat} />
       <Route path="/auth" component={Auth} />
-      <Route path="/chat" component={user ? Chat : Auth} />
-      <Route path="/chat/:sessionId" component={user ? Chat : Auth} />
+      <Route path="/chat" component={Chat} />
+      <Route path="/chat/:sessionId" component={Chat} />
       <Route path="/subscription" component={user ? Subscription : Auth} />
       <Route path="/admin" component={user ? AdminDashboard : Auth} />
       <Route path="/settings" component={Settings} />
