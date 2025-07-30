@@ -627,6 +627,52 @@ body {
   .admin-tabs-mobile > * {
     min-width: max-content !important;
   }
+  
+  /* Enhanced admin dashboard mobile visibility */
+  .admin-dashboard {
+    padding: 0.75rem !important;
+  }
+  
+  .admin-analytics-cards {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  
+  .admin-card-content {
+    padding: 0.75rem !important;
+  }
+  
+  /* Ensure all admin content is visible */
+  .admin-content-mobile {
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  /* Better visibility for form elements */
+  .admin-form-element {
+    margin-bottom: 1rem !important;
+  }
+  
+  .admin-form-label {
+    display: block !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 600 !important;
+    color: var(--foreground) !important;
+  }
+  
+  /* Enhanced button visibility */
+  .admin-button {
+    min-height: 44px !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Improved modal visibility */
+  .admin-modal {
+    margin: 1rem !important;
+    max-height: calc(100vh - 2rem) !important;
+    overflow-y: auto !important;
+  }
 }
 
 /* High contrast mode support */

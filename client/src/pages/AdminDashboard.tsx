@@ -626,7 +626,6 @@ export default function AdminDashboard() {
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-t-2xl">
                 <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-```python
                   <CreditCard className="h-6 w-6 text-blue-600" />
                   Payments & Subscriptions
                 </CardTitle>
@@ -1148,9 +1147,10 @@ export default function AdminDashboard() {
                                 <div className="flex gap-2 mt-1">
                                   <input
                                     type="password"
-                                    value={status ? "••••••••••••••••" : ""}
+                                    defaultValue={status ? "••••••••••••••••" : ""}
                                     placeholder="Enter API key..."
                                     className="flex-1 p-2 border rounded-md"
+                                    onChange={(e) => console.log(`${provider} API key updated`)}
                                   />
                                   <Button size="sm" variant="outline">Test</Button>
                                 </div>
@@ -1161,6 +1161,7 @@ export default function AdminDashboard() {
                                   type="url"
                                   placeholder={`Default ${provider} endpoint`}
                                   className="w-full mt-1 p-2 border rounded-md"
+                                  onChange={(e) => console.log(`${provider} endpoint:`, e.target.value)}
                                 />
                               </div>
                               <div className="flex gap-2">
@@ -1184,39 +1185,40 @@ export default function AdminDashboard() {
                                 type="text"
                                 placeholder="e.g., Custom API"
                                 className="w-full mt-1 p-2 border rounded-md"
+                                onChange={(e) => console.log('Provider name:', e.target.value)}
                               />
                             </div>
                             <div>
-                                    <label className="text-sm font-medium">API Type</label>
-                                    <select 
-                                      className="w-full mt-1 p-2 border rounded-md"
-                                      defaultValue="openai"
-                                      onChange={(e) => console.log('API type:', e.target.value)}
-                                    >
-                                      <option value="openai">OpenAI Compatible</option>
-                                      <option value="anthropic">Anthropic</option>
-                                      <option value="cohere">Cohere</option>
-                                      <option value="custom">Custom</option>
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">API Key</label>
-                                    <input
-                                      type="password"
-                                      placeholder="Enter API key..."
-                                      className="w-full mt-1 p-2 border rounded-md"
-                                      onChange={(e) => console.log('API key updated')}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Endpoint URL</label>
-                                    <input
-                                      type="url"
-                                      placeholder="https://api.example.com/v1/chat"
-                                      className="w-full mt-1 p-2 border rounded-md"
-                                      onChange={(e) => console.log('Endpoint URL:', e.target.value)}
-                                    />
-                                  </div>
+                              <label className="text-sm font-medium">API Type</label>
+                              <select 
+                                className="w-full mt-1 p-2 border rounded-md"
+                                defaultValue="openai"
+                                onChange={(e) => console.log('API type:', e.target.value)}
+                              >
+                                <option value="openai">OpenAI Compatible</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="cohere">Cohere</option>
+                                <option value="custom">Custom</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">API Key</label>
+                              <input
+                                type="password"
+                                placeholder="Enter API key..."
+                                className="w-full mt-1 p-2 border rounded-md"
+                                onChange={(e) => console.log('API key updated')}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Endpoint URL</label>
+                              <input
+                                type="url"
+                                placeholder="https://api.example.com/v1/chat"
+                                className="w-full mt-1 p-2 border rounded-md"
+                                onChange={(e) => console.log('Endpoint URL:', e.target.value)}
+                              />
+                            </div>
                           </div>
                           <Button>Add API Provider</Button>
                         </CardContent>
@@ -1381,8 +1383,7 @@ export default function AdminDashboard() {
                                 Edit
                               </Button>
                               {tier !== 'free' && (
-                                <Button 
-                                  size="sm" 
+                                <Button size="sm" 
                                   variant="destructive"
                                   onClick={() => handleDeletePlan(tier)}
                                   className="flex-1"
@@ -1391,7 +1392,7 @@ export default function AdminDashboard() {
                                 </Button>
                               )}
                             </div>
-                          </CardContent>```python
+                          </CardContent>
                         </Card>
                       ))}
                     </div>
