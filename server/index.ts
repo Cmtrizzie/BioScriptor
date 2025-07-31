@@ -91,6 +91,10 @@ app.use((req, res, next) => {
 // ========== DATABASE & STORAGE ==========
 import './storage';
 
+// Admin routes - ensure they're mounted before other routes
+import adminRoutes from './routes/admin.js';
+app.use('/api/admin', adminRoutes);
+
 // Check database status on startup
 async function checkDatabaseStatus() {
   try {
