@@ -179,16 +179,20 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const response = await fetch('/api/admin/analytics', {
         headers: {
-          'X-User-Email': user?.email || ''
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 
       if (!response.ok) {
+        console.error('Failed to fetch analytics:', response.status, response.statusText);
         throw new Error('Failed to fetch analytics');
       }
 
       return response.json();
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useQuery<User[]>({
@@ -196,21 +200,25 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const params = new URLSearchParams({
         search: searchQuery,
-        tier: planFilter
+        tier: planFilter !== 'all' ? planFilter : ''
       });
 
       const response = await fetch(`/api/admin/users?${params}`, {
         headers: {
-          'X-User-Email': user?.email || ''
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 
       if (!response.ok) {
+        console.error('Failed to fetch users:', response.status, response.statusText);
         throw new Error('Failed to fetch users');
       }
 
       return response.json();
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery<Subscription[]>({
@@ -218,16 +226,20 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const response = await fetch('/api/admin/subscriptions', {
         headers: {
-          'X-User-Email': user?.email || ''
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 
       if (!response.ok) {
+        console.error('Failed to fetch subscriptions:', response.status, response.statusText);
         throw new Error('Failed to fetch subscriptions');
       }
 
       return response.json();
-    }
+    },
+    enabled: !!user?.email
   });
 
   // Add queries for other data
@@ -254,7 +266,9 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const response = await fetch('/api/admin/promo-codes', {
         headers: {
-          'X-User-Email': user?.email || ''
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 
@@ -264,7 +278,8 @@ export default function AdminDashboard() {
       }
 
       return response.json();
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
@@ -408,7 +423,8 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 
@@ -436,7 +452,8 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
         body: JSON.stringify({ banned, reason })
       });
@@ -467,6 +484,11 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'X-User-Email': user?.email || ''
         },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
+        },
         body: JSON.stringify({ tier })
       });
 
@@ -494,7 +516,8 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
         body: JSON.stringify({ credits })
       });
@@ -1812,6 +1835,81 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Create Promo Code Modal */}
+      {creatingPromo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Create New Promo Code</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Promo Code</label>
+                <Input
+                  placeholder="e.g., SUMMER20"
+                  onChange={(e) => {
+                    // Handle promo code input
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <Select defaultValue="percentage">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percentage</SelectItem>
+                    <SelectItem value="fixed">Fixed Amount</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Value</label>
+                <Input
+                  type="number"
+                  placeholder="20"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Max Uses (Optional)</label>
+                <Input
+                  type="number"
+                  placeholder="100"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Expires At (Optional)</label>
+                <Input
+                  type="date"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button 
+                onClick={() => {
+                  toast({
+                    title: "Feature Coming Soon",
+                    description: "Promo code creation will be available in a future update.",
+                  });
+                  setCreatingPromo(false);
+                }}
+                className="flex-1"
+              >
+                Create Promo
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setCreatingPromo(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Provider Modal */}
       {creatingProvider && (
