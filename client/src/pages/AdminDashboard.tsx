@@ -194,7 +194,7 @@ export default function AdminDashboard() {
     enabled: !!user?.email
   });
 
-  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useQuery<User[]>({
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers, error: usersError } = useQuery<User[]>({
     queryKey: ['adminUsers', searchQuery, planFilter],
     queryFn: async () => {
       try {
@@ -207,48 +207,31 @@ export default function AdminDashboard() {
         });
 
         if (!response.ok) {
-          console.warn(`Failed to fetch users: ${response.status} ${response.statusText}`);
-          // Return fallback data instead of throwing
-          return [
-            {
-              id: 1,
-              email: 'demo@example.com',
-              displayName: 'Demo User',
-              tier: 'free',
-              queryCount: 5,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              status: 'active',
-              lastActive: new Date().toISOString(),
-              credits: 10
-            }
-          ];
+          if (response.status === 401) {
+            console.warn('🔒 Admin authentication failed for users');
+            throw new Error(`Authentication failed: ${response.status}`);
+          }
+          throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
         }
 
         return response.json();
       } catch (error) {
-        console.error('Failed to fetch users:', error.message);
-        // Return fallback data instead of throwing
-        return [
-          {
-            id: 1,
-            email: 'demo@example.com',
-            displayName: 'Demo User',
-            tier: 'free',
-            queryCount: 5,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: 'active',
-            lastActive: new Date().toISOString(),
-            credits: 10
-          }
-        ];
+        console.error('❌ Failed to fetch users:', error.message);
+        throw error;
       }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: (failureCount, error) => {
+      // Don't retry on auth failures
+      if (error.message?.includes('Authentication failed')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: 1000
   });
 
-  const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery<Subscription[]>({
+  const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions, error: subscriptionsError } = useQuery<Subscription[]>({
     queryKey: ['adminSubscriptions'],
     queryFn: async () => {
       try {
@@ -261,41 +244,28 @@ export default function AdminDashboard() {
         });
 
         if (!response.ok) {
-          console.warn(`Failed to fetch subscriptions: ${response.status} ${response.statusText}`);
-          // Return fallback data
-          return [
-            {
-              id: 1,
-              userId: 1,
-              paypalSubscriptionId: 'mock-subscription-id',
-              status: 'active',
-              tier: 'premium',
-              startDate: new Date().toISOString(),
-              createdAt: new Date().toISOString(),
-              revenue: 9.99
-            }
-          ];
+          if (response.status === 401) {
+            console.warn('🔒 Admin authentication failed for subscriptions');
+            throw new Error(`Authentication failed: ${response.status}`);
+          }
+          throw new Error(`Failed to fetch subscriptions: ${response.status} ${response.statusText}`);
         }
 
         return response.json();
       } catch (error) {
-        console.error('Failed to fetch subscriptions:', error.message);
-        // Return fallback data
-        return [
-          {
-            id: 1,
-            userId: 1,
-            paypalSubscriptionId: 'mock-subscription-id',
-            status: 'active',
-            tier: 'premium',
-            startDate: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            revenue: 9.99
-          }
-        ];
+        console.error('❌ Failed to fetch subscriptions:', error.message);
+        throw error;
       }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: (failureCount, error) => {
+      // Don't retry on auth failures
+      if (error.message?.includes('Authentication failed')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: 1000
   });
 
   // Add queries for other data
@@ -627,12 +597,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleTogglePromo = async (promoId: number) => {
+  const handleTogglePromo = async (promo: PromoCode) => {
     try {
-      const promo = (realPromos || promoCodesData).find(p => p.id === promoId);
-      if (!promo) return;
+      console.log('🔄 Toggling promo:', promo.code, 'to', !promo.active);
 
-      const response = await fetch(`/api/admin/promo-codes/${promoId}/toggle`, {
+      const response = await fetch(`/api/admin/promo-codes/${promo.id}/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -643,20 +612,17 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle promo');
+        console.error('❌ Failed to toggle promo:', response.status, response.statusText);
+        return;
       }
 
-      toast({
-        title: "Success",
-        description: "Promo code status updated.",
-      });
-      refetchPromos();
+      const result = await response.json();
+      console.log('✅ Promo toggle successful:', result);
+
+      // Only refetch if the operation was successful
+      await refetchPromos();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update promo code status.",
-        variant: "destructive",
-      });
+      console.error('❌ Failed to toggle promo:', error);
     }
   };
 
@@ -819,6 +785,34 @@ export default function AdminDashboard() {
     { id: 'promos', label: 'Promos', icon: <Gift size={18} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={18} /> }
   ];
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Please sign in to access the admin dashboard.</p>
+      </div>
+    );
+  }
+
+  // Show authentication error state
+  if (usersError?.message?.includes('Authentication failed') || 
+      subscriptionsError?.message?.includes('Authentication failed')) {
+    return (
+      <div className="flex items-center justify-center h-64 flex-col space-y-4">
+        <div className="text-red-600 text-center">
+          <h3 className="text-lg font-semibold">Authentication Error</h3>
+          <p className="text-sm">Unable to authenticate admin access. Please check your permissions.</p>
+        </div>
+        <Button onClick={() => {
+          refetchUsers();
+          refetchSubscriptions();
+          refetchPromos();
+        }}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 flex">
@@ -1771,7 +1765,8 @@ export default function AdminDashboard() {
                   <CardTitle>Recent Admin Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {activityLoading ? (
+                  {activityLoading ?```python
+(
                     <div className="flex justify-center items-center h-64">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     </div>
@@ -2098,7 +2093,7 @@ export default function AdminDashboard() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleTogglePromo(promo.id)}
+                                    onClick={() => handleTogglePromo(promo)}
                                   >
                                     {promo.active ? 'Disable' : 'Enable'}
                                   </Button>

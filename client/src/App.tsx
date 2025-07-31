@@ -95,7 +95,10 @@ class ErrorBoundary extends React.Component<
 }
 
 function App() {
-  console.log('App component rendering');
+  if (import.meta.env.DEV && !window.__app_rendered) {
+    console.log('🎯 App component rendering');
+    window.__app_rendered = true;
+  }
 
   useEffect(() => {
     // Prevent flash of unstyled content

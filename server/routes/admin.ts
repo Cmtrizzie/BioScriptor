@@ -8,36 +8,32 @@ const router = express.Router();
 // Admin authentication middleware
 export const adminAuth = async (req: any, res: any, next: any) => {
   try {
-    console.log('Admin auth middleware triggered');
-
-    // In development mode, completely bypass authentication
+    // In development mode, always allow admin access
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Bypassing all authentication checks');
-      req.adminUser = { 
-        id: 1, 
-        email: 'admin@dev.local', 
-        tier: 'admin', 
-        displayName: 'Dev Admin',
-        queryCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      console.log('🔓 Development mode: Allowing admin access for', req.method, req.path);
+      req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin', displayName: 'Admin User' };
       return next();
     }
 
-    const userEmail = req.headers['x-user-email'] as string;
+    // In production, check for valid admin user
+    const userEmail = req.headers['x-user-email'] as string || 
+                     req.headers['X-User-Email'] as string ||
+                     req.user?.email;
 
-    if (!userEmail) {
-      console.log('Admin auth failed: No user email found in headers');
-      console.log('Available headers:', Object.keys(req.headers));
+    const authToken = req.headers['authorization'] as string;
+
+    if (!userEmail && !authToken) {
+      console.log('❌ Admin auth failed: No authentication found for', req.method, req.path);
+      console.log('Available headers:', Object.keys(req.headers).filter(h => h.toLowerCase().includes('auth') || h.toLowerCase().includes('user')));
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Check if user exists and has admin privileges
-    const user = await db.select().from(users).where(eq(users.email, userEmail));
+    console.log('🔍 Admin auth check for email:', userEmail, 'path:', req.method, req.path);
+
+    const user = await db.select().from(users).where(eq(users.email, userEmail as string)).limit(1);
 
     if (!user.length) {
-      console.log('Admin auth failed: User not found');
+      console.log('❌ Admin auth failed: User not found');
       return res.status(401).json({ error: 'User not found' });
     }
 
@@ -46,11 +42,11 @@ export const adminAuth = async (req: any, res: any, next: any) => {
       req.adminUser = user[0];
       next();
     } else {
-      console.log('Admin auth failed: User tier is', user[0].tier);
+      console.log('❌ Admin auth failed: User tier is', user[0].tier);
       return res.status(403).json({ error: 'Admin access required' });
     }
   } catch (error) {
-    console.error('Admin auth error:', error);
+    console.error('🔥 Admin auth error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
