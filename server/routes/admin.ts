@@ -37,9 +37,9 @@ const requireAdmin = async (req: any, res: Response, next: NextFunction) => {
 };
 
 // Apply admin middleware to all routes
-router.use(requireAdmin);
+router.use(adminAuth);
 
-router.get('/analytics', adminAuth, async (req: any, res: any) => {
+router.get('/analytics', async (req: any, res: any) => {
   try {
     console.log('Fetching admin analytics...');
 
@@ -214,7 +214,7 @@ router.get('/analytics', adminAuth, async (req: any, res: any) => {
 });
 
 // Get all users with pagination and filtering
-router.get('/users', adminAuth, async (req: any, res: any) => {
+router.get('/users', async (req: any, res: any) => {
   try {
     const { page = 1, limit = 25, search = '', tier = 'all' } = req.query;
     console.log('🔍 Fetching users for admin:', req.adminUser?.email);
@@ -241,7 +241,7 @@ router.get('/users', adminAuth, async (req: any, res: any) => {
 });
 
 // Get subscriptions
-router.get('/subscriptions', adminAuth, async (req: any, res: any) => {
+router.get('/subscriptions', async (req: any, res: any) => {
   try {
     console.log('🔍 Fetching subscriptions for admin:', req.adminUser?.email);
     
@@ -929,7 +929,7 @@ router.post('/promo-codes', async (req, res) => {
 });
 
 // Get promo codes
-router.get('/promo-codes', adminAuth, async (req: any, res: any) => {
+router.get('/promo-codes', async (req: any, res: any) => {
   try {
     console.log('🔍 Fetching promo codes for admin:', req.adminUser?.email);
     
@@ -1035,7 +1035,7 @@ router.post('/settings', async (req, res) => {
 });
 
 // Toggle promo code
-router.post('/promo-codes/:promoId/toggle', adminAuth, async (req: any, res: any) => {
+router.post('/promo-codes/:promoId/toggle', async (req: any, res: any) => {
   try {
     const { promoId } = req.params;
     const { active } = req.body;
@@ -1070,7 +1070,7 @@ router.post('/promo-codes/:promoId/toggle', adminAuth, async (req: any, res: any
 });
 
 // Delete promo code
-router.delete('/promo-codes/:promoId', adminAuth, async (req: any, res: any) => {
+router.delete('/promo-codes/:promoId', async (req: any, res: any) => {
   try {
     const { promoId } = req.params;
 
