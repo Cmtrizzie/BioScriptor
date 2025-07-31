@@ -759,16 +759,50 @@ export default function AdminDashboard() {
 
       if (!response.ok) {
         console.error('❌ Failed to toggle promo:', response.status, response.statusText);
+        toast({
+          title: "Error",
+          description: "Failed to toggle promo code.",
+          variant: "destructive",
+        });
         return;
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.error('❌ Failed to parse response:', parseError);
+        toast({
+          title: "Error",
+          description: "Invalid response from server.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       console.log('✅ Promo toggle successful:', result);
 
-      // Only refetch if the operation was successful
-      await refetchPromos();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message || `Promo code ${result.active ? 'activated' : 'deactivated'} successfully.`,
+        });
+        // Only refetch if the operation was successful
+        await refetchPromos();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to toggle promo code.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('❌ Failed to toggle promo:', error);
+      toast({
+        title: "Error",
+        description: "Network error occurred.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -784,18 +818,42 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete promo');
+        console.error('❌ Failed to delete promo:', response.status, response.statusText);
+        toast({
+          title: "Error",
+          description: "Failed to delete promo code.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast({
-        title: "Success",
-        description: "Promo code deleted successfully.",
-      });
-      refetchPromos();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.error('❌ Failed to parse delete response:', parseError);
+        // Assume success if we can't parse the response but got 200
+        result = { success: true, message: "Promo code deleted successfully." };
+      }
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message || "Promo code deleted successfully.",
+        });
+        refetchPromos();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to delete promo code.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('❌ Delete promo error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete promo code.",
+        description: "Network error occurred.",
         variant: "destructive",
       });
     }
