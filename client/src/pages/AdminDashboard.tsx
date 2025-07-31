@@ -1395,3 +1395,118 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Code</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Value</TableHead>
+                          <TableHead>Usage</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {promoCodesData.map((promo) => (
+                          <TableRow key={promo.id}>
+                            <TableCell className="font-mono">{promo.code}</TableCell>
+                            <TableCell className="capitalize">{promo.type}</TableCell>
+                            <TableCell>
+                              {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value}`}
+                            </TableCell>
+                            <TableCell>
+                              {promo.usedCount}/{promo.maxUses || '∞'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={promo.active ? 'default' : 'secondary'}>
+                                {promo.active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleTogglePromo(promo.id)}
+                                >
+                                  {promo.active ? 'Disable' : 'Enable'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeletePromo(promo.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Settings Section */}
+          {activeSection === 'settings' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">System Settings</h2>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>General Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span>Maintenance Mode</span>
+                      <Button variant="outline" size="sm">Toggle</Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>User Registration</span>
+                      <Button variant="outline" size="sm">Enabled</Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Rate Limiting</span>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span>Two-Factor Auth</span>
+                      <Button variant="outline" size="sm">Required</Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Session Timeout</span>
+                      <Button variant="outline" size="sm">30 min</Button>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Audit Logging</span>
+                      <Button variant="outline" size="sm">Enabled</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
