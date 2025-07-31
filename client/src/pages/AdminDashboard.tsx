@@ -847,10 +847,19 @@ export default function AdminDashboard() {
 
   const handleDeletePromo = async (promoId: number) => {
     try {
+      console.log('🗑️ Deleting promo:', promoId);
+
+      // Optimistically remove from local state
+      const promoToDelete = promoCodesData.find(p => p.id === promoId);
+      if (promoToDelete) {
+        setPromoCodesData(prev => prev.filter(p => p.id !== promoId));
+      }
+
       const response = await fetch(`/api/admin/promo-codes/${promoId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-User-Email': user?.email || '',
           'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
@@ -858,6 +867,10 @@ export default function AdminDashboard() {
 
       if (!response.ok) {
         console.error('❌ Failed to delete promo:', response.status, response.statusText);
+        // Revert optimistic update
+        if (promoToDelete) {
+          setPromoCodesData(prev => [...prev, promoToDelete]);
+        }
         toast({
           title: "Error",
           description: "Failed to delete promo code.",
@@ -868,6 +881,11 @@ export default function AdminDashboard() {
 
       let result;
       try {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('❌ Response is not JSON:', contentType);
+          throw new Error('Server returned non-JSON response');
+        }
         result = await response.json();
       } catch (parseError) {
         console.error('❌ Failed to parse delete response:', parseError);
@@ -875,13 +893,20 @@ export default function AdminDashboard() {
         result = { success: true, message: "Promo code deleted successfully." };
       }
 
+      console.log('✅ Delete promo result:', result);
+
       if (result.success) {
         toast({
           title: "Success",
           description: result.message || "Promo code deleted successfully.",
         });
+        // Refetch to ensure consistency
         refetchPromos();
       } else {
+        // Revert optimistic update
+        if (promoToDelete) {
+          setPromoCodesData(prev => [...prev, promoToDelete]);
+        }
         toast({
           title: "Error",
           description: result.error || "Failed to delete promo code.",
@@ -890,6 +915,11 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('❌ Delete promo error:', error);
+      // Revert optimistic update
+      const promoToDelete = promoCodesData.find(p => p.id === promoId);
+      if (promoToDelete) {
+        setPromoCodesData(prev => [...prev, promoToDelete]);
+      }
       toast({
         title: "Error",
         description: "Network error occurred.",

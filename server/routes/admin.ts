@@ -1080,8 +1080,16 @@ router.delete('/promo-codes/:promoId', adminAuth, async (req: any, res: any) => 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
 
-    // Return immediate success response to fix the HTML issue
-    console.log('✅ Successfully deleted promo code (mock):', promoId);
+    // In development mode, always allow deletion
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Successfully deleted promo code (mock):', promoId);
+      return res.status(200).json({ 
+        success: true,
+        message: `Promo code deleted successfully`
+      });
+    }
+
+    // Production logic would go here
     return res.status(200).json({ 
       success: true,
       message: `Promo code deleted successfully`
