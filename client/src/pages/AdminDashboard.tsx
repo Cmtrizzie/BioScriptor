@@ -995,12 +995,10 @@ export default function AdminDashboard() {
       const promoToDelete = promoCodesData.find(p => p.id === promoId);
       if (promoToDelete) {
         setPromoCodesData(prev => [...prev, promoToDelete]);
-      }
-      toast({
-```python
-        title: "Error",
-        description: "Network error occurred.",
-        variant: "destructive",
+        
+          title: "Error",
+          description: "Network error occurred.",
+          variant: "destructive",
       });
     }
   };
@@ -1800,7 +1798,7 @@ export default function AdminDashboard() {
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
-                          <TableBody```python
+                          <TableBody>```text
                             <TableRow>
                               <TableCell>user1@example.com</TableCell>
                               <TableCell>$9.99</TableCell>
@@ -2661,7 +2659,6 @@ export default function AdminDashboard() {
                 />
               </div>
               <div>
-                ```python
 
                 <label className="block text-sm font-medium mb-1">Expires At (Optional)</label>
                 <Input
