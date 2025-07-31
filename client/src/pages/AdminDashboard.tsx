@@ -1815,12 +1815,12 @@ export default function AdminDashboard() {
                 <Button className="gap-2" onClick={() => {
                   const newTier = prompt('Enter new plan tier name:');
                   if (newTier) {
-                    fetch(`/api/admin/plans/${newTier}`, {
+                    fetch('/api/admin/plans/' + newTier, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
                         'X-User-Email': user?.email || '',
-                        'Authorization': `Bearer ${user?.accessToken || ''}`,
+                        'Authorization': 'Bearer ' + (user?.accessToken || ''),
                       },
                       body: JSON.stringify({
                         maxQueries: 50,
@@ -1830,7 +1830,7 @@ export default function AdminDashboard() {
                     }).then(() => {
                       toast({
                         title: "Success",
-                        description: `${newTier} plan created successfully.`,
+                        description: newTier + ' plan created successfully.',
                       });
                     });
                   }
