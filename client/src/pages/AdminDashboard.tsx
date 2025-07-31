@@ -2441,30 +2441,6 @@ export default function AdminDashboard() {
                           {systemSettings?.rateLimiting ? 'Enabled' : 'Disabled'}
                         </Button>
                       </div>
-
-                      {/* Promo Code Management in Settings */}
-                      <div className="border-t pt-4 mt-4">
-                        <h4 className="font-medium mb-3">Promo Code Management</h4>
-                        <div className="space-y-2">
-                          {promoCodesData.map((promo) => (
-                            <div key={promo.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm">{promo.code}</span>
-                                <Badge variant={promo.active ? 'default' : 'secondary'} className="text-xs">
-                                  {promo.active ? 'Active' : 'Inactive'}
-                                </Badge>
-                              </div>
-                              <Button 
-                                variant={promo.active ? "destructive" : "default"} 
-                                size="sm"
-                                onClick={() => handleTogglePromo(promo)}
-                              >
-                                {promo.active ? 'Disable' : 'Enable'}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
 
