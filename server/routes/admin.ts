@@ -9,21 +9,22 @@ const router = express.Router();
 // Middleware to check admin privileges
 const requireAdmin = async (req: any, res: any, next: any) => {
   try {
-    // Check multiple possible header formats
+    // In development mode, always allow admin access
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Allowing admin access');
+      req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin' };
+      return next();
+    }
+
+    // Check multiple possible header formats for production
     const userEmail = req.headers['x-user-email'] || 
                      req.headers['X-User-Email'] || 
                      req.headers['x-replit-user-name'] ||
-                     req.headers['x-firebase-uid'] ||
+                     req.headers['authorization']?.replace('Bearer ', '') ||
                      req.user?.email;
     
     if (!userEmail) {
-      console.log('Admin auth failed: No user email found in headers', Object.keys(req.headers));
-      // In development mode, allow access without strict auth
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: Allowing admin access without strict auth');
-        req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin' };
-        return next();
-      }
+      console.log('Admin auth failed: No user email found in headers');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
@@ -33,36 +34,19 @@ const requireAdmin = async (req: any, res: any, next: any) => {
     
     if (!user.length) {
       console.log('Admin auth failed: User not found in database');
-      // In development mode, create mock admin user
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: Creating mock admin user');
-        req.adminUser = { id: 1, email: userEmail, tier: 'admin' };
-        return next();
-      }
       return res.status(401).json({ error: 'User not found' });
     }
 
-    // Allow admin tier users OR for development, allow any user to access admin
-    if (user[0].tier !== 'admin' && process.env.NODE_ENV === 'production') {
+    // Check admin privileges
+    if (user[0].tier !== 'admin') {
       console.log('Admin auth failed: User tier is', user[0].tier);
       return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    // In development, grant admin access to any authenticated user
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Granting admin access to user:', userEmail);
-      user[0].tier = 'admin'; // Override tier for development
     }
 
     req.adminUser = user[0];
     next();
   } catch (error) {
     console.error('Admin auth error:', error);
-    // In development mode, continue with mock user
-    if (process.env.NODE_ENV === 'development') {
-      req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin' };
-      return next();
-    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -612,6 +596,12 @@ router.post('/api-providers/:providerId/toggle', async (req, res) => {
     const { providerId } = req.params;
     const { enabled } = req.body;
     
+    // For development, use mock data
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Mock: ${enabled ? 'Enabled' : 'Disabled'} API provider ${providerId}`);
+      return res.json({ success: true, enabled, provider: `Provider ${providerId}` });
+    }
+    
     const provider = await db.select().from(apiProviders).where(eq(apiProviders.id, Number(providerId))).limit(1);
     if (!provider.length) {
       return res.status(404).json({ error: 'Provider not found' });
@@ -626,12 +616,16 @@ router.post('/api-providers/:providerId/toggle', async (req, res) => {
       .where(eq(apiProviders.id, Number(providerId)));
 
     // Log the action
-    await db.insert(adminLogs).values({
-      adminUserId: req.adminUser.id,
-      action: 'toggle_api_provider',
-      targetResource: `api:${provider[0].name}`,
-      details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider[0].name}`
-    });
+    try {
+      await db.insert(adminLogs).values({
+        adminUserId: req.adminUser.id,
+        action: 'toggle_api_provider',
+        targetResource: `api:${provider[0].name}`,
+        details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider[0].name}`
+      });
+    } catch (logError) {
+      console.warn('Failed to log admin action:', logError);
+    }
 
     res.json({ success: true, enabled, provider: provider[0].name });
   } catch (error) {

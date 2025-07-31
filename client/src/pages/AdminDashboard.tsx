@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -482,10 +481,6 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
-        },
-        headers: {
-          'Content-Type': 'application/json',
           'X-User-Email': user?.email || '',
           'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
@@ -685,7 +680,7 @@ export default function AdminDashboard() {
       }
 
       const result = await response.json();
-      
+
       // Add to local state
       setApiProviders(prev => [...prev, {
         id: result.provider.id,
@@ -1432,7 +1427,7 @@ export default function AdminDashboard() {
                                 onClick={() => {
                                   const email = (document.getElementById('manual-user-email') as HTMLInputElement)?.value;
                                   const reason = (document.getElementById('manual-reason') as HTMLInputElement)?.value;
-                                  
+
                                   if (!email) {
                                     toast({
                                       title: "Error",
@@ -1845,7 +1840,7 @@ export default function AdminDashboard() {
                       <div className="text-2xl font-bold">
                         ${tier === 'free' ? '0' : tier === 'premium' ? '9.99' : '29.99'}/month
                       </div>
-                      
+
                       {editingPlan?.tier === tier ? (
                         <div className="space-y-3">
                           <div>
