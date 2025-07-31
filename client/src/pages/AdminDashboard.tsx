@@ -173,7 +173,7 @@ export default function AdminDashboard() {
     cohere: false
   };
 
-  const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery<AdminAnalytics>({
+  const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics, error: analyticsError } = useQuery<AdminAnalytics>({
     queryKey: ['adminAnalytics'],
     queryFn: async () => {
       try {
@@ -190,87 +190,68 @@ export default function AdminDashboard() {
           headers['Authorization'] = 'Bearer dev-admin-token';
         }
 
+        console.log('🔄 Fetching analytics data...');
         const response = await fetch('/api/admin/analytics', {
           headers
         });
 
         if (!response.ok) {
-          console.error('Failed to fetch analytics:', response.status, response.statusText);
-          // Return mock data instead of throwing error
-          return {
-            totalUsers: 5,
-            activeUsers: 3,
-            usersByTier: {
-              free: 3,
-              premium: 1,
-              enterprise: 1
-            },
-            totalSubscriptions: 2,
-            activeSubscriptions: 2,
-            recentActivity: [
-              {
-                id: 1,
-                adminUserId: 1,
-                action: 'User Registration',
-                targetResource: 'users',
-                details: 'New user registered',
-                timestamp: new Date().toISOString()
-              }
-            ],
-            queriesLast24h: 847,
-            monthlyRevenue: 2450.00,
-            conversionRate: 8.5,
-            apiStatus: {
-              groq: true,
-              together: true,
-              openrouter: true,
-              cohere: false
-            },
-            systemStatus: {
-              database: true,
-              cache: true,
-              security: true,
-              rateLimiting: true,
-              auditLogs: true
-            }
-          };
+          console.warn('⚠️ Analytics API returned error:', response.status, response.statusText);
+          throw new Error(`Analytics API error: ${response.status}`);
         }
 
-        return response.json();
+        const data = await response.json();
+        console.log('✅ Analytics data fetched successfully:', data);
+        return data;
       } catch (error) {
-        console.error('Analytics fetch error:', error);
-        // Return fallback data
-        return {
-          totalUsers: 5,
-          activeUsers: 3,
-          usersByTier: {
-            free: 3,
-            premium: 1,
-            enterprise: 1
-          },
-          totalSubscriptions: 2,
-          activeSubscriptions: 2,
-          recentActivity: [],
-          queriesLast24h: 847,
-          monthlyRevenue: 2450.00,
-          conversionRate: 8.5,
-          apiStatus: {
-            groq: true,
-            together: true,
-            openrouter: true,
-            cohere: false
-          },
-          systemStatus: {
-            database: true,
-            cache: true,
-            security: true,
-            rateLimiting: true,
-            auditLogs: true
-          }
-        };
+        console.error('❌ Analytics fetch error:', error);
+        throw error; // Let React Query handle the error
       }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: (failureCount, error) => {
+      // Don't retry on auth failures (401/403)
+      if (error?.message?.includes('401') || error?.message?.includes('403')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 60 * 1000, // Refresh every 60 seconds (less aggressive)
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+    // Provide safe fallback data
+    placeholderData: (previousData) => previousData || {
+      totalUsers: 0,
+      activeUsers: 0,
+      usersByTier: {
+        free: 0,
+        premium: 0,
+        enterprise: 0
+      },
+      totalSubscriptions: 0,
+      activeSubscriptions: 0,
+      recentActivity: [],
+      queriesLast24h: 0,
+      monthlyRevenue: 0.00,
+      conversionRate: 0.0,
+      apiStatus: {
+        groq: false,
+        together: false,
+        openrouter: false,
+        cohere: false
+      },
+      systemStatus: {
+        database: false,
+        cache: false,
+        security: false,
+        rateLimiting: false,
+        auditLogs: false
+      }
+    },
+    // Use error boundary to prevent crashes
+    throwOnError: false
   });
 
   const { data: users, isLoading: usersLoading, refetch: refetchUsers, error: usersError } = useQuery<User[]>({
@@ -1018,7 +999,8 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/settings', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ setting, value })
+        body:```python
+ JSON.stringify({ setting, value })
       });
 
             if (!response.ok) {
@@ -1821,6 +1803,7 @@ export default function AdminDashboard() {
                       </div>
                     </CardContent>
                   </Card>
+                ```python
                 </TabsContent>
 
                 <TabsContent value="manual">
@@ -2129,7 +2112,6 @@ export default function AdminDashboard() {
                   <CardTitle>Recent Admin Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  ```python
                   {activityLoading ?(
                     <div className="flex justify-center items-center h-64">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
