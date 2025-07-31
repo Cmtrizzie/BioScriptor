@@ -611,18 +611,19 @@ export default function AdminDashboard() {
   const handleResetUserLimit = async (userId: number) => {
     try {
       console.log('🔄 Resetting limit for user:', userId);
-      const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+      
+      // Show immediate loading state
+      toast({
+        title: "Processing",
+        description: "Resetting user limit...",
+      });
 
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-User-Email': user?.email || 'admin@dev.local',
+        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+      };
+
       const response = await fetch(`/api/admin/users/${userId}/reset-limit`, {
         method: 'POST',
         headers
@@ -640,10 +641,8 @@ export default function AdminDashboard() {
         description: result.message || "User daily limit has been reset.",
       });
       
-      // Refresh users data immediately
+      // Refresh users data immediately for real-time updates
       await refetchUsers();
-      
-      // Also refresh analytics to update counts
       refetchAnalytics();
     } catch (error) {
       console.error('❌ Reset limit error:', error);
@@ -734,18 +733,19 @@ export default function AdminDashboard() {
   const handleAddCredits = async (userId: number, credits: number) => {
     try {
       console.log('💰 Adding credits:', credits, 'to user:', userId);
-      const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+      
+      // Show immediate loading state
+      toast({
+        title: "Processing",
+        description: `Adding ${credits} credits...`,
+      });
 
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-User-Email': user?.email || 'admin@dev.local',
+        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+      };
+
       const response = await fetch(`/api/admin/users/${userId}/add-credits`, {
         method: 'POST',
         headers,
@@ -766,8 +766,6 @@ export default function AdminDashboard() {
       
       // Refresh users data immediately to show updated credits
       await refetchUsers();
-      
-      // Also refresh analytics
       refetchAnalytics();
     } catch (error) {
       console.error('❌ Add credits error:', error);
