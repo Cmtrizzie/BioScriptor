@@ -610,6 +610,7 @@ export default function AdminDashboard() {
   // Handle actions
   const handleResetUserLimit = async (userId: number) => {
     try {
+      console.log('🔄 Resetting limit for user:', userId);
       const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
@@ -627,19 +628,28 @@ export default function AdminDashboard() {
         headers
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to reset user limit');
+        throw new Error(result.error || 'Failed to reset user limit');
       }
 
+      console.log('✅ Successfully reset user limit');
       toast({
         title: "Success",
-        description: "User daily limit has been reset.",
+        description: result.message || "User daily limit has been reset.",
       });
-      refetchUsers();
+      
+      // Refresh users data immediately
+      await refetchUsers();
+      
+      // Also refresh analytics to update counts
+      refetchAnalytics();
     } catch (error) {
+      console.error('❌ Reset limit error:', error);
       toast({
         title: "Error",
-        description: "Failed to reset user limit.",
+        description: error.message || "Failed to reset user limit.",
         variant: "destructive",
       });
     }
@@ -723,6 +733,7 @@ export default function AdminDashboard() {
 
   const handleAddCredits = async (userId: number, credits: number) => {
     try {
+      console.log('💰 Adding credits:', credits, 'to user:', userId);
       const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
@@ -741,19 +752,28 @@ export default function AdminDashboard() {
         body: JSON.stringify({ credits })
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to add credits');
+        throw new Error(result.error || 'Failed to add credits');
       }
 
+      console.log('✅ Successfully added credits');
       toast({
         title: "Success",
-        description: `Added ${credits} credits successfully.`,
+        description: result.message || `Added ${credits} credits successfully.`,
       });
-      refetchUsers();
+      
+      // Refresh users data immediately to show updated credits
+      await refetchUsers();
+      
+      // Also refresh analytics
+      refetchAnalytics();
     } catch (error) {
+      console.error('❌ Add credits error:', error);
       toast({
         title: "Error",
-        description: "Failed to add credits.",
+        description: error.message || "Failed to add credits.",
         variant: "destructive",
       });
     }
