@@ -747,8 +747,10 @@ export default function AdminDashboard() {
     try {
       console.log('🔄 Toggling promo:', promo.code, 'to', !promo.active);
 
-      // Optimistically update the local state first
+      // Optimistically update both the local state and the fetched data
       const newActiveState = !promo.active;
+      
+      // Update local mock data
       setPromoCodesData(prev => 
         prev.map(p => p.id === promo.id ? { ...p, active: newActiveState } : p)
       );
@@ -799,12 +801,15 @@ export default function AdminDashboard() {
       if (result.success) {
         toast({
           title: "Success",
-          description: result.message || `Promo code ${newActiveState ? 'activated' : 'deactivated'} successfully.`,
+          description: result.message || `Promo code ${newActiveState ? 'enabled' : 'disabled'} successfully.`,
         });
-        // Ensure the state matches the server response
+        
+        // Update the local state to match server response
+        const finalActiveState = result.active !== undefined ? result.active : newActiveState;
         setPromoCodesData(prev => 
-          prev.map(p => p.id === promo.id ? { ...p, active: result.active !== undefined ? result.active : newActiveState } : p)
+          prev.map(p => p.id === promo.id ? { ...p, active: finalActiveState } : p)
         );
+        
         // Also refetch to ensure consistency
         refetchPromos();
       } else {
@@ -2303,41 +2308,46 @@ export default function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(realPromos && realPromos.length > 0 ? realPromos : promoCodesData).map((promo) => (
-                            <TableRow key={promo.id}>
-                              <TableCell className="font-mono">{promo.code}</TableCell>
-                              <TableCell className="capitalize">{promo.type}</TableCell>
-                              <TableCell>
-                                {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value}`}
-                              </TableCell>
-                              <TableCell>
-                                {promo.usedCount}/{promo.maxUses || '∞'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={promo.active ? 'default' : 'secondary'}>
-                                  {promo.active ? 'Active' : 'Inactive'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant={promo.active ? "destructive" : "default"}
-                                    onClick={() => handleTogglePromo(promo)}
-                                  >
-                                    {promo.active ? 'Disable' : 'Enable'}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDeletePromo(promo.id)}
-                                  >
-                                    <Trash2 size={14} />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {(realPromos && realPromos.length > 0 ? realPromos : promoCodesData).map((promo) => {
+                            // Find the current state from our local data to ensure consistency
+                            const currentPromo = promoCodesData.find(p => p.id === promo.id) || promo;
+                            
+                            return (
+                              <TableRow key={promo.id}>
+                                <TableCell className="font-mono">{currentPromo.code}</TableCell>
+                                <TableCell className="capitalize">{currentPromo.type}</TableCell>
+                                <TableCell>
+                                  {currentPromo.type === 'percentage' ? `${currentPromo.value}%` : `$${currentPromo.value}`}
+                                </TableCell>
+                                <TableCell>
+                                  {currentPromo.usedCount}/{currentPromo.maxUses || '∞'}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={currentPromo.active ? 'default' : 'secondary'}>
+                                    {currentPromo.active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant={currentPromo.active ? "destructive" : "default"}
+                                      onClick={() => handleTogglePromo(currentPromo)}
+                                    >
+                                      {currentPromo.active ? 'Disable' : 'Enable'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleDeletePromo(currentPromo.id)}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -2406,6 +2416,30 @@ export default function AdminDashboard() {
                         >
                           {systemSettings?.rateLimiting ? 'Enabled' : 'Disabled'}
                         </Button>
+                      </div>
+
+                      {/* Promo Code Management in Settings */}
+                      <div className="border-t pt-4 mt-4">
+                        <h4 className="font-medium mb-3">Promo Code Management</h4>
+                        <div className="space-y-2">
+                          {promoCodesData.map((promo) => (
+                            <div key={promo.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm">{promo.code}</span>
+                                <Badge variant={promo.active ? 'default' : 'secondary'} className="text-xs">
+                                  {promo.active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
+                              <Button 
+                                variant={promo.active ? "destructive" : "default"} 
+                                size="sm"
+                                onClick={() => handleTogglePromo(promo)}
+                              >
+                                {promo.active ? 'Disable' : 'Enable'}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
