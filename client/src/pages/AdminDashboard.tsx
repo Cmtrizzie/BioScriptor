@@ -1765,8 +1765,8 @@ export default function AdminDashboard() {
                   <CardTitle>Recent Admin Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {activityLoading ?```python
-(
+                  ```python
+                  {activityLoading ?(
                     <div className="flex justify-center items-center h-64">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     </div>
@@ -1863,7 +1863,7 @@ export default function AdminDashboard() {
                               size="sm" 
                               onClick={() => {
                                 const newPrice = (document.getElementById('price-' + tier) as HTMLInputElement)?.value;
-                                fetch(`/api/admin/plans/${tier}/pricing`, {
+                                fetch('/api/admin/plans/' + tier + '/pricing', {
                                   method: 'POST',
                                   headers: {
                                     'Content-Type': 'application/json',
@@ -1956,7 +1956,7 @@ export default function AdminDashboard() {
                                 const prioritySupport = (document.getElementById('support-' + tier) as HTMLInputElement)?.checked;
                                 const analytics = (document.getElementById('analytics-' + tier) as HTMLInputElement)?.checked;
 
-                                fetch(`/api/admin/plans/${tier}/update`, {
+                                fetch('/api/admin/plans/' + tier + '/update', {
                                   method: 'POST',
                                   headers: {
                                     'Content-Type': 'application/json',
