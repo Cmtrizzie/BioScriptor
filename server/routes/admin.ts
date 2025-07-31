@@ -394,7 +394,8 @@ router.post('/api-providers', async (req, res) => {
       endpoint,
       apiKey: apiKey || '',
       planAccess,
-      priority: 10 // Default low priority for new providers
+      priority: 10, // Default low priority for new providers
+      enabled: true // Default to enabled
     }).returning();
 
     // Log the action
@@ -402,13 +403,17 @@ router.post('/api-providers', async (req, res) => {
       adminUserId: req.adminUser.id,
       action: 'add_api_provider',
       targetResource: `api:${newProvider[0].name}`,
-      details: `Added new API provider: ${name} (${type})`
+      details: `Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}`
     });
 
     res.json({ success: true, provider: newProvider[0] });
   } catch (error) {
     console.error('Add provider error:', error);
-    res.status(500).json({ error: 'Failed to add API provider' });
+    if (error.code === '23505') { // Unique constraint violation
+      res.status(400).json({ error: 'Provider name already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to add API provider' });
+    }
   }
 });
 

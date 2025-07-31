@@ -132,6 +132,14 @@ export default function AdminDashboard() {
   const [editingPlan, setEditingPlan] = useState<PlanLimitEdit | null>(null);
   const [editingPrice, setEditingPrice] = useState<{ tier: string; currentPrice: number } | null>(null);
   const [creatingPromo, setCreatingPromo] = useState(false);
+  const [creatingProvider, setCreatingProvider] = useState(false);
+  const [newProvider, setNewProvider] = useState({
+    name: '',
+    type: 'openai',
+    endpoint: '',
+    apiKey: '',
+    planAccess: ['free', 'premium', 'enterprise']
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([
@@ -499,6 +507,64 @@ export default function AdminDashboard() {
         provider.id === providerId ? { ...provider, enabled: enabled } : provider
       )
     );
+  };
+
+  const handleCreateProvider = async () => {
+    if (!newProvider.name || !newProvider.endpoint) {
+      toast({
+        title: "Error",
+        description: "Name and endpoint are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/api-providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify(newProvider)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create API provider');
+      }
+
+      const result = await response.json();
+      
+      // Add to local state
+      setApiProviders(prev => [...prev, {
+        id: result.provider.id,
+        name: result.provider.name,
+        enabled: result.provider.enabled,
+        priority: result.provider.priority,
+        stats: { requestsToday: 0, successRate: 100, avgResponse: '0.0' }
+      }]);
+
+      // Reset form
+      setNewProvider({
+        name: '',
+        type: 'openai',
+        endpoint: '',
+        apiKey: '',
+        planAccess: ['free', 'premium', 'enterprise']
+      });
+      setCreatingProvider(false);
+
+      toast({
+        title: "Success",
+        description: "API provider created successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create API provider.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Navigation
@@ -921,7 +987,7 @@ export default function AdminDashboard() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -929,12 +995,30 @@ export default function AdminDashboard() {
                                   >
                                     Reset Limit
                                   </Button>
+                                  <Select 
+                                    value={user.tier} 
+                                    onValueChange={(tier) => handleUpgradeUser(user.id, tier)}
+                                  >
+                                    <SelectTrigger className="w-24 h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="free">Free</SelectItem>
+                                      <SelectItem value="premium">Premium</SelectItem>
+                                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleUpgradeUser(user.id, 'premium')}
-                                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                                    variant="outline"
+                                    onClick={() => {
+                                      const credits = prompt('Enter credits to add:');
+                                      if (credits && !isNaN(Number(credits))) {
+                                        handleAddCredits(user.id, Number(credits));
+                                      }
+                                    }}
                                   >
-                                    Upgrade
+                                    Add Credits
                                   </Button>
                                   <Button
                                     size="sm"
@@ -1122,14 +1206,23 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">API Management</h2>
-                <Button 
-                  onClick={() => {}}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Refresh Status
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setCreatingProvider(true)}
+                    className="gap-2"
+                  >
+                    <Plus size={16} />
+                    Add Provider
+                  </Button>
+                  <Button 
+                    onClick={() => {}}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <RefreshCw size={16} />
+                    Refresh Status
+                  </Button>
+                </div>
               </div>
 
               <Tabs defaultValue="providers">
@@ -1507,6 +1600,79 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Create Provider Modal */}
+      {creatingProvider && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add New API Provider</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Provider Name</label>
+                <Input
+                  value={newProvider.name}
+                  onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., anthropic, openai"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <Select 
+                  value={newProvider.type} 
+                  onValueChange={(value) => setNewProvider(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openai">OpenAI Compatible</SelectItem>
+                    <SelectItem value="cohere">Cohere</SelectItem>
+                    <SelectItem value="anthropic">Anthropic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">API Endpoint</label>
+                <Input
+                  value={newProvider.endpoint}
+                  onChange={(e) => setNewProvider(prev => ({ ...prev, endpoint: e.target.value }))}
+                  placeholder="https://api.provider.com/v1/chat/completions"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">API Key (Optional)</label>
+                <Input
+                  type="password"
+                  value={newProvider.apiKey}
+                  onChange={(e) => setNewProvider(prev => ({ ...prev, apiKey: e.target.value }))}
+                  placeholder="Leave empty to configure later"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button onClick={handleCreateProvider} className="flex-1">
+                Create Provider
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCreatingProvider(false);
+                  setNewProvider({
+                    name: '',
+                    type: 'openai',
+                    endpoint: '',
+                    apiKey: '',
+                    planAccess: ['free', 'premium', 'enterprise']
+                  });
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
