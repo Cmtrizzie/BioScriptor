@@ -325,7 +325,11 @@ export default function AdminDashboard() {
       }
       return failureCount < 2;
     },
-    retryDelay: 1000
+    retryDelay: 1000,
+    staleTime: 10 * 1000, // 10 seconds for user data
+    refetchInterval: 15 * 1000, // Refresh every 15 seconds
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
   });
 
   const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions, error: subscriptionsError } = useQuery<Subscription[]>({
@@ -611,7 +615,7 @@ export default function AdminDashboard() {
   const handleResetUserLimit = async (userId: number) => {
     try {
       console.log('🔄 Resetting limit for user:', userId);
-      
+
       // Show immediate loading state
       toast({
         title: "Processing",
@@ -640,7 +644,7 @@ export default function AdminDashboard() {
         title: "Success",
         description: result.message || "User daily limit has been reset.",
       });
-      
+
       // Refresh users data immediately for real-time updates
       await refetchUsers();
       refetchAnalytics();
@@ -733,7 +737,7 @@ export default function AdminDashboard() {
   const handleAddCredits = async (userId: number, credits: number) => {
     try {
       console.log('💰 Adding credits:', credits, 'to user:', userId);
-      
+
       // Show immediate loading state
       toast({
         title: "Processing",
@@ -763,7 +767,7 @@ export default function AdminDashboard() {
         title: "Success",
         description: result.message || `Added ${credits} credits successfully.`,
       });
-      
+
       // Refresh users data immediately to show updated credits
       await refetchUsers();
       refetchAnalytics();
@@ -993,6 +997,7 @@ export default function AdminDashboard() {
         setPromoCodesData(prev => [...prev, promoToDelete]);
       }
       toast({
+```python
         title: "Error",
         description: "Network error occurred.",
         variant: "destructive",
@@ -1795,7 +1800,7 @@ export default function AdminDashboard() {
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
-                          <TableBody>
+                          <TableBody```python
                             <TableRow>
                               <TableCell>user1@example.com</TableCell>
                               <TableCell>$9.99</TableCell>
@@ -1820,7 +1825,6 @@ export default function AdminDashboard() {
                       </div>
                     </CardContent>
                   </Card>
-                ```python
                 </TabsContent>
 
                 <TabsContent value="manual">
@@ -2657,6 +2661,8 @@ export default function AdminDashboard() {
                 />
               </div>
               <div>
+                ```python
+
                 <label className="block text-sm font-medium mb-1">Expires At (Optional)</label>
                 <Input
                   type="date"
