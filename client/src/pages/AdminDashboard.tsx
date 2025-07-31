@@ -1834,7 +1834,7 @@ export default function AdminDashboard() {
                       });
                     });
                   }
-                }}>
+                }}
                   <Plus size={16} />
                   Create Plan
                 </Button>
