@@ -230,6 +230,68 @@ export default function AdminDashboard() {
     }
   });
 
+  // Add queries for other data
+  const { data: activityLogs, isLoading: activityLoading, refetch: refetchActivity } = useQuery({
+    queryKey: ['adminActivityLogs'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/activity-logs', {
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to fetch activity logs, using fallback');
+        return analytics?.recentActivity || [];
+      }
+
+      return response.json();
+    }
+  });
+
+  const { data: realPromos, isLoading: promosLoading, refetch: refetchPromos } = useQuery<PromoCode[]>({
+    queryKey: ['adminPromos'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/promo-codes', {
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to fetch promos, using fallback');
+        return promoCodesData;
+      }
+
+      return response.json();
+    }
+  });
+
+  const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
+    queryKey: ['adminSettings'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/settings', {
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to fetch settings, using defaults');
+        return {
+          maintenanceMode: false,
+          userRegistration: true,
+          rateLimiting: true,
+          twoFactorAuth: false,
+          sessionTimeout: 30,
+          auditLogging: true
+        };
+      }
+
+      return response.json();
+    }
+  });
+
   // Mock data for API Providers
   const [apiProviders, setApiProviders] = useState<ApiProvider[]>([
     {
@@ -479,26 +541,92 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleTogglePromo = (promoId: number) => {
-    setPromoCodes(codes => 
-      codes.map(code => 
-        code.id === promoId 
-          ? { ...code, active: !code.active }
-          : code
-      )
-    );
-    toast({
-      title: "Success",
-      description: "Promo code status updated.",
-    });
+  const handleTogglePromo = async (promoId: number) => {
+    try {
+      const promo = (realPromos || promoCodesData).find(p => p.id === promoId);
+      if (!promo) return;
+
+      const response = await fetch(`/api/admin/promo-codes/${promoId}/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify({ active: !promo.active })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle promo');
+      }
+
+      toast({
+        title: "Success",
+        description: "Promo code status updated.",
+      });
+      refetchPromos();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update promo code status.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeletePromo = (promoId: number) => {
-    setPromoCodes(codes => codes.filter(code => code.id !== promoId));
-    toast({
-      title: "Success",
-      description: "Promo code deleted successfully.",
-    });
+  const handleDeletePromo = async (promoId: number) => {
+    try {
+      const response = await fetch(`/api/admin/promo-codes/${promoId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-User-Email': user?.email || ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete promo');
+      }
+
+      toast({
+        title: "Success",
+        description: "Promo code deleted successfully.",
+      });
+      refetchPromos();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete promo code.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateSetting = async (setting: string, value: any) => {
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || ''
+        },
+        body: JSON.stringify({ setting, value })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update setting');
+      }
+
+      toast({
+        title: "Success",
+        description: `Setting ${setting} updated successfully.`,
+      });
+      refetchSettings();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update setting.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleToggleApiProvider = (providerId: number, enabled: boolean) => {
@@ -1380,7 +1508,7 @@ export default function AdminDashboard() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Activity Logs</h2>
                 <Button 
-                  onClick={() => {}}
+                  onClick={() => refetchActivity()}
                   variant="outline"
                   className="gap-2"
                 >
@@ -1394,23 +1522,38 @@ export default function AdminDashboard() {
                   <CardTitle>Recent Admin Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {analytics?.recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                          <Activity size={16} className="text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{activity.action}</div>
-                          <div className="text-sm text-slate-500">{activity.targetResource}</div>
-                          <div className="text-sm text-slate-600">{activity.details}</div>
-                          <div className="text-xs text-slate-400 mt-1">
-                            {new Date(activity.timestamp).toLocaleString()}
+                  {activityLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(activityLogs || analytics?.recentActivity || []).map((activity: any, index: number) => (
+                        <div key={activity.id || index} className="flex gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                            <Activity size={16} className="text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium">{activity.action}</div>
+                            <div className="text-sm text-slate-500">{activity.targetResource}</div>
+                            <div className="text-sm text-slate-600">{activity.details}</div>
+                            <div className="text-xs text-slate-400 mt-1">
+                              {new Date(activity.timestamp).toLocaleString()}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                      {(!activityLogs || activityLogs.length === 0) && !analytics?.recentActivity?.length && (
+                        <div className="text-center py-12">
+                          <Activity className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No activity yet</h3>
+                          <p className="text-slate-500 dark:text-slate-500">
+                            Admin activity will appear here when actions are performed
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -1425,7 +1568,12 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Plan Management</h2>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => {
+                  toast({
+                    title: "Feature Coming Soon",
+                    description: "Plan creation will be available in a future update.",
+                  });
+                }}>
                   <Plus size={16} />
                   Create Plan
                 </Button>
@@ -1448,9 +1596,21 @@ export default function AdminDashboard() {
                         <div>• Max queries: {tier === 'free' ? '10' : tier === 'premium' ? '100' : 'Unlimited'}</div>
                         <div>• File size: {tier === 'free' ? '1MB' : tier === 'premium' ? '10MB' : '100MB'}</div>
                         <div>• Priority support: {tier === 'free' ? '❌' : '✅'}</div>
+                        <div>• API Access: {tier === 'enterprise' ? '✅' : '❌'}</div>
+                        <div>• Export formats: {tier === 'free' ? 'Basic' : tier === 'premium' ? 'Standard' : 'All formats'}</div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => {
+                            toast({
+                              title: "Feature Coming Soon",
+                              description: "Plan editing will be available in a future update.",
+                            });
+                          }}
+                        >
                           <Edit size={14} />
                           Edit
                         </Button>
@@ -1488,57 +1648,63 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Code</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Value</TableHead>
-                          <TableHead>Usage</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {promoCodesData.map((promo) => (
-                          <TableRow key={promo.id}>
-                            <TableCell className="font-mono">{promo.code}</TableCell>
-                            <TableCell className="capitalize">{promo.type}</TableCell>
-                            <TableCell>
-                              {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value}`}
-                            </TableCell>
-                            <TableCell>
-                              {promo.usedCount}/{promo.maxUses || '∞'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={promo.active ? 'default' : 'secondary'}>
-                                {promo.active ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleTogglePromo(promo.id)}
-                                >
-                                  {promo.active ? 'Disable' : 'Enable'}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleDeletePromo(promo.id)}
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                              </div>
-                            </TableCell>
+                  {promosLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Code</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Value</TableHead>
+                            <TableHead>Usage</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {(realPromos || promoCodesData).map((promo) => (
+                            <TableRow key={promo.id}>
+                              <TableCell className="font-mono">{promo.code}</TableCell>
+                              <TableCell className="capitalize">{promo.type}</TableCell>
+                              <TableCell>
+                                {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value}`}
+                              </TableCell>
+                              <TableCell>
+                                {promo.usedCount}/{promo.maxUses || '∞'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={promo.active ? 'default' : 'secondary'}>
+                                  {promo.active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleTogglePromo(promo.id)}
+                                  >
+                                    {promo.active ? 'Disable' : 'Enable'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeletePromo(promo.id)}
+                                  >
+                                    <Trash2 size={14} />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -1553,49 +1719,95 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">System Settings</h2>
+                <Button 
+                  onClick={() => logout()}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>General Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Maintenance Mode</span>
-                      <Button variant="outline" size="sm">Toggle</Button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>User Registration</span>
-                      <Button variant="outline" size="sm">Enabled</Button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Rate Limiting</span>
-                      <Button variant="outline" size="sm">Configure</Button>
-                    </div>
-                  </CardContent>
-                </Card>
+              {settingsLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>General Settings</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Maintenance Mode</span>
+                        <Button 
+                          variant={systemSettings?.maintenanceMode ? "destructive" : "outline"} 
+                          size="sm"
+                          onClick={() => handleUpdateSetting('maintenanceMode', !systemSettings?.maintenanceMode)}
+                        >
+                          {systemSettings?.maintenanceMode ? 'Enabled' : 'Disabled'}
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>User Registration</span>
+                        <Button 
+                          variant={systemSettings?.userRegistration ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => handleUpdateSetting('userRegistration', !systemSettings?.userRegistration)}
+                        >
+                          {systemSettings?.userRegistration ? 'Enabled' : 'Disabled'}
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Rate Limiting</span>
+                        <Button 
+                          variant={systemSettings?.rateLimiting ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => handleUpdateSetting('rateLimiting', !systemSettings?.rateLimiting)}
+                        >
+                          {systemSettings?.rateLimiting ? 'Enabled' : 'Disabled'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Security Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Two-Factor Auth</span>
-                      <Button variant="outline" size="sm">Required</Button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Session Timeout</span>
-                      <Button variant="outline" size="sm">30 min</Button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Audit Logging</span>
-                      <Button variant="outline" size="sm">Enabled</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Security Settings</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Two-Factor Auth</span>
+                        <Button 
+                          variant={systemSettings?.twoFactorAuth ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => handleUpdateSetting('twoFactorAuth', !systemSettings?.twoFactorAuth)}
+                        >
+                          {systemSettings?.twoFactorAuth ? 'Required' : 'Optional'}
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Session Timeout</span>
+                        <Button variant="outline" size="sm">
+                          {systemSettings?.sessionTimeout || 30} min
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Audit Logging</span>
+                        <Button 
+                          variant={systemSettings?.auditLogging ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => handleUpdateSetting('auditLogging', !systemSettings?.auditLogging)}
+                        >
+                          {systemSettings?.auditLogging ? 'Enabled' : 'Disabled'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </motion.div>
           )}
         </div>
