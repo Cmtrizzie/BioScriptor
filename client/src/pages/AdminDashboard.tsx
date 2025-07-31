@@ -1040,6 +1040,240 @@ export default function AdminDashboard() {
                             </TableBody>
                           </Table>
                         </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="webhooks">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>PayPal Webhook Logs</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-12">
+                          <Network className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No webhook data</h3>
+                          <p className="text-slate-500 dark:text-slate-500">
+                            Webhook logs will appear here when events are received from PayPal
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="failed">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Failed Payments</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-12">
+                          <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No failed payments</h3>
+                          <p className="text-slate-500 dark:text-slate-500">
+                            Failed payment attempts will be logged here for review
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="manual">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Manual Payment Actions</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex gap-4">
+                            <Button className="gap-2">
+                              <Plus size={16} />
+                              Manual Subscription
+                            </Button>
+                            <Button variant="outline" className="gap-2">
+                              <Edit size={16} />
+                              Adjust Billing
+                            </Button>
+                            <Button variant="destructive" className="gap-2">
+                              <Trash2 size={16} />
+                              Cancel Subscription
+                            </Button>
+                          </div>
+
+                          <div className="text-sm text-slate-500">
+                            Use these tools to manually manage subscriptions when needed for customer support or billing adjustments.
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            )}
+
+            {/* APIs Section */}
+            {activeSection === 'apis' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">API Management</h2>
+                  <Button 
+                    onClick={() => {}}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <RefreshCw size={16} />
+                    Refresh Status
+                  </Button>
+                </div>
+
+                <Tabs defaultValue="providers">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="providers">API Providers</TabsTrigger>
+                    <TabsTrigger value="errors">Error Logs</TabsTrigger>
+                    <TabsTrigger value="analytics">Usage Analytics</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="providers">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {apiProviders.map((provider) => (
+                        <Card key={provider.id} className={`border-2 transition-all duration-200 ${provider.enabled ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
+                          <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${provider.enabled ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                                <CardTitle className="text-lg capitalize font-semibold">{provider.name}</CardTitle>
+                              </div>
+                              <Badge variant={provider.enabled ? "default" : "destructive"} className="font-medium">
+                                {provider.enabled ? "Online" : "Offline"}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Daily Requests:</span>
+                                <span className="font-bold text-blue-600">{provider.stats?.requestsToday || 0}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Success Rate:</span>
+                                <span className="font-bold text-green-600">{provider.stats?.successRate?.toFixed(1) || '0.0'}%</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Avg Response:</span>
+                                <span className="font-bold text-orange-600">{provider.stats?.avgResponse || '0.0'}s</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Priority:</span>
+                                <span className="font-bold text-purple-600">#{provider.priority}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                              <Button 
+                                size="sm" 
+                                variant={provider.enabled ? "destructive" : "default"}
+                                className="flex-1"
+                                onClick={() => handleToggleApiProvider(provider.id, !provider.enabled)}
+                              >
+                                {provider.enabled ? 'Disable' : 'Enable'}
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Settings size={14} />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="errors">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Recent API Errors</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Timestamp</TableHead>
+                                <TableHead>Provider</TableHead>
+                                <TableHead>Error Type</TableHead>
+                                <TableHead>User ID</TableHead>
+                                <TableHead>Message</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {apiErrors.map((error) => (
+                                <TableRow key={error.id}>
+                                  <TableCell className="text-sm">
+                                    {new Date(error.timestamp).toLocaleString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{error.provider}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="destructive">{error.errorType}</Badge>
+                                  </TableCell>
+                                  <TableCell className="font-mono">{error.userId}</TableCell>
+                                  <TableCell className="text-sm text-slate-600 max-w-xs truncate">
+                                    {error.errorMessage}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="analytics">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Daily Usage</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-12">
+                            <BarChart2 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">Usage Analytics</h3>
+                            <p className="text-slate-500 dark:text-slate-500">
+                              Detailed usage analytics will be displayed here
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Cost Breakdown</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {apiProviders.filter(p => p.enabled).map((provider) => (
+                              <div key={provider.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                                <span className="font-medium">{provider.name}</span>
+                                <span className="text-green-600 font-bold">$0.00</span>
+                              </div>
+                            ))}
+                            <div className="border-t pt-3 flex justify-between items-center font-bold">
+                              <span>Total Daily Cost:</span>
+                              <span className="text-blue-600">$0.00</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            )}
       </CardContent>
     </Card>
   </TabsContent>
