@@ -63,16 +63,29 @@ export const adminLogs = pgTable("admin_logs", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
-export const promoCodes = pgTable("promo_codes", {
-  id: serial("id").primaryKey(),
-  code: text("code").notNull().unique(),
-  type: text("type").notNull(), // 'percentage' or 'fixed'
-  value: integer("value").notNull(), // percentage (1-100) or fixed amount in cents
-  maxUses: integer("max_uses"),
-  usedCount: integer("used_count").notNull().default(0),
-  expiresAt: timestamp("expires_at"),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+export const promoCodes = pgTable('promo_codes', {
+  id: serial('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  type: text('type').notNull(), // 'percentage' or 'fixed'
+  value: integer('value').notNull(), // percentage (1-100) or fixed amount in cents
+  maxUses: integer('max_uses'),
+  usedCount: integer('used_count').notNull().default(0),
+  expiresAt: timestamp('expires_at'),
+  active: boolean('active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const paymentFailures = pgTable('payment_failures', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  subscriptionId: text('subscription_id'),
+  amount: integer('amount').notNull(), // in cents
+  currency: text('currency').notNull().default('USD'),
+  reason: text('reason').notNull(),
+  attempts: integer('attempts').notNull().default(1),
+  lastAttempt: timestamp('last_attempt').notNull().defaultNow(),
+  resolved: boolean('resolved').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const apiProviders = pgTable("api_providers", {
@@ -115,18 +128,7 @@ export const webhookLogs = pgTable("webhook_logs", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
-export const paymentFailures = pgTable("payment_failures", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  subscriptionId: text("subscription_id"),
-  amount: integer("amount").notNull(), // in cents
-  currency: text("currency").notNull().default("USD"),
-  reason: text("reason").notNull(),
-  attempts: integer("attempts").notNull().default(1),
-  lastAttempt: timestamp("last_attempt").notNull().defaultNow(),
-  resolved: boolean("resolved").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users);

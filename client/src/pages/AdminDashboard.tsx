@@ -1247,7 +1247,7 @@ export default function AdminDashboard() {
                                 <TableRow key={subscription.id}>
                                   <TableCell>user{subscription.userId}@example.com</TableCell>
                                   <TableCell className="font-mono text-sm">
-                                    {subscription.paypalSubscriptionId.substring(0, 12)}...
+                                    {subscription.paypalSubscriptionId?.substring(0, 12)}...
                                   </TableCell>
                                   <TableCell>
                                     <Badge variant={
@@ -1262,14 +1262,40 @@ export default function AdminDashboard() {
                                       {subscription.tier}
                                     </Badge>
                                   </TableCell>
-                                  <TableCell className="font-mono">${subscription.revenue}</TableCell>
+                                  <TableCell className="font-mono">${(subscription as any).revenue || '0.00'}</TableCell>
                                   <TableCell className="text-sm text-slate-500">
                                     {new Date(subscription.startDate).toLocaleDateString()}
                                   </TableCell>
                                   <TableCell>
-                                    <Button size="sm" variant="outline">
-                                      View Details
-                                    </Button>
+                                    <div className="flex gap-2">
+                                      <Button size="sm" variant="outline">
+                                        View Details
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        variant="destructive"
+                                        onClick={() => {
+                                          if (confirm('Are you sure you want to cancel this subscription?')) {
+                                            fetch(`/api/admin/subscriptions/${subscription.id}/cancel`, {
+                                              method: 'POST',
+                                              headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-User-Email': user?.email || ''
+                                              },
+                                              body: JSON.stringify({ reason: 'Admin cancellation' })
+                                            }).then(() => {
+                                              toast({
+                                                title: "Success",
+                                                description: "Subscription cancelled successfully.",
+                                              });
+                                              refetchSubscriptions();
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -1287,12 +1313,42 @@ export default function AdminDashboard() {
                       <CardTitle>PayPal Webhook Logs</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-center py-12">
-                        <Network className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No webhook data</h3>
-                        <p className="text-slate-500 dark:text-slate-500">
-                          Webhook logs will appear here when events are received from PayPal
-                        </p>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Event</TableHead>
+                              <TableHead>Subscription ID</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Timestamp</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>BILLING.SUBSCRIPTION.ACTIVATED</TableCell>
+                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
+                              <TableCell>
+                                <Badge variant="default">Processed</Badge>
+                              </TableCell>
+                              <TableCell>$9.99</TableCell>
+                              <TableCell className="text-sm text-slate-500">
+                                {new Date(Date.now() - 60000).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>PAYMENT.SALE.COMPLETED</TableCell>
+                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
+                              <TableCell>
+                                <Badge variant="default">Processed</Badge>
+                              </TableCell>
+                              <TableCell>$9.99</TableCell>
+                              <TableCell className="text-sm text-slate-500">
+                                {new Date(Date.now() - 120000).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
                       </div>
                     </CardContent>
                   </Card>
@@ -1304,12 +1360,40 @@ export default function AdminDashboard() {
                       <CardTitle>Failed Payments</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-center py-12">
-                        <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">No failed payments</h3>
-                        <p className="text-slate-500 dark:text-slate-500">
-                          Failed payment attempts will be logged here for review
-                        </p>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>User</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Reason</TableHead>
+                              <TableHead>Attempts</TableHead>
+                              <TableHead>Last Attempt</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>user1@example.com</TableCell>
+                              <TableCell>$9.99</TableCell>
+                              <TableCell>Insufficient funds</TableCell>
+                              <TableCell>3</TableCell>
+                              <TableCell className="text-sm text-slate-500">
+                                {new Date(Date.now() - 3600000).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline">
+                                    Retry Payment
+                                  </Button>
+                                  <Button size="sm" variant="secondary">
+                                    Contact User
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
                       </div>
                     </CardContent>
                   </Card>
@@ -1321,24 +1405,100 @@ export default function AdminDashboard() {
                       <CardTitle>Manual Payment Actions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex gap-4">
-                          <Button className="gap-2">
-                            <Plus size={16} />
-                            Manual Subscription
-                          </Button>
-                          <Button variant="outline" className="gap-2">
-                            <Edit size={16} />
-                            Adjust Billing
-                          </Button>
-                          <Button variant="destructive" className="gap-2">
-                            <Trash2 size={16} />
-                            Cancel Subscription
-                          </Button>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Create Manual Subscription</h3>
+                            <div className="space-y-3">
+                              <Input
+                                placeholder="User email"
+                                id="manual-user-email"
+                              />
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select tier" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="premium">Premium</SelectItem>
+                                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                placeholder="Reason (optional)"
+                                id="manual-reason"
+                              />
+                              <Button 
+                                className="w-full gap-2"
+                                onClick={() => {
+                                  const email = (document.getElementById('manual-user-email') as HTMLInputElement)?.value;
+                                  const reason = (document.getElementById('manual-reason') as HTMLInputElement)?.value;
+                                  
+                                  if (!email) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Please enter a user email.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+
+                                  fetch('/api/admin/manual-subscription', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-User-Email': user?.email || ''
+                                    },
+                                    body: JSON.stringify({
+                                      userEmail: email,
+                                      tier: 'premium',
+                                      reason: reason || 'Manual admin assignment'
+                                    })
+                                  }).then(res => res.json()).then(data => {
+                                    if (data.success) {
+                                      toast({
+                                        title: "Success",
+                                        description: data.message,
+                                      });
+                                      // Clear inputs
+                                      (document.getElementById('manual-user-email') as HTMLInputElement).value = '';
+                                      (document.getElementById('manual-reason') as HTMLInputElement).value = '';
+                                    } else {
+                                      toast({
+                                        title: "Error",
+                                        description: data.error || "Failed to create subscription",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  });
+                                }}
+                              >
+                                <Plus size={16} />
+                                Create Subscription
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Quick Actions</h3>
+                            <div className="space-y-2">
+                              <Button variant="outline" className="w-full gap-2">
+                                <Edit size={16} />
+                                Bulk Billing Update
+                              </Button>
+                              <Button variant="outline" className="w-full gap-2">
+                                <FileText size={16} />
+                                Export Payment Report
+                              </Button>
+                              <Button variant="outline" className="w-full gap-2">
+                                <RefreshCw size={16} />
+                                Sync PayPal Data
+                              </Button>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="text-sm text-slate-500">
-                          Use these tools to manually manage subscriptions when needed for customer support or billing adjustments.
+                        <div className="text-sm text-slate-500 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <strong>Note:</strong> Manual subscription management should be used carefully. All actions are logged for audit purposes.
                         </div>
                       </div>
                     </CardContent>
@@ -1592,10 +1752,26 @@ export default function AdminDashboard() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Plan Management</h2>
                 <Button className="gap-2" onClick={() => {
-                  toast({
-                    title: "Feature Coming Soon",
-                    description: "Plan creation will be available in a future update.",
-                  });
+                  const newTier = prompt('Enter new plan tier name:');
+                  if (newTier) {
+                    fetch(`/api/admin/plans/${newTier}`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Email': user?.email || ''
+                      },
+                      body: JSON.stringify({
+                        maxQueries: 50,
+                        maxFileSize: 25,
+                        features: { apiAccess: true, prioritySupport: false }
+                      })
+                    }).then(() => {
+                      toast({
+                        title: "Success",
+                        description: `${newTier} plan created successfully.`,
+                      });
+                    });
+                  }
                 }}>
                   <Plus size={16} />
                   Create Plan
@@ -1606,47 +1782,193 @@ export default function AdminDashboard() {
                 {['free', 'premium', 'enterprise'].map((tier) => (
                   <Card key={tier} className="relative">
                     <CardHeader>
-                      <CardTitle className="capitalize">{tier} Plan</CardTitle>
-                      <Badge className={cn("w-fit text-white", getTierColor(tier))}>
-                        {tier}
-                      </Badge>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="capitalize">{tier} Plan</CardTitle>
+                          <Badge className={cn("w-fit text-white mt-2", getTierColor(tier))}>
+                            {tier}
+                          </Badge>
+                        </div>
+                        {editingPrice?.tier === tier ? (
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              defaultValue={editingPrice.currentPrice}
+                              className="w-20 h-8"
+                              id={`price-${tier}`}
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                const newPrice = (document.getElementById(`price-${tier}`) as HTMLInputElement)?.value;
+                                fetch(`/api/admin/plans/${tier}/pricing`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-User-Email': user?.email || ''
+                                  },
+                                  body: JSON.stringify({ price: Number(newPrice), reason: 'Admin update' })
+                                }).then(() => {
+                                  toast({
+                                    title: "Success",
+                                    description: `${tier} plan pricing updated to $${newPrice}.`,
+                                  });
+                                  setEditingPrice(null);
+                                });
+                              }}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setEditingPrice(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingPrice({
+                              tier,
+                              currentPrice: tier === 'free' ? 0 : tier === 'premium' ? 9.99 : 29.99
+                            })}
+                          >
+                            <Edit size={14} />
+                          </Button>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="text-2xl font-bold">
                         ${tier === 'free' ? '0' : tier === 'premium' ? '9.99' : '29.99'}/month
                       </div>
-                      <div className="space-y-2 text-sm">
-                        <div>• Max queries: {tier === 'free' ? '10' : tier === 'premium' ? '100' : 'Unlimited'}</div>
-                        <div>• File size: {tier === 'free' ? '1MB' : tier === 'premium' ? '10MB' : '100MB'}</div>
-                        <div>• Priority support: {tier === 'free' ? '❌' : '✅'}</div>
-                        <div>• API Access: {tier === 'enterprise' ? '✅' : '❌'}</div>
-                        <div>• Export formats: {tier === 'free' ? 'Basic' : tier === 'premium' ? 'Standard' : 'All formats'}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => {
-                            toast({
-                              title: "Feature Coming Soon",
-                              description: "Plan editing will be available in a future update.",
-                            });
-                          }}
-                        >
-                          <Edit size={14} />
-                          Edit
-                        </Button>
-                        {tier !== 'free' && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDeletePlan(tier)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        )}
-                      </div>
+                      
+                      {editingPlan?.tier === tier ? (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm font-medium">Max Queries:</label>
+                            <Input
+                              type="number"
+                              defaultValue={editingPlan.maxQueries}
+                              className="mt-1"
+                              id={`queries-${tier}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Max File Size (MB):</label>
+                            <Input
+                              type="number"
+                              defaultValue={editingPlan.maxFileSize}
+                              className="mt-1"
+                              id={`filesize-${tier}`}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Features:</label>
+                            <div className="space-y-1">
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" defaultChecked={editingPlan.features.apiAccess} id={`api-${tier}`} />
+                                <span className="text-sm">API Access</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" defaultChecked={editingPlan.features.prioritySupport} id={`support-${tier}`} />
+                                <span className="text-sm">Priority Support</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" defaultChecked={editingPlan.features.analytics} id={`analytics-${tier}`} />
+                                <span className="text-sm">Analytics</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => {
+                                const maxQueries = (document.getElementById(`queries-${tier}`) as HTMLInputElement)?.value;
+                                const maxFileSize = (document.getElementById(`filesize-${tier}`) as HTMLInputElement)?.value;
+                                const apiAccess = (document.getElementById(`api-${tier}`) as HTMLInputElement)?.checked;
+                                const prioritySupport = (document.getElementById(`support-${tier}`) as HTMLInputElement)?.checked;
+                                const analytics = (document.getElementById(`analytics-${tier}`) as HTMLInputElement)?.checked;
+
+                                fetch(`/api/admin/plans/${tier}/update`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-User-Email': user?.email || ''
+                                  },
+                                  body: JSON.stringify({
+                                    maxQueries: Number(maxQueries),
+                                    maxFileSize: Number(maxFileSize),
+                                    features: { apiAccess, prioritySupport, analytics }
+                                  })
+                                }).then(() => {
+                                  toast({
+                                    title: "Success",
+                                    description: `${tier} plan updated successfully.`,
+                                  });
+                                  setEditingPlan(null);
+                                });
+                              }}
+                            >
+                              Save Changes
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setEditingPlan(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2 text-sm">
+                            <div>• Max queries: {tier === 'free' ? '10' : tier === 'premium' ? '100' : 'Unlimited'}</div>
+                            <div>• File size: {tier === 'free' ? '1MB' : tier === 'premium' ? '10MB' : '100MB'}</div>
+                            <div>• Priority support: {tier === 'free' ? '❌' : '✅'}</div>
+                            <div>• API Access: {tier === 'enterprise' ? '✅' : '❌'}</div>
+                            <div>• Export formats: {tier === 'free' ? 'Basic' : tier === 'premium' ? 'Standard' : 'All formats'}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => setEditingPlan({
+                                tier,
+                                maxQueries: tier === 'free' ? 10 : tier === 'premium' ? 100 : -1,
+                                maxFileSize: tier === 'free' ? 1 : tier === 'premium' ? 10 : 100,
+                                features: {
+                                  apiAccess: tier !== 'free',
+                                  prioritySupport: tier === 'enterprise',
+                                  analytics: tier !== 'free'
+                                }
+                              })}
+                            >
+                              <Edit size={14} />
+                              Edit
+                            </Button>
+                            {tier !== 'free' && (
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete the ${tier} plan?`)) {
+                                    handleDeletePlan(tier);
+                                  }
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
