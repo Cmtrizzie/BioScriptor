@@ -1025,21 +1025,21 @@ export default function AdminDashboard() {
                                     <Badge className={cn("text-white", getTierColor(subscription.tier))}>
                                       {subscription.tier}
                                     </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono">${subscription.revenue}</TableCell>
-                  <TableCell className="text-sm text-slate-500">
-                    {new Date(subscription.startDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="outline">
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+                                  </TableCell>
+                                  <TableCell className="font-mono">${subscription.revenue}</TableCell>
+                                  <TableCell className="text-sm text-slate-500">
+                                    {new Date(subscription.startDate).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button size="sm" variant="outline">
+                                      View Details
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
       </CardContent>
     </Card>
   </TabsContent>
