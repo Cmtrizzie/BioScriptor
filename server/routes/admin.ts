@@ -2,6 +2,7 @@ import express from 'express';
 import { db } from '../storage';
 import { users, conversations, subscriptions, apiProviders, apiErrorLogs, adminLogs, planLimits, promoCodes } from '../../shared/schema';
 import { eq, desc, count, sql } from 'drizzle-orm';
+import { Response, NextFunction } from 'express';
 
 const router = express.Router();
 
@@ -52,7 +53,10 @@ export const adminAuth = async (req: any, res: any, next: any) => {
 };
 
 // Middleware to check admin privileges
-const requireAdmin = async (req: any, res: any, next: any) => {
+const requireAdmin = async (req: any, res: Response, next: NextFunction) => {
+  console.log('Admin middleware - user:', req.user ? 'authenticated' : 'not authenticated');
+  console.log('Admin middleware - tier:', req.user?.tier);
+
   try {
     // In development mode, always allow admin access
     if (process.env.NODE_ENV === 'development') {
@@ -294,10 +298,25 @@ router.get('/users', async (req, res) => {
       .orderBy(desc(users.createdAt))
       .limit(Number(limit))
       .offset(offset);
-
-    res.json(allUsers);
   } catch (error) {
     console.error('Users fetch error:', error);
+
+    // Provide fallback data for development
+    if (process.env.NODE_ENV === 'development') {
+      const fallbackUsers = [
+        {
+          id: 'demo-1',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          tier: 'free',
+          createdAt: new Date(),
+          queryCount: 5,
+          lastActive: new Date()
+        }
+      ];
+      return res.json(fallbackUsers);
+    }
+
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });

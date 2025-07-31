@@ -18,14 +18,18 @@ if (import.meta.env.DEV) {
 
 // Enable React DevTools in development
 if (import.meta.env.DEV) {
-  import('@welldone-software/why-did-you-render').then((wdyr) => {
-    wdyr.default(React, {
-      trackAllPureComponents: true,
-    });
-  }).catch(() => {
-    // Silently fail if why-did-you-render is not available
-  });
-}
+    try {
+      import("@welldone-software/why-did-you-render").then((wdyr) => {
+        wdyr.default(React, {
+          trackAllPureComponents: true,
+        });
+      }).catch(() => {
+        // Why-did-you-render not available, skipping
+      });
+    } catch (e) {
+      // Optional dependency not available
+    }
+  }
 
 const root = ReactDOM.createRoot(rootElement);
 
