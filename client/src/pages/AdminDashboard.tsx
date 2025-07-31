@@ -1857,12 +1857,12 @@ export default function AdminDashboard() {
                               type="number"
                               defaultValue={editingPrice.currentPrice}
                               className="w-20 h-8"
-                              id={`price-${tier}`}
+                              id={'price-' + tier}
                             />
                             <Button 
                               size="sm" 
                               onClick={() => {
-                                const newPrice = (document.getElementById(`price-${tier}`) as HTMLInputElement)?.value;
+                                const newPrice = (document.getElementById('price-' + tier) as HTMLInputElement)?.value;
                                 fetch(`/api/admin/plans/${tier}/pricing`, {
                                   method: 'POST',
                                   headers: {
@@ -1873,7 +1873,7 @@ export default function AdminDashboard() {
                                 }).then(() => {
                                   toast({
                                     title: "Success",
-                                    description: `${tier} plan pricing updated to $${newPrice}.`,
+                                    description: tier + ' plan pricing updated to $' + newPrice + '.',
                                   });
                                   setEditingPrice(null);
                                 });
@@ -1916,7 +1916,7 @@ export default function AdminDashboard() {
                               type="number"
                               defaultValue={editingPlan.maxQueries}
                               className="mt-1"
-                              id={`queries-${tier}`}
+                              id={'queries-' + tier}
                             />
                           </div>
                           <div>
@@ -1925,22 +1925,22 @@ export default function AdminDashboard() {
                               type="number"
                               defaultValue={editingPlan.maxFileSize}
                               className="mt-1"
-                              id={`filesize-${tier}`}
+                              id={'filesize-' + tier}
                             />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Features:</label>
                             <div className="space-y-1">
                               <label className="flex items-center gap-2">
-                                <input type="checkbox" defaultChecked={editingPlan.features.apiAccess} id={`api-${tier}`} />
+                                <input type="checkbox" defaultChecked={editingPlan.features.apiAccess} id={'api-' + tier} />
                                 <span className="text-sm">API Access</span>
                               </label>
                               <label className="flex items-center gap-2">
-                                <input type="checkbox" defaultChecked={editingPlan.features.prioritySupport} id={`support-${tier}`} />
+                                <input type="checkbox" defaultChecked={editingPlan.features.prioritySupport} id={'support-' + tier} />
                                 <span className="text-sm">Priority Support</span>
                               </label>
                               <label className="flex items-center gap-2">
-                                <input type="checkbox" defaultChecked={editingPlan.features.analytics} id={`analytics-${tier}`} />
+                                <input type="checkbox" defaultChecked={editingPlan.features.analytics} id={'analytics-' + tier} />
                                 <span className="text-sm">Analytics</span>
                               </label>
                             </div>
@@ -1950,11 +1950,11 @@ export default function AdminDashboard() {
                               size="sm" 
                               className="flex-1"
                               onClick={() => {
-                                const maxQueries = (document.getElementById(`queries-${tier}`) as HTMLInputElement)?.value;
-                                const maxFileSize = (document.getElementById(`filesize-${tier}`) as HTMLInputElement)?.value;
-                                const apiAccess = (document.getElementById(`api-${tier}`) as HTMLInputElement)?.checked;
-                                const prioritySupport = (document.getElementById(`support-${tier}`) as HTMLInputElement)?.checked;
-                                const analytics = (document.getElementById(`analytics-${tier}`) as HTMLInputElement)?.checked;
+                                const maxQueries = (document.getElementById('queries-' + tier) as HTMLInputElement)?.value;
+                                const maxFileSize = (document.getElementById('filesize-' + tier) as HTMLInputElement)?.value;
+                                const apiAccess = (document.getElementById('api-' + tier) as HTMLInputElement)?.checked;
+                                const prioritySupport = (document.getElementById('support-' + tier) as HTMLInputElement)?.checked;
+                                const analytics = (document.getElementById('analytics-' + tier) as HTMLInputElement)?.checked;
 
                                 fetch(`/api/admin/plans/${tier}/update`, {
                                   method: 'POST',
@@ -1970,7 +1970,7 @@ export default function AdminDashboard() {
                                 }).then(() => {
                                   toast({
                                     title: "Success",
-                                    description: `${tier} plan updated successfully.`,
+                                    description: tier + ' plan updated successfully.',
                                   });
                                   setEditingPlan(null);
                                 });
