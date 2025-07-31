@@ -198,8 +198,9 @@ export default function AdminDashboard() {
     queryKey: ['adminUsers', searchQuery, planFilter],
     queryFn: async () => {
       try {
-        const response = await fetch('/api/admin/users?search=&tier=', {
+        const response = await fetch(`/api/admin/users?search=${searchQuery}&tier=${planFilter}`, {
           headers: {
+            'Content-Type': 'application/json',
             'X-User-Email': user?.email || '',
             'Authorization': `Bearer ${user?.accessToken || ''}`,
           }
@@ -322,20 +323,25 @@ export default function AdminDashboard() {
   const { data: realPromos, isLoading: promosLoading, refetch: refetchPromos } = useQuery<PromoCode[]>({
     queryKey: ['adminPromos'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/promo-codes', {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Email': user?.email || '',
-          'Authorization': `Bearer ${user?.accessToken || ''}`,
-        }
-      });
+      try {
+        const response = await fetch('/api/admin/promo-codes', {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Email': user?.email || '',
+            'Authorization': `Bearer ${user?.accessToken || ''}`,
+          }
+        });
 
-      if (!response.ok) {
-        console.warn('Failed to fetch promos, using fallback');
+        if (!response.ok) {
+          console.warn('Failed to fetch promos, using fallback');
+          return promoCodesData;
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Failed to fetch promos:', error.message);
         return promoCodesData;
       }
-
-      return response.json();
     },
     enabled: !!user?.email
   });
@@ -630,7 +636,8 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
         body: JSON.stringify({ active: !promo.active })
       });
@@ -659,7 +666,8 @@ export default function AdminDashboard() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || ''
+          'X-User-Email': user?.email || '',
+          'Authorization': `Bearer ${user?.accessToken || ''}`,
         }
       });
 

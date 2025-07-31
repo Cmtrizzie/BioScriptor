@@ -60,7 +60,7 @@ const requireAdmin = async (req: any, res: any, next: any) => {
   try {
     // In development mode, always allow admin access
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Allowing admin access');
+      console.log('Development mode: Allowing admin access for', req.path);
       req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin', displayName: 'Admin User' };
       return next();
     }
@@ -73,12 +73,12 @@ const requireAdmin = async (req: any, res: any, next: any) => {
                      req.user?.email;
 
     if (!userEmail) {
-      console.log('Admin auth failed: No user email found in headers');
+      console.log('Admin auth failed: No user email found in headers for', req.path);
       console.log('Available headers:', Object.keys(req.headers));
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    console.log('Admin auth check for email:', userEmail);
+    console.log('Admin auth check for email:', userEmail, 'path:', req.path);
 
     const user = await db.select().from(users).where(eq(users.email, userEmail as string)).limit(1);
 
