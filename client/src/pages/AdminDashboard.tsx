@@ -999,11 +999,10 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/settings', {
         method: 'POST',
         headers,
-        body:```python
- JSON.stringify({ setting, value })
+        body: JSON.stringify({ setting, value })
       });
 
-            if (!response.ok) {
+      if (!response.ok) {
         throw new Error('Failed to update setting');
       }
 
