@@ -966,9 +966,8 @@ export default function AdminDashboard() {
                       Recent Activity
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    ```tool_code
-{analytics?.recentActivity.slice(0, 3).map((activity) => (
+                  
+                    {(analytics?.recentActivity || []).slice(0, 3).map((activity) => (
                       <div key={activity.id} className="flex gap-3">
                         <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
                           <UserCheck size={16} className="text-blue-600 dark:text-blue-400" />
