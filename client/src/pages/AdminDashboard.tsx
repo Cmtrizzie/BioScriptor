@@ -747,6 +747,12 @@ export default function AdminDashboard() {
     try {
       console.log('🔄 Toggling promo:', promo.code, 'to', !promo.active);
 
+      // Optimistically update the local state first
+      const newActiveState = !promo.active;
+      setPromoCodesData(prev => 
+        prev.map(p => p.id === promo.id ? { ...p, active: newActiveState } : p)
+      );
+
       const response = await fetch(`/api/admin/promo-codes/${promo.id}/toggle`, {
         method: 'POST',
         headers: {
@@ -754,11 +760,15 @@ export default function AdminDashboard() {
           'X-User-Email': user?.email || '',
           'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
-        body: JSON.stringify({ active: !promo.active })
+        body: JSON.stringify({ active: newActiveState })
       });
 
       if (!response.ok) {
         console.error('❌ Failed to toggle promo:', response.status, response.statusText);
+        // Revert the optimistic update
+        setPromoCodesData(prev => 
+          prev.map(p => p.id === promo.id ? { ...p, active: promo.active } : p)
+        );
         toast({
           title: "Error",
           description: "Failed to toggle promo code.",
@@ -772,6 +782,10 @@ export default function AdminDashboard() {
         result = await response.json();
       } catch (parseError) {
         console.error('❌ Failed to parse response:', parseError);
+        // Revert the optimistic update
+        setPromoCodesData(prev => 
+          prev.map(p => p.id === promo.id ? { ...p, active: promo.active } : p)
+        );
         toast({
           title: "Error",
           description: "Invalid response from server.",
@@ -785,11 +799,19 @@ export default function AdminDashboard() {
       if (result.success) {
         toast({
           title: "Success",
-          description: result.message || `Promo code ${result.active ? 'activated' : 'deactivated'} successfully.`,
+          description: result.message || `Promo code ${newActiveState ? 'activated' : 'deactivated'} successfully.`,
         });
-        // Only refetch if the operation was successful
-        await refetchPromos();
+        // Ensure the state matches the server response
+        setPromoCodesData(prev => 
+          prev.map(p => p.id === promo.id ? { ...p, active: result.active !== undefined ? result.active : newActiveState } : p)
+        );
+        // Also refetch to ensure consistency
+        refetchPromos();
       } else {
+        // Revert the optimistic update
+        setPromoCodesData(prev => 
+          prev.map(p => p.id === promo.id ? { ...p, active: promo.active } : p)
+        );
         toast({
           title: "Error",
           description: result.error || "Failed to toggle promo code.",
@@ -798,6 +820,10 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('❌ Failed to toggle promo:', error);
+      // Revert the optimistic update
+      setPromoCodesData(prev => 
+        prev.map(p => p.id === promo.id ? { ...p, active: promo.active } : p)
+      );
       toast({
         title: "Error",
         description: "Network error occurred.",
@@ -2277,7 +2303,7 @@ export default function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(realPromos || promoCodesData).map((promo) => (
+                          {(realPromos && realPromos.length > 0 ? realPromos : promoCodesData).map((promo) => (
                             <TableRow key={promo.id}>
                               <TableCell className="font-mono">{promo.code}</TableCell>
                               <TableCell className="capitalize">{promo.type}</TableCell>
@@ -2296,7 +2322,7 @@ export default function AdminDashboard() {
                                 <div className="flex gap-2">
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant={promo.active ? "destructive" : "default"}
                                     onClick={() => handleTogglePromo(promo)}
                                   >
                                     {promo.active ? 'Disable' : 'Enable'}
