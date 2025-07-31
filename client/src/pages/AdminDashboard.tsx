@@ -759,6 +759,7 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-User-Email': user?.email || '',
           'Authorization': `Bearer ${user?.accessToken || ''}`,
         },
@@ -779,9 +780,32 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ Response is not JSON:', contentType);
+        const textResponse = await response.text();
+        console.error('Response text:', textResponse);
+        
+        // Revert the optimistic update
+        setPromoCodesData(prev => 
+          prev.map(p => p.id === promo.id ? { ...p, active: promo.active } : p)
+        );
+        toast({
+          title: "Error",
+          description: "Server returned invalid response format.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       let result;
       try {
-        result = await response.json();
+        const responseText = await response.text();
+        if (!responseText.trim()) {
+          throw new Error('Empty response');
+        }
+        result = JSON.parse(responseText);
       } catch (parseError) {
         console.error('❌ Failed to parse response:', parseError);
         // Revert the optimistic update

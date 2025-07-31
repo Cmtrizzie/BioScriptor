@@ -1050,6 +1050,9 @@ router.post('/promo-codes/:promoId/toggle', async (req, res) => {
 
     console.log('🔄 Toggling promo code:', promoId, 'to active:', active);
 
+    // Set proper response headers
+    res.setHeader('Content-Type', 'application/json');
+
     // In development mode, just return success with mock data
     const mockPromoCode = `PROMO${promoId}`;
     
@@ -1075,7 +1078,7 @@ router.post('/promo-codes/:promoId/toggle', async (req, res) => {
         }
 
         console.log('✅ Successfully toggled promo code:', promo[0].code);
-        return res.json({ 
+        return res.status(200).json({ 
           success: true, 
           active, 
           code: promo[0].code,
@@ -1083,7 +1086,7 @@ router.post('/promo-codes/:promoId/toggle', async (req, res) => {
         });
       } else {
         console.log('⚠️ Promo code not found in database, using mock response');
-        return res.json({ 
+        return res.status(200).json({ 
           success: true, 
           active, 
           code: mockPromoCode,
@@ -1092,7 +1095,7 @@ router.post('/promo-codes/:promoId/toggle', async (req, res) => {
       }
     } catch (dbError) {
       console.warn('Database error, using mock response:', dbError.message);
-      return res.json({ 
+      return res.status(200).json({ 
         success: true, 
         active, 
         code: mockPromoCode,
@@ -1101,10 +1104,11 @@ router.post('/promo-codes/:promoId/toggle', async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Toggle promo error:', error);
-    res.status(500).json({ 
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to toggle promo code',
-      message: error.message || 'Unknown error occurred'
+      message: error?.message || 'Unknown error occurred'
     });
   }
 });
@@ -1115,6 +1119,9 @@ router.delete('/promo-codes/:promoId', async (req, res) => {
     const { promoId } = req.params;
 
     console.log('🗑️ Deleting promo code:', promoId);
+
+    // Set proper response headers
+    res.setHeader('Content-Type', 'application/json');
 
     try {
       const promo = await db.select().from(promoCodes).where(eq(promoCodes.id, Number(promoId))).limit(1);
@@ -1135,30 +1142,31 @@ router.delete('/promo-codes/:promoId', async (req, res) => {
         }
 
         console.log('✅ Successfully deleted promo code:', promo[0].code);
-        return res.json({ 
+        return res.status(200).json({ 
           success: true,
           message: `Promo code ${promo[0].code} deleted successfully`
         });
       } else {
         console.log('⚠️ Promo code not found in database');
-        return res.json({ 
+        return res.status(200).json({ 
           success: true,
           message: `Promo code deleted successfully`
         });
       }
     } catch (dbError) {
       console.warn('Database error during deletion:', dbError.message);
-      return res.json({ 
+      return res.status(200).json({ 
         success: true,
         message: `Promo code deleted successfully`
       });
     }
   } catch (error) {
     console.error('❌ Delete promo error:', error);
-    res.status(500).json({ 
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to delete promo code',
-      message: error.message || 'Unknown error occurred'
+      message: error?.message || 'Unknown error occurred'
     });
   }
 });
