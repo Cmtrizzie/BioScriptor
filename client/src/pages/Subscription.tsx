@@ -86,7 +86,7 @@ export default function Subscription() {
     mutationFn: async ({ tier }: { tier: string }) => {
       // Simulate PayPal subscription creation
       const paypalSubscriptionId = `PAYPAL_${tier.toUpperCase()}_${Date.now()}`;
-      
+
       const response = await fetch('/api/subscription', {
         method: 'POST',
         headers: {
@@ -125,9 +125,86 @@ export default function Subscription() {
     }
   });
 
-  const handleSubscribe = (tier: string) => {
+  const handleSubscribe = async (tier: 'free' | 'premium' | 'enterprise') => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to manage subscriptions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tier === user.tier) {
+      toast({
+        title: "Already Subscribed",
+        description: `You're already on the ${tier} plan.`,
+      });
+      return;
+    }
+
     setLoading(tier);
-    subscribeMutation.mutate({ tier });
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-User-Email': user.email || 'demo@dev.local',
+      };
+
+      // Add authorization if available
+      if (user.accessToken) {
+        headers['Authorization'] = `Bearer ${user.accessToken}`;
+      } else {
+        // Provide fallback auth for development
+        headers['Authorization'] = 'Bearer dev-token';
+      }
+
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          tier,
+          userEmail: user.email,
+          userId: user.uid || 'demo-user'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Subscription failed';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+
+      if (result.approvalUrl) {
+        // Redirect to PayPal for payment
+        window.location.href = result.approvalUrl;
+      } else {
+        toast({
+          title: "Success",
+          description: result.message || `Successfully ${tier === 'free' ? 'downgraded to' : 'upgraded to'} ${tier} plan!`,
+        });
+
+        // Refresh user data
+        queryClient.invalidateQueries({ queryKey: ['user'] });
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Subscription Error", 
+        description: error instanceof Error ? error.message : "Failed to process subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
   };
 
   const formatFeatureValue = (key: string, value: any) => {
@@ -143,7 +220,7 @@ export default function Subscription() {
     const pricing = planPricing[tier];
     const isCurrentPlan = user?.tier === tier;
     const isUpgrade = user?.tier === 'free' && tier !== 'free';
-    
+
     return (
       <Card className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''} ${tier === 'premium' ? 'border-primary shadow-lg' : ''}`}>
         {tier === 'premium' && (
@@ -151,7 +228,7 @@ export default function Subscription() {
             <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
           </div>
         )}
-        
+
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Icon className={`h-8 w-8 ${
@@ -166,7 +243,7 @@ export default function Subscription() {
             <span className="text-sm font-normal text-muted-foreground">/{pricing.period}</span>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -175,51 +252,51 @@ export default function Subscription() {
                 {plan.features.maxQueries === -1 ? 'Unlimited' : plan.features.maxQueries} queries/month
               </span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
               <span className="text-sm">{plan.features.maxFileSize}MB file uploads</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
               <span className="text-sm">{plan.features.aiProviders.length} AI provider(s)</span>
             </div>
-            
+
             {plan.features.advancedAnalysis && (
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
                 <span className="text-sm">Advanced bioinformatics analysis</span>
               </div>
             )}
-            
+
             {plan.features.prioritySupport && (
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
                 <span className="text-sm">Priority support</span>
               </div>
             )}
-            
+
             {plan.features.collaborativeFeatures && (
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
                 <span className="text-sm">Collaborative features</span>
               </div>
             )}
-            
+
             {plan.features.apiAccess && (
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
                 <span className="text-sm">API access</span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
               <span className="text-sm">Export: {plan.features.exportFormats.join(', ')}</span>
             </div>
           </div>
-          
+
           <div className="pt-4">
             {isCurrentPlan ? (
               <Button className="w-full" disabled>
