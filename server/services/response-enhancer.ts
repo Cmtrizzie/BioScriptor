@@ -997,28 +997,158 @@ export interface BuilderContext {
   isBuilderMode: boolean;
   useCase?: string;
   techStack?: string[];
-  experience?: "beginner" | "intermediate"python\n# Example code will be generated based on your request\nprint('Hello, BioScriptor!')\n```";
+  experience?: "beginner" | "intermediate" | "advanced";
+}
+
+export function detectBuilderMode(
+  userMessage: string,
+  conversationHistory: ChatMessage[]
+): BuilderContext {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Builder mode triggers
+  const builderTriggers = [
+    'build', 'create', 'develop', 'implement', 'design',
+    'make', 'generate', 'construct', 'setup', 'configure'
+  ];
+  
+  const isBuilderMode = builderTriggers.some(trigger => lowerMessage.includes(trigger));
+  
+  // Detect use case
+  let useCase: string | undefined;
+  if (lowerMessage.includes('web') || lowerMessage.includes('website')) useCase = 'web_development';
+  if (lowerMessage.includes('api') || lowerMessage.includes('backend')) useCase = 'api_development';
+  if (lowerMessage.includes('analysis') || lowerMessage.includes('bioinformatics')) useCase = 'data_analysis';
+  
+  // Detect tech stack
+  const techStack: string[] = [];
+  if (lowerMessage.includes('python')) techStack.push('python');
+  if (lowerMessage.includes('javascript') || lowerMessage.includes('js')) techStack.push('javascript');
+  if (lowerMessage.includes('react')) techStack.push('react');
+  if (lowerMessage.includes('node')) techStack.push('nodejs');
+  
+  // Detect experience level
+  let experience: "beginner" | "intermediate" | "advanced" = "intermediate";
+  if (lowerMessage.includes('beginner') || lowerMessage.includes('new to')) experience = "beginner";
+  if (lowerMessage.includes('advanced') || lowerMessage.includes('expert')) experience = "advanced";
+  
+  return {
+    isBuilderMode,
+    useCase,
+    techStack: techStack.length > 0 ? techStack : undefined,
+    experience
+  };
+}
+
+export function generateFollowUpResponse(
+  userMessage: string,
+  builderContext: BuilderContext
+): string | null {
+  if (!builderContext.isBuilderMode) return null;
+  
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Follow-up triggers
+  const followUpTriggers = [
+    'yes', 'yeah', 'sure', 'go ahead', 'continue', 'next',
+    'tell me more', 'show me', 'explain', 'how'
+  ];
+  
+  if (!followUpTriggers.some(trigger => lowerMessage.includes(trigger))) return null;
+  
+  return `Great! Let's continue building your ${builderContext.useCase || 'project'}. 
+
+## Next Steps
+Based on your requirements, here's what we can work on:
+
+${builderContext.techStack ? `**Tech Stack**: ${builderContext.techStack.join(', ')}` : ''}
+${builderContext.experience ? `**Experience Level**: ${builderContext.experience}` : ''}
+
+What specific feature would you like to implement first?`;
 }
 
 export function generateGeneralResponse(): string {
   return `I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing.
 
-             ### What I can help with:
-             - 🔬 **Bioinformatics analysis and tools**
-             - 📊 **Data analysis and visualization**
-             - 🧬 **Genomics and molecular biology**
-             - 💻 **Scientific programming and scripting**
-             - 🧮 **Statistical analysis and modeling**
-             - 📝 **Research methodology and documentation**
+### What I can help with:
+- 🔬 **Bioinformatics analysis and tools**
+- 📊 **Data analysis and visualization**
+- 🧬 **Genomics and molecular biology**
+- 💻 **Scientific programming and scripting**
+- 🧮 **Statistical analysis and modeling**
+- 📝 **Research methodology and documentation**
 
-             ### Example queries:
-             - "Help me analyze DNA sequences"
-             - "Create a Python script for data processing"
-             - "Explain CRISPR gene editing"
-             - "Design a bioinformatics workflow"
-             - "Visualize genomic data"
+### Example queries:
+- "Help me analyze DNA sequences"
+- "Create a Python script for data processing"
+- "Explain CRISPR gene editing"
+- "Design a bioinformatics workflow"
+- "Visualize genomic data"
 
-             **What would you like to work on today?**`;
+**What would you like to work on today?**`;
+}
+
+export function generateConversationHook(
+  intent: string,
+  context: any,
+  userMessage: string
+): string {
+  const personality = getPersonalityForContext(userMessage, context.previousResponses || []);
+  const hooks = personality.response_patterns?.acknowledgments || [
+    "Great question!",
+    "I'd be happy to help!",
+    "Let's explore this together!"
+  ];
+  
+  const hook = getRandomFromArray(hooks);
+  
+  // Add context-specific hooks
+  if (intent === 'greeting') {
+    return `${hook} ${personality.greeting_style === 'warm and welcoming' ? 
+      "Welcome to BioScriptor! I'm here to help with your bioinformatics and scientific computing needs." :
+      "Hello! Ready to dive into some exciting scientific work?"}`;
+  }
+  
+  if (intent === 'farewell') {
+    return "Thank you for using BioScriptor! Feel free to return anytime for more scientific assistance. Good luck with your research! 🧬✨";
+  }
+  
+  return hook;
+}
+
+export function generateSmartFollowUps(
+  intent: string,
+  content: string,
+  context: any
+): string {
+  const followUps: string[] = [];
+  
+  if (intent === 'code_request') {
+    followUps.push(
+      "- 🔧 **Optimize** this code for better performance?",
+      "- 📚 **Explain** the algorithm in more detail?",
+      "- 🧪 **Test** this with sample data?",
+      "- 📊 **Visualize** the results?",
+      "- 🔄 **Adapt** this for different input formats?"
+    );
+  } else if (intent === 'technical_question') {
+    followUps.push(
+      "- 💡 **Explore** related concepts?",
+      "- 🛠️ **Implement** a practical example?",
+      "- 📖 **Learn** about best practices?",
+      "- 🔍 **Investigate** advanced techniques?",
+      "- 🎯 **Apply** this to your specific use case?"
+    );
+  } else {
+    followUps.push(
+      "- 🚀 **Continue** exploring this topic?",
+      "- 💬 **Discuss** alternative approaches?",
+      "- 📝 **Document** your findings?",
+      "- 🔬 **Experiment** with variations?"
+    );
+  }
+  
+  return `### Next Steps\n\nWould you like me to:\n\n${followUps.slice(0, 4).join('\n')}`;
 }
 
 export function generateCodeResponse(
