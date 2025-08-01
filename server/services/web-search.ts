@@ -1,4 +1,6 @@
 import fetch from 'node-fetch';
+import { spawn } from 'child_process';
+import path from 'path';
 
 interface WebSearchResult {
   title: string;
@@ -30,6 +32,64 @@ interface SearXNGResponse {
   infoboxes: any[];
   suggestions: string[];
   unresponsive_engines: string[];
+}
+
+// Scrapy-based web search
+async function scrapySearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
+  return new Promise((resolve, reject) => {
+    console.log('🕷️ Starting Scrapy web search...');
+    
+    const scrapyScript = path.join(process.cwd(), 'server', 'services', 'scrapy-search.py');
+    const pythonProcess = spawn('python3', [scrapyScript, query, maxResults.toString()], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 30000,
+      env: { ...process.env, PYTHONPATH: process.cwd() }
+    });
+
+    let output = '';
+    let errorOutput = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0 && output.trim()) {
+        try {
+          const result = JSON.parse(output.trim());
+          if (result.results && Array.isArray(result.results)) {
+            console.log(`✅ Scrapy found ${result.results.length} results`);
+            resolve(result.results);
+          } else {
+            console.warn('Scrapy returned invalid results format');
+            resolve([]);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse Scrapy output:', parseError.message);
+          resolve([]);
+        }
+      } else {
+        console.warn(`Scrapy process failed with code ${code}:`, errorOutput);
+        resolve([]);
+      }
+    });
+
+    pythonProcess.on('error', (error) => {
+      console.warn('Scrapy process error:', error.message);
+      resolve([]);
+    });
+
+    // Handle timeout
+    setTimeout(() => {
+      pythonProcess.kill();
+      console.warn('Scrapy search timed out');
+      resolve([]);
+    }, 25000);
+  });
 }
 
 // DuckDuckGo Instant Answer API and HTML fallback
@@ -206,7 +266,14 @@ async function searxngSearch(query: string, maxResults: number = 5): Promise<Web
 
 export async function performWebSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   try {
-    // Try SearXNG first
+    // Try Scrapy first (most reliable)
+    const scrapyResults = await scrapySearch(query, maxResults);
+    if (scrapyResults.length > 0) {
+      return scrapyResults;
+    }
+    
+    // Fallback to SearXNG
+    console.log('🔄 Scrapy failed, trying SearXNG fallback...');
     const searxResults = await searxngSearch(query, maxResults);
     if (searxResults.length > 0) {
       return searxResults;
@@ -219,8 +286,8 @@ export async function performWebSearch(query: string, maxResults: number = 5): P
       return ddgResults;
     }
     
-    // If both fail, provide contextual mock results
-    console.log('⚠️ All search methods failed, providing contextual information');
+    // If all methods fail, provide contextual mock results
+    console.log('⚠️ All search methods (Scrapy, SearXNG, DuckDuckGo) failed, providing contextual information');
     
     // Provide topic-specific mock results based on query
     if (/bitcoin|btc|cryptocurrency|crypto/i.test(query)) {
@@ -298,7 +365,7 @@ export function shouldPerformWebSearch(query: string): boolean {
   return webSearchKeywords.some(keyword => queryLower.includes(keyword));
 }
 
-// Web search service object
+// Web search service object with Scrapy integration
 export const webSearchService = {
   async search(query: string, options: { maxResults?: number; bioinformatics?: boolean } = {}): Promise<WebSearchResponse> {
     const startTime = Date.now();
