@@ -1201,7 +1201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
   // Subscription endpoint  
   app.post("/api/subscribe", async (req: any, res) => {
     try {
