@@ -38,7 +38,7 @@ interface SearXNGResponse {
 async function scrapySearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   return new Promise((resolve, reject) => {
     console.log('🕷️ Starting Scrapy web search...');
-    
+
     const scrapyScript = path.join(process.cwd(), 'server', 'services', 'scrapy-search.py');
     const pythonProcess = spawn('python3', [scrapyScript, query, maxResults.toString()], {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -96,10 +96,10 @@ async function scrapySearch(query: string, maxResults: number = 5): Promise<WebS
 async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   try {
     console.log('🦆 Trying DuckDuckGo Instant Answer API...');
-    
+
     // First try the Instant Answer API
     const instantUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-    
+
     const instantResponse = await fetch(instantUrl, {
       method: 'GET',
       headers: {
@@ -110,7 +110,7 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
 
     if (instantResponse.ok) {
       const instantData = await instantResponse.json();
-      
+
       // Check for abstract or definition
       if (instantData.Abstract && instantData.AbstractText) {
         return [{
@@ -119,7 +119,7 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
           snippet: instantData.AbstractText.substring(0, 200)
         }];
       }
-      
+
       // Check for related topics
       if (instantData.RelatedTopics && instantData.RelatedTopics.length > 0) {
         const results = instantData.RelatedTopics
@@ -130,19 +130,19 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
             url: topic.FirstURL,
             snippet: topic.Text.substring(0, 200)
           }));
-        
+
         if (results.length > 0) {
           console.log(`✅ DuckDuckGo Instant API found ${results.length} results`);
           return results;
         }
       }
     }
-    
+
     console.log('🔄 DuckDuckGo Instant API had no results, trying HTML search...');
-    
+
     // Fallback to HTML scraping
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    
+
     const response = await fetch(searchUrl, {
       method: 'GET',
       headers: {
@@ -159,19 +159,19 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
     }
 
     const html = await response.text();
-    
+
     // Improved regex patterns for better extraction
     const results: WebSearchResult[] = [];
     const resultPattern = /<div class="result__body">[\s\S]*?<a[^>]*href="([^"]+)"[^>]*class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-    
+
     let match;
     let count = 0;
-    
+
     while ((match = resultPattern.exec(html)) && count < maxResults) {
       const url = match[1];
       const title = match[2].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
       const snippet = match[3].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-      
+
       if (url && title && !url.includes('duckduckgo.com') && title.length > 0) {
         results.push({
           title: title.substring(0, 100),
@@ -181,10 +181,10 @@ async function duckduckgoSearch(query: string, maxResults: number = 5): Promise<
         count++;
       }
     }
-    
+
     console.log(`✅ DuckDuckGo HTML found ${results.length} results`);
     return results;
-    
+
   } catch (error) {
     console.warn('DuckDuckGo search failed:', error.message);
     return [];
@@ -218,7 +218,7 @@ async function searxngSearch(query: string, maxResults: number = 5): Promise<Web
   for (const instance of searxngInstances) {
     try {
       const searchUrl = `${instance}/search`;
-      
+
       const response = await fetch(`${searchUrl}?${params}`, {
         method: 'GET',
         headers: {
@@ -271,24 +271,24 @@ export async function performWebSearch(query: string, maxResults: number = 5): P
     if (scrapyResults.length > 0) {
       return scrapyResults;
     }
-    
+
     // Fallback to SearXNG
     console.log('🔄 Scrapy failed, trying SearXNG fallback...');
     const searxResults = await searxngSearch(query, maxResults);
     if (searxResults.length > 0) {
       return searxResults;
     }
-    
+
     // Fallback to DuckDuckGo if SearXNG fails
     console.log('🔄 SearXNG failed, trying DuckDuckGo fallback...');
     const ddgResults = await duckduckgoSearch(query, maxResults);
     if (ddgResults.length > 0) {
       return ddgResults;
     }
-    
+
     // If all methods fail, provide contextual mock results
     console.log('⚠️ All search methods (Scrapy, SearXNG, DuckDuckGo) failed, providing contextual information');
-    
+
     // Provide topic-specific mock results based on query
     if (/bitcoin|btc|cryptocurrency|crypto/i.test(query)) {
       return [
@@ -309,14 +309,14 @@ export async function performWebSearch(query: string, maxResults: number = 5): P
         }
       ];
     }
-    
+
     // Generic fallback
     return [{
       title: `Search Results for: ${query}`,
       url: 'https://search.brave.com/search?q=' + encodeURIComponent(query),
       snippet: 'Web search is temporarily unavailable. You can try searching manually on major search engines for the most current information.'
     }];
-    
+
   } catch (error) {
     console.error('Web search failed:', error);
     return [];
@@ -343,26 +343,39 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 }
 
 // Helper function to determine if a query might benefit from web search
-export function shouldPerformWebSearch(query: string): boolean {
-  // Ensure query is a string
+function shouldPerformWebSearch(query: string): boolean {
   if (!query || typeof query !== 'string') {
     return false;
   }
 
-  const webSearchKeywords = [
-    'latest', 'recent', 'news', 'current', 'today', 'this year', '2024', '2025',
-    'what is', 'how to', 'tutorial', 'guide', 'example', 'documentation',
-    'research', 'study', 'paper', 'publication', 'article',
-    'protein', 'gene', 'sequence', 'genome', 'bioinformatics', 'molecular',
-    'database', 'tool', 'software', 'algorithm', 'method',
-    'covid', 'sars', 'virus', 'bacteria', 'disease', 'medicine',
-    // Cryptocurrency and finance keywords
-    'bitcoin', 'btc', 'cryptocurrency', 'crypto', 'ethereum', 'price', 'market',
-    'trading', 'investment', 'blockchain', 'defi', 'nft', 'coinbase', 'binance'
-  ];
-
   const queryLower = query.toLowerCase();
-  return webSearchKeywords.some(keyword => queryLower.includes(keyword));
+
+  // Current events and news
+  if (/\b(latest|recent|current|today|news|trending|happening|update|headlines)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Prices and market data
+  if (/\b(price|cost|value|market|stock|crypto|bitcoin|ethereum|btc|eth)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Weather
+  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Events and schedules
+  if (/\b(when|schedule|event|happening|concert|movie|game)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Research and scientific updates
+  if (/\b(research|study|discovery|breakthrough|publication|findings)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  return false;
 }
 
 // Web search service object with Scrapy integration
@@ -397,12 +410,12 @@ export const webSearchService = {
     if (!query || typeof query !== 'string') {
       return '';
     }
-    
+
     // For crypto queries, use specific terms
     if (/(crypto|bitcoin|ethereum|price)/i.test(query)) {
       return 'cryptocurrency prices bitcoin ethereum latest';
     }
-    
+
     // Remove common question words and extract key terms
     return query
       .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')

@@ -880,6 +880,7 @@ export const processQuery = async (
 
         if (dataPrivacyMode !== 'private') {
             conversationManager.addMessage(finalResponseMessage);
+            conversationManager.addMessage(finalResponseMessage);
         }
 
         return finalResponseMessage;
