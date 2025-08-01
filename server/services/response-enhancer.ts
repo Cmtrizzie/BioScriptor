@@ -253,6 +253,14 @@ export function getPersonalityForContext(
     .map((m) => m.content.toLowerCase())
     .join(" ");
 
+  // Detect user tone first
+  const userTone = analyzeUserTone(msg);
+
+  // Match personality to user's communication style
+  if (userTone.isPlayful || /(fun|play|cool|awesome|emoji|casual|hey|yo|wazup)/.test(msg)) {
+    return PERSONALITY_PROFILES.playful;
+  }
+
   // Creative mode detection
   if (CREATIVE_TRIGGERS.some(trigger => msg.includes(trigger))) {
     return PERSONALITY_PROFILES.creative;
@@ -263,34 +271,41 @@ export function getPersonalityForContext(
     return PERSONALITY_PROFILES.innovator;
   }
 
-  // Rotate personalities for longer conversations to maintain engagement
-  if (conversationHistory.length > 0 && conversationHistory.length % 6 === 0) {
-    return PERSONALITY_PROFILES.creative;
-  }
-
-  // Context-based personality selection
+  // Only use bioinformatics personality for CLEARLY bio-related queries
   if (
-    /(dna|rna|protein|sequence|crispr|pcr|blast|alignment|gene|genome|analysis)/.test(
-      msg + topics,
-    )
+    /(dna|rna|protein|sequence|crispr|pcr|blast|alignment|gene|genome|bioinformatics|molecular)/.test(msg) &&
+    /(analysis|analyze|sequence|design|predict)/.test(msg)
   ) {
     return PERSONALITY_PROFILES.bioinformatics_guru;
   }
-  if (/(how to|teach me|explain|learn|understand|tutorial|guide)/.test(msg)) {
-    return PERSONALITY_PROFILES.mentor;
-  }
+
+  // Only use expert for clearly technical programming queries
   if (
-    /(implement|algorithm|optimization|performance|architecture|advanced)/.test(
-      msg,
-    )
+    /(code|programming|algorithm|implementation|software)/.test(msg) &&
+    /(optimization|performance|architecture|advanced)/.test(msg)
   ) {
     return PERSONALITY_PROFILES.expert;
   }
-  if (/(fun|play|cool|awesome|emoji|casual|hey|yo|wazup)/.test(msg)) {
-    return PERSONALITY_PROFILES.playful;
+
+  // Use mentor for learning-focused queries
+  if (/(how to|teach me|explain|learn|understand|tutorial|guide)/.test(msg)) {
+    return PERSONALITY_PROFILES.mentor;
   }
 
-  return PERSONALITY_PROFILES.mentor;
+  // Default to a more adaptable personality for general queries
+  return userTone.isCasual ? PERSONALITY_PROFILES.playful : PERSONALITY_PROFILES.mentor;
+}
+
+function analyzeUserTone(message: string): { isCasual: boolean; isPlayful: boolean; isDirectRequest: boolean } {
+  const casual = /(hey|yo|sup|what's up|show me|gimme|wanna)/i.test(message);
+  const playful = /(cool|awesome|amazing|love|fun|lol|haha)/i.test(message);
+  const directRequest = /^(show|tell|give|get|find)/i.test(message.trim());
+  
+  return {
+    isCasual: casual,
+    isPlayful: playful,
+    isDirectRequest: directRequest
+  };
 }
 
 // ========== EMBEDDING & SEMANTIC ANALYSIS ==========
@@ -915,16 +930,28 @@ export function detectUserIntent(query: string): string {
     return "farewell";
   }
 
-  // Technical questions
+  // News/information requests
+  if (/(news|headlines|trending|latest|current events|what's happening)/i.test(lowerQuery)) {
+    return "news_request";
+  }
+
+  // General information requests
+  if (/(show me|tell me|what is|who is|where is|when is)/i.test(lowerQuery)) {
+    return "information_request";
+  }
+
+  // Technical questions (only for clearly bio/science related)
   if (
-    /(how to|explain|what is|help me|analyze|design|optimize)/i.test(lowerQuery)
+    /(dna|rna|protein|gene|sequence|crispr|pcr|bioinformatics|genomics)/i.test(lowerQuery) &&
+    /(how to|explain|analyze|design|optimize)/i.test(lowerQuery)
   ) {
     return "technical_question";
   }
 
-  // Code requests
+  // Code requests (only for clearly programming related)
   if (
-    /(code|script|function|algorithm|implement|write|create)/i.test(lowerQuery)
+    /(code|script|function|algorithm|implement|write|create)/i.test(lowerQuery) &&
+    /(python|javascript|programming|software)/i.test(lowerQuery)
   ) {
     return "code_request";
   }
@@ -1068,24 +1095,51 @@ What specific feature would you like to implement first?`;
 }
 
 export function generateGeneralResponse(): string {
-  return `I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing.
+  return `I'm BioScriptor, your AI assistant. I specialize in bioinformatics and scientific computing, but I can help with many topics!
 
 ### What I can help with:
 - 🔬 **Bioinformatics analysis and tools**
 - 📊 **Data analysis and visualization**
 - 🧬 **Genomics and molecular biology**
-- 💻 **Scientific programming and scripting**
-- 🧮 **Statistical analysis and modeling**
-- 📝 **Research methodology and documentation**
+- 💻 **Programming and scripting**
+- 📰 **General information and current topics**
+- 🧮 **Problem solving and explanations**
 
 ### Example queries:
 - "Help me analyze DNA sequences"
-- "Create a Python script for data processing"
-- "Explain CRISPR gene editing"
-- "Design a bioinformatics workflow"
-- "Visualize genomic data"
+- "Show me the latest news"
+- "Explain how something works"
+- "Create a script for data processing"
+- "What's trending today?"
 
 **What would you like to work on today?**`;
+}
+
+export function generateContextualResponse(intent: string, userMessage: string): string | null {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  if (intent === 'news_request') {
+    return `I'd be happy to help with news and current events! However, I should mention that I don't have real-time access to current news feeds.
+
+For the most up-to-date headlines, I'd recommend checking:
+- **News websites** like BBC, Reuters, or AP News
+- **News aggregators** like Google News or Apple News
+- **Social media** trending topics
+
+If you're looking for science and tech news specifically, I can discuss recent developments in biotechnology, AI, or other scientific fields that I'm aware of. What type of news interests you most?`;
+  }
+  
+  if (intent === 'information_request' && !/(dna|gene|protein|bio)/.test(lowerMessage)) {
+    const tone = lowerMessage.includes('show me') ? 'direct' : 'conversational';
+    
+    if (tone === 'direct') {
+      return `I understand you're looking for information! While I specialize in scientific topics, I can help with many general questions too.
+
+Could you be more specific about what you'd like to know? I'll do my best to provide helpful information or point you in the right direction.`;
+    }
+  }
+  
+  return null;
 }
 
 export function generateConversationHook(
@@ -1571,6 +1625,24 @@ export async function enhanceResponse(
     };
   }
 
+  // Handle news and information requests that aren't bio-related
+  if (intent === "news_request" || intent === "information_request") {
+    const contextualResponse = generateContextualResponse(intent, options.userMessage);
+    if (contextualResponse) {
+      return {
+        ...message,
+        content: contextualResponse,
+        metadata: {
+          ...message.metadata,
+          intent,
+          conversationContext,
+          builderContext,
+          contextualResponse: true,
+        },
+      };
+    }
+  }
+
   // Check for follow-up trigger phrases
   const followUpResponse = generateFollowUpResponse(
     options.userMessage,
@@ -1763,6 +1835,16 @@ export function shouldPerformWebSearch(query: string): boolean {
     return true;
   }
 
+  // News and current events
+  if (queryLower.includes('news') || queryLower.includes('headlines') || queryLower.includes('trending')) {
+    return true;
+  }
+
+  // Time-sensitive queries
+  if (queryLower.includes('today') || queryLower.includes('latest') || queryLower.includes('current')) {
+    return true;
+  }
+
   // Crypto/finance queries that need current data
   const cryptoKeywords = ['bitcoin', 'btc', 'cryptocurrency', 'crypto', 'ethereum', 'eth', 'price', 'market'];
   if (cryptoKeywords.some(keyword => queryLower.includes(keyword))) {
@@ -1770,13 +1852,12 @@ export function shouldPerformWebSearch(query: string): boolean {
   }
 
   const webSearchKeywords = [
-    'latest', 'recent', 'news', 'current', 'today', 'this year', '2024', '2025',
-    'what is', 'how to', 'tutorial', 'guide', 'example', 'documentation',
+    'recent', 'this year', '2024', '2025', 'what's happening',
+    'tutorial', 'guide', 'example', 'documentation',
     'research', 'study', 'paper', 'publication', 'article',
-    'protein', 'gene', 'sequence', 'genome', 'bioinformatics', 'molecular',
     'database', 'tool', 'software', 'algorithm', 'method',
     'covid', 'sars', 'virus', 'bacteria', 'disease', 'medicine',
-    'trading', 'investment', 'blockchain', 'defi', 'nft', 'coinbase', 'binance'
+    'trading', 'investment', 'blockchain', 'defi', 'nft'
   ];
 
   return webSearchKeywords.some(keyword => queryLower.includes(keyword));
