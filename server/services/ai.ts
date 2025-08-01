@@ -107,86 +107,101 @@ async function processBioQuery(
         analysisType 
     };
 
-    // Run specialized bioinformatics analysis
-    switch (analysisType) {
-        case 'crispr':
-            if (fileAnalysis?.sequence) {
-                const guides = generateCRISPRGuides(fileAnalysis.sequence);
-                responseContent = formatCRISPRResults(guides, conversationContext);
-                metadata.guides = guides;
-            } else {
-                responseContent = generateCRISPRGuidance(query, conversationContext);
+    try {
+        // Run specialized bioinformatics analysis
+        switch (analysisType) {
+            case 'crispr':
+                if (fileAnalysis && fileAnalysis.sequence) {
+                    const guides = generateCRISPRGuides(fileAnalysis.sequence);
+                    responseContent = formatCRISPRResults(guides, conversationContext);
+                    metadata.guides = guides;
+                } else {
+                    responseContent = generateCRISPRGuidance(query, conversationContext);
+                }
+                break;
+
+            case 'pcr':
+                if (fileAnalysis && fileAnalysis.sequence) {
+                    const pcrResults = simulatePCR(fileAnalysis.sequence);
+                    responseContent = formatPCRResults(pcrResults, conversationContext);
+                    metadata.pcrResults = pcrResults;
+                } else {
+                    responseContent = generatePCRGuidance(query, conversationContext);
+                }
+                break;
+
+            case 'codon_optimization':
+                if (fileAnalysis && fileAnalysis.sequence) {
+                    const optimized = optimizeCodonUsage(fileAnalysis.sequence);
+                    responseContent = formatOptimizationResults(optimized, conversationContext);
+                    metadata.optimization = optimized;
+                } else {
+                    responseContent = generateOptimizationGuidance(query, conversationContext);
+                }
+                break;
+
+            case 'sequence_analysis':
+                if (fileAnalysis) {
+                    responseContent = formatSequenceAnalysis(fileAnalysis, conversationContext);
+                } else {
+                    responseContent = generateSequenceGuidance(query, conversationContext);
+                }
+                break;
+
+            default:
+                // General bioinformatics guidance
+                responseContent = await getGeneralBioGuidance(query, conversationContext);
+                break;
+        }
+
+        // Enhance response with personality and context
+        const enhancedResponse = await enhanceResponse(
+            {
+                id: generateUniqueId(),
+                role: 'assistant',
+                content: responseContent,
+                timestamp: Date.now(),
+                status: 'complete' as const,
+                metadata: {
+                    confidence: 0.95,
+                    topic: analysisType
+                }
+            },
+            {
+                context: {
+                    previousResponses: [],
+                    currentTopic: analysisType,
+                    taskType: analysisType,
+                    conversationContext
+                },
+                tone: conversationContext.emotionalContext || 'neutral',
+                userMessage: query,
+                userSkillLevel: conversationContext.userExpertiseLevel || 'intermediate'
             }
-            break;
+        );
 
-        case 'pcr':
-            if (fileAnalysis?.sequence) {
-                const pcrResults = simulatePCR(fileAnalysis.sequence);
-                responseContent = formatPCRResults(pcrResults, conversationContext);
-                metadata.pcrResults = pcrResults;
-            } else {
-                responseContent = generatePCRGuidance(query, conversationContext);
-            }
-            break;
-
-        case 'codon_optimization':
-            if (fileAnalysis?.sequence) {
-                const optimized = optimizeCodonUsage(fileAnalysis.sequence);
-                responseContent = formatOptimizationResults(optimized, conversationContext);
-                metadata.optimization = optimized;
-            } else {
-                responseContent = generateOptimizationGuidance(query, conversationContext);
-            }
-            break;
-
-        case 'sequence_analysis':
-            if (fileAnalysis) {
-                responseContent = formatSequenceAnalysis(fileAnalysis, conversationContext);
-            } else {
-                responseContent = generateSequenceGuidance(query, conversationContext);
-            }
-            break;
-
-        default:
-            // General bioinformatics guidance
-            responseContent = await getGeneralBioGuidance(query, conversationContext);
-            break;
-    }
-
-    // Enhance response with personality and context
-    const enhancedResponse = await enhanceResponse(
-        {
+        return {
             id: generateUniqueId(),
             role: 'assistant',
-            content: responseContent,
+            content: typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content,
             timestamp: Date.now(),
-            status: 'complete' as const,
+            status: 'complete',
+            metadata
+        };
+    } catch (error) {
+        console.error('Error in processBioQuery:', error);
+        return {
+            id: generateUniqueId(),
+            role: 'assistant',
+            content: 'I encountered an error processing your bioinformatics query. Please try again.',
+            timestamp: Date.now(),
+            status: 'error',
             metadata: {
-                confidence: 0.95,
-                topic: analysisType
+                error: error instanceof Error ? error.message : 'Unknown error',
+                confidence: 0
             }
-        },
-        {
-            context: {
-                previousResponses: [],
-                currentTopic: analysisType,
-                taskType: analysisType,
-                conversationContext
-            },
-            tone: conversationContext.emotionalContext,
-            userMessage: query,
-            userSkillLevel: conversationContext.userExpertiseLevel
-        }
-    );
-
-    return {
-        id: generateUniqueId(),
-        role: 'assistant',
-        content: typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content,
-        timestamp: Date.now(),
-        status: 'complete',
-        metadata
-    };
+        };
+    }
 }
 
 // Response comparison and selection
@@ -679,6 +694,13 @@ function analyzeConversation(history: ChatMessage[]): ConversationContext {
     const userMessages = recentMessages.filter(m => m.role === 'user');
 
     return {
+        id: generateUniqueId(),
+        history: recentMessages,
+        lastActive: Date.now(),
+        memory: {
+            topics: new Set(extractTopicsFromHistory(recentMessages)),
+            entities: new Set()
+        },
         topics: extractTopicsFromHistory(recentMessages),
         userExpertiseLevel: detectUserExpertiseLevel(userMessages),
         conversationFlow: detectConversationFlow(recentMessages),
@@ -756,13 +778,19 @@ function selectOptimalProvider(query: string, context: ConversationContext): str
     const queryType = classifyQuery(query);
 
     // Bioinformatics queries need highest accuracy
-    if (queryType === 'bioinformatics') return 'groq'; // Most accurate for scientific content
+    if (queryType === 'bioinformatics') {
+        return 'groq'; // Most accurate for scientific content
+    }
 
     // Creative queries need most capable model
-    if (queryType === 'creative') return 'together'; // Best for creative responses
+    if (queryType === 'creative') {
+        return 'together'; // Best for creative responses
+    }
 
     // Technical queries need balanced accuracy/speed
-    if (queryType === 'technical') return 'openrouter'; // Good balance
+    if (queryType === 'technical') {
+        return 'openrouter'; // Good balance
+    }
 
     // General queries can use fastest
     return 'groq'; // Fast and reliable
