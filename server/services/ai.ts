@@ -101,93 +101,36 @@ async function processBioQuery(
     userTier?: string
 ): Promise<ChatMessage> {
     const analysisType = detectQueryType(query);
-    let responseContent = '';
-    let metadata: any = { 
-        confidence: 0.95, 
-        processingTime: 1200,
-        analysisType 
-    };
-
+    
     try {
-        // Run specialized bioinformatics analysis
-        switch (analysisType) {
-            case 'crispr':
-                if (fileAnalysis && fileAnalysis.sequence) {
-                    const guides = generateCRISPRGuides(fileAnalysis.sequence);
-                    responseContent = formatCRISPRResults(guides, conversationContext);
-                    metadata.guides = guides;
-                } else {
-                    responseContent = generateCRISPRGuidance(query, conversationContext);
-                }
-                break;
-
-            case 'pcr':
-                if (fileAnalysis && fileAnalysis.sequence) {
-                    const pcrResults = simulatePCR(fileAnalysis.sequence);
-                    responseContent = formatPCRResults(pcrResults, conversationContext);
-                    metadata.pcrResults = pcrResults;
-                } else {
-                    responseContent = generatePCRGuidance(query, conversationContext);
-                }
-                break;
-
-            case 'codon_optimization':
-                if (fileAnalysis && fileAnalysis.sequence) {
-                    const optimized = optimizeCodonUsage(fileAnalysis.sequence);
-                    responseContent = formatOptimizationResults(optimized, conversationContext);
-                    metadata.optimization = optimized;
-                } else {
-                    responseContent = generateOptimizationGuidance(query, conversationContext);
-                }
-                break;
-
-            case 'sequence_analysis':
-                if (fileAnalysis) {
-                    responseContent = formatSequenceAnalysis(fileAnalysis, conversationContext);
-                } else {
-                    responseContent = generateSequenceGuidance(query, conversationContext);
-                }
-                break;
-
-            default:
-                // General bioinformatics guidance
-                responseContent = await getGeneralBioGuidance(query, conversationContext);
-                break;
-        }
-
-        // Enhance response with personality and context
-        const enhancedResponse = await enhanceResponse(
-            {
-                id: generateUniqueId(),
-                role: 'assistant',
-                content: responseContent,
-                timestamp: Date.now(),
-                status: 'complete' as const,
-                metadata: {
-                    confidence: 0.95,
-                    topic: analysisType
-                }
+        // Use AI for all bioinformatics queries instead of templates
+        const aiResponse = await faultTolerantAI.processQuery(
+            query,
+            { 
+                conversationContext,
+                userIntent: 'bioinformatics_query',
+                fileAnalysis
             },
-            {
-                context: {
-                    previousResponses: [],
-                    currentTopic: analysisType,
-                    taskType: analysisType,
-                    conversationContext
-                },
-                tone: conversationContext.emotionalContext || 'neutral',
-                userMessage: query,
-                userSkillLevel: conversationContext.userExpertiseLevel || 'intermediate'
-            }
+            conversationContext.emotionalContext || 'neutral',
+            conversationContext.history.slice(-6).map(m => ({
+                role: m.role,
+                content: m.content
+            })),
+            userTier || 'free'
         );
 
         return {
             id: generateUniqueId(),
             role: 'assistant',
-            content: typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content,
+            content: aiResponse.content,
             timestamp: Date.now(),
             status: 'complete',
-            metadata
+            metadata: {
+                confidence: 0.95,
+                processingTime: Date.now() - Date.now(),
+                analysisType,
+                model: aiResponse.provider || 'groq'
+            }
         };
     } catch (error) {
         console.error('Error in processBioQuery:', error);
@@ -269,43 +212,17 @@ function scoreResponse(
 function buildEnhancedSystemPrompt(context: ConversationContext, query: string): string {
     const queryType = classifyQuery(query);
 
-    let prompt = `You are BioScriptor, an advanced AI assistant specialized in bioinformatics and scientific computing.
+    let prompt = `You are BioScriptor, an AI assistant that helps with bioinformatics and general questions.
 
-**User Context:**
-- Expertise Level: ${context.userExpertiseLevel}
-- Conversation Flow: ${context.conversationFlow}
-- Emotional Context: ${context.emotionalContext}
-- Preferred Style: ${context.preferredResponseStyle}
-- Active Topics: ${context.topics.join(', ') || 'None'}
+IMPORTANT: Always provide direct, specific answers. Never use template responses like "I'd be happy to help with your question about X" or "Based on current best practices in the field". Give the actual information requested.
 
-**Response Guidelines:**`;
+For web search queries (current events, news, prices, etc.): Use the provided search results to give accurate, up-to-date information.
 
-    if (queryType === 'bioinformatics') {
-        prompt += `
-- Prioritize scientific accuracy and cite best practices
-- Include relevant examples and code snippets when appropriate
-- Suggest follow-up analyses or related techniques
-- Use technical language appropriate for ${context.userExpertiseLevel} level`;
-    } else if (queryType === 'technical') {
-        prompt += `
-- Provide clear, implementable solutions
-- Include code examples with explanations
-- Consider edge cases and best practices
-- Optimize for ${context.preferredResponseStyle} responses`;
-    } else {
-        prompt += `
-- Be helpful and informative while staying within your expertise
-- Gently redirect to bioinformatics topics when appropriate
-- Maintain a warm, professional tone
-- Provide concise but complete answers`;
-    }
+For bioinformatics: Provide specific technical guidance with examples.
 
-    prompt += `
+For general questions: Answer naturally and conversationally.
 
-**Current Query Type:** ${queryType}
-**Time:** ${getTimeBasedGreeting()}
-
-Respond helpfully and accurately, adapting your tone and detail level to the user's context.`;
+Be concise and helpful. Avoid repetitive or templated language.`;
 
     return prompt;
 }
@@ -370,53 +287,8 @@ function formatSequenceAnalysis(analysis: BioFileAnalysis, context: Conversation
     return response;
 }
 
-async function getGeneralBioGuidance(query: string, context: ConversationContext): Promise<string> {
-    // This would call the AI with bioinformatics-specific prompting
-    const prompt = `As a bioinformatics expert, provide guidance on: ${query}`;
-
-    return `I'd be happy to help with your bioinformatics question about "${query}". ` +
-           `Based on current best practices in the field, here's my guidance:\n\n` +
-           `[This would be enhanced with actual AI response based on the query]`;
-}
-
-function generateCRISPRGuidance(query: string, context: ConversationContext): string {
-    return `## CRISPR Guide Design Assistance\n\n` +
-           `I can help you design CRISPR guide RNAs! For the best results, please provide:\n\n` +
-           `- Target gene sequence (FASTA format)\n` +
-           `- Desired cut site location\n` +
-           `- PAM sequence preference (NGG for Cas9)\n\n` +
-           `Would you like me to explain the guide design process or help with a specific sequence?`;
-}
-
-function generatePCRGuidance(query: string, context: ConversationContext): string {
-    return `## PCR Design and Optimization\n\n` +
-           `I can assist with PCR primer design and reaction optimization. I can help with:\n\n` +
-           `- Primer design and validation\n` +
-           `- Annealing temperature calculation\n` +
-           `- Reaction condition optimization\n` +
-           `- Troubleshooting amplification issues\n\n` +
-           `What specific aspect of PCR would you like help with?`;
-}
-
-function generateOptimizationGuidance(query: string, context: ConversationContext): string {
-    return `## Codon Optimization Services\n\n` +
-           `I can help optimize your sequences for expression in various host organisms:\n\n` +
-           `- **E. coli** (most common for protein production)\n` +
-           `- **S. cerevisiae** (yeast expression)\n` +
-           `- **Human** (mammalian cell lines)\n` +
-           `- **Custom** (specify your host organism)\n\n` +
-           `Please provide your protein sequence and target host for optimization.`;
-}
-
-function generateSequenceGuidance(query: string, context: ConversationContext): string {
-    return `## Sequence Analysis Capabilities\n\n` +
-           `I can analyze various sequence formats:\n\n` +
-           `- **FASTA** (.fa, .fasta) - DNA/RNA/protein sequences\n` +
-           `- **GenBank** (.gb, .gbk) - annotated sequences\n` +
-           `- **PDB** (.pdb) - protein structures\n` +
-           `- **CSV** - custom data formats\n\n` +
-           `Upload your file or paste the sequence for detailed analysis!`;
-}
+// Removed template functions to prevent repetitive responses
+// All responses now go through AI processing for natural, contextual answers
 
 // ========== Conversation Manager ==========
 class ConversationManager {
@@ -867,8 +739,8 @@ export const processQuery = async (
 
         // 6. Prepare enhanced query with search context
         let enhancedQuery = query;
-        if (searchResults) {
-            enhancedQuery = `User Query: ${query}\n\nWeb Search Results:\n${searchResults}\n\nPlease provide a comprehensive answer using both your knowledge and the search results above.`;
+        if (searchResults && searchResults.trim() !== '') {
+            enhancedQuery = `${searchResults}User Question: ${query}\n\nBased on the above search results and your knowledge, provide a clear, direct answer.`;
         }
 
         // 7. Use the fault-tolerant AI system

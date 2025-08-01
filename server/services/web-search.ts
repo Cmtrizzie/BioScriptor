@@ -315,21 +315,27 @@ export async function performWebSearch(query: string, maxResults: number = 5): P
 
 export function formatSearchResults(results: WebSearchResult[]): string {
   if (results.length === 0) {
-    return 'No web search results found. The search functionality may be temporarily unavailable.';
+    return '';
   }
 
-  const formattedResults = results
-    .filter(result => result.title && result.snippet) // Filter out empty results
-    .slice(0, 5) // Limit to 5 results
-    .map((result, index) => {
-      const title = result.title.length > 100 ? result.title.substring(0, 100) + '...' : result.title;
-      const snippet = result.snippet.length > 200 ? result.snippet.substring(0, 200) + '...' : result.snippet;
+  const validResults = results
+    .filter(result => result.title && result.snippet && result.title.trim() !== '' && result.snippet.trim() !== '')
+    .slice(0, 3); // Limit to 3 most relevant results
 
-      return `${index + 1}. **${title}**\n   ${snippet}${result.url ? `\n   🔗 ${result.url}` : ''}`;
+  if (validResults.length === 0) {
+    return '';
+  }
+
+  const formattedResults = validResults
+    .map((result, index) => {
+      const title = result.title.length > 80 ? result.title.substring(0, 80) + '...' : result.title;
+      const snippet = result.snippet.length > 150 ? result.snippet.substring(0, 150) + '...' : result.snippet;
+      
+      return `**${title}**: ${snippet}`;
     })
     .join('\n\n');
 
-  return `## 🌐 Web Search Results\n\n${formattedResults}`;
+  return `Based on current web search results:\n\n${formattedResults}\n\n`;
 }
 
 // Enhanced function to determine if a query should trigger web search
