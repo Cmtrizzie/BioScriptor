@@ -174,32 +174,30 @@ export function enhanceResponse(
     preferredStyle?: string;
   }
 ): ChatMessage {
-  const domain = determineResponseDomain(options.userMessage || '');
+  // Return the message as-is for most cases to avoid templated responses
+  const userMessage = options.userMessage || '';
+  const isGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening)$/i.test(userMessage.trim());
+  const isBio = /(dna|rna|protein|sequence|crispr|pcr|gene|genome|bioinformatics)/i.test(userMessage);
   
-  // Route to appropriate handler based on domain
-  switch (domain) {
-    case 'bio':
-      // For bioinformatics queries, use expert personality
-      return handleGeneralKnowledge(message, {
-        ...options,
-        personality: PERSONALITY_PROFILES.expert
-      });
-    
-    case 'greeting':
-    case 'general':
-      // For general queries, use generalist personality
-      return handleGeneralKnowledge(message, {
-        ...options,
-        personality: PERSONALITY_PROFILES.generalist
-      });
-    
-    default:
-      // Default to mentor personality for educational content
-      return handleGeneralKnowledge(message, {
-        ...options,
-        personality: PERSONALITY_PROFILES.mentor
-      });
+  // Only enhance for specific cases where it adds value
+  if (isGreeting && message.content.length < 50) {
+    return {
+      ...message,
+      content: `Hello! How can I assist you today?`
+    };
   }
+  
+  // For bioinformatics queries, keep the response but clean it up
+  if (isBio && message.content.includes('molecular picture')) {
+    return {
+      ...message,
+      content: message.content.replace(/Let me paint you a molecular picture\.\.\. Here's where it gets interesting\.\.\. /g, '')
+                              .replace(/💡 \*[^*]+\* [^🧬]+🧬 [^⚡]+⚡/g, '')
+    };
+  }
+  
+  // Return original message without templated enhancements
+  return message;
 }
 
 // === FACTUAL ANSWER GENERATION ===

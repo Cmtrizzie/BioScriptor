@@ -861,31 +861,18 @@ export const processQuery = async (
             bestResponse = selectBestResponse(successfulResponses, query, conversationContext);
         }
 
-        // 7. Enhanced response processing
-        const enhancedResponse = await enhanceResponse(bestResponse, {
-            context: {
-                previousResponses: context.history || [],
-                currentTopic: userIntent,
-                taskType: queryType,
-                conversationContext
-            },
-            tone,
-            userMessage: query,
-            userSkillLevel: conversationContext.userExpertiseLevel,
-            preferredStyle: conversationContext.preferredResponseStyle
-        });
-
+        // Minimal response processing - avoid over-enhancement
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
-            content: typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content,
+            content: bestResponse.content,
             timestamp: Date.now(),
             status: 'complete',
             metadata: {
                 tone,
                 intent: userIntent,
                 queryType,
-                model: optimalProvider,
+                model: optimalprovider,
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
@@ -935,137 +922,11 @@ export const processQuery = async (
                     break;
             }
 
-            // Enhance response using the enhancer service
-            const enhancedResponse = await enhanceResponse(
-                {
-                    id: generateUniqueId(),
-                    role: 'assistant',
-                    content: responseContent,
-                    timestamp: Date.now(),
-                    status: 'complete' as const,
-                    metadata: {
-                        confidence: 0.85,
-                        topic: metadata.intent
-                    }
-                },
-                {
-                    context: {
-                        currentTopic: metadata.intent,
-                        taskType: queryType
-                    },
-                    tone,
-                    userMessage: query,
-                    userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
-                }
-            );
-
-            const bioMessage: ChatMessage = {
-                id: generateUniqueId(),
-                role: 'assistant',
-                content: enhancedResponse,
-                timestamp: Date.now(),
-                status: 'complete',
-                metadata
-            };
-
-            conversationManager.addMessage(bioMessage);
-            return bioMessage;
-        }
-
-        // Prepare conversation history for AI context
-        const recentHistory = context.history
-            .slice(-6) // Last 3 exchanges (user + assistant)
-            .map(m => ({ role: m.role, content: m.content }));
-
-        // Enhanced detection for sports/news queries
-        const isGeneralQuery = userIntent === 'general_trending' || 
-                              /(news|latest|arsenal|football|soccer|player|transfer|sport)/i.test(query);
-
-        // Always continue with AI response
-
-        // Analyze conversation context
-        const conversationAnalysis = analyzeConversationContext(context.history);
-
-        // Build enhanced system prompt based on context
-        const systemPrompt = `You are BioScriptor, a specialized AI assistant for bioinformatics, data analysis, and scientific computing.
-
-${conversationAnalysis.personality.tone && `Communication Style: ${conversationAnalysis.personality.tone}`}
-${conversationAnalysis.personality.explanation_style && `Explanation Style: ${conversationAnalysis.personality.explanation_style}`}
-
-Current Context:
-- User Intent: ${userIntent}
-- Query Type: ${queryType}
-- Conversation Topics: ${Array.from(context.memory.topics).join(', ') || 'None'}
-- Time: ${getTimeBasedGreeting()}
-
-Always provide helpful, accurate, and scientifically sound responses. When discussing bioinformatics topics, include relevant examples and cite best practices.`;
-
-        // Prepare conversation context
-        const conversationHistory = recentHistory.length > 0 ? recentHistory : [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: query }
-        ];
-
-        if (recentHistory.length > 0) {
-            conversationHistory.unshift({ role: 'system', content: systemPrompt });
-        }
-
-        // Generate AI response
-        const startTime = Date.now();
-        const aiResponse = await faultTolerantAI.processQuery(
-            query,
-            { 
-                fileAnalysis,
-                conversationContext: context,
-                userIntent
-            },
-            tone,
-            conversationHistory,
-            userTier
-        );
-
-        const processingTime = Date.now() - startTime;
-
-        // Ensure content is a string
-        let enhancedContent = typeof aiResponse.content === 'string' 
-            ? aiResponse.content 
-            : JSON.stringify(aiResponse.content);
-
-        try {
-            const responseToEnhance = {
-                id: generateUniqueId(),
-                role: 'assistant' as const,
-                content: aiResponse.content,
-                timestamp: Date.now(),
-                status: 'complete' as const,
-                metadata: {
-                    confidence: 0.85,
-                    topic: userIntent
-                }
-            };
-
-            const enhancedResponse = await enhanceResponse(responseToEnhance, {
-                context: {
-                    previousResponses: context.history || [],
-                    currentTopic: userIntent,
-                    taskType: queryType
-                },
-                tone,
-                userMessage: query,
-                userSkillLevel: userTier === 'pro' ? 'advanced' : 'intermediate'
-            });
-
-            enhancedContent = typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content;
-        } catch (enhanceError) {
-            console.warn('Response enhancement failed, using original response:', enhanceError);
-            enhancedContent = aiResponse.content;
-        }
-
-        // Create response message
+// Create response message without over-enhancement
         const aiResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
-            content: enhancedContent,
+            content: aiResponse.content,
             timestamp: Date.now(),
             status: 'complete',
             metadata: {

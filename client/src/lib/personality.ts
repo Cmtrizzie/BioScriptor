@@ -33,44 +33,25 @@ export const errorResponses = [
   "Hmm, that's beyond my current knowledge base. Try another approach?"
 ];
 
-// Creative response enhancer
-export const enhanceResponse = (response: string) => {
+// Creative response enhancer - more subtle approach
+export const enhanceResponse = (response: string, context?: { userQuery?: string; isGreeting?: boolean }) => {
+  // Only enhance if the response is very short or it's a greeting
+  if (!context?.isGreeting && response.length > 100) {
+    return response; // Return as-is for longer responses
+  }
+  
   let enhanced = response;
   
-  // Add personality-based enhancements
-  if (botPersonality.tone === "witty") {
-    const witticisms = [
-      "Funny you should mention that...", 
-      "Here's a fascinating insight...", 
-      "You'll love this discovery...",
-      "Plot twist...",
-      "Here's where it gets interesting..."
-    ];
-    enhanced = `${witticisms[Math.floor(Math.random() * witticisms.length)]} ${enhanced}`;
+  // Only add minimal enhancements for appropriate contexts
+  if (context?.isGreeting) {
+    return enhanced; // Keep greetings simple
   }
   
-  if (botPersonality.style === "storytelling") {
-    const storyOpeners = [
-      "Picture this scientific scenario...", 
-      "Once upon a time in the lab...", 
-      "Imagine a world where...",
-      "Let me paint you a molecular picture...",
-      "Here's how this biological story unfolds..."
-    ];
-    enhanced = `${storyOpeners[Math.floor(Math.random() * storyOpeners.length)]} ${enhanced}`;
-  }
-  
-  // Add emojis if enabled
-  if (botPersonality.emoji) {
-    const emojiMap: Record<string, string[]> = {
-      "?": ["🤔", "❓", "🧐", "🔬"],
-      "!": ["❗", "🎉", "🔥", "⚡", "🚀"],
-      ".": ["✨", "🌟", "💫", "🧬", "💡"]
-    };
-    
+  // Very minimal emoji addition for short responses only
+  if (botPersonality.emoji && response.length < 50) {
     const lastChar = enhanced.slice(-1);
-    if (emojiMap[lastChar]) {
-      enhanced += " " + emojiMap[lastChar][Math.floor(Math.random() * emojiMap[lastChar].length)];
+    if (lastChar === '!' && Math.random() > 0.7) {
+      enhanced += " ✨";
     }
   }
   
