@@ -714,23 +714,35 @@ export const processQuery = async (
             return await processBioQuery(query, userMessage, conversationContext, fileAnalysis, userTier);
         }
 
-        // 4. Check if web search is needed
+        // 4. Enhanced web search with better detection and caching
         let searchResults = '';
         const needsWebSearch = webSearchService.detectExplicitSearch(query) || 
                               webSearchService.detectImplicitTriggers(query);
 
         if (needsWebSearch) {
-            console.log('🌐 Performing web search for query...');
+            console.log(`🌐 Performing web search for: "${query}"`);
             try {
-                const searchResponse = await webSearchService.search(query, { maxResults: 5 });
+                const searchResponse = await webSearchService.search(query, { 
+                    maxResults: 5,
+                    bioinformatics: queryType === 'bioinformatics'
+                });
+                
                 if (searchResponse.results.length > 0) {
                     searchResults = webSearchService.formatResultsForAI(searchResponse);
-                    console.log(`✅ Web search completed: ${searchResponse.results.length} results`);
+                    console.log(`✅ Web search completed: ${searchResponse.results.length} results in ${searchResponse.searchTime}ms`);
                 } else {
                     console.log('⚠️ Web search returned no results');
+                    // For some queries, provide context that search was attempted
+                    if (webSearchService.detectExplicitSearch(query)) {
+                        searchResults = `I searched the web for "${query}" but couldn't find current results. I'll provide information based on my knowledge instead.\n\n`;
+                    }
                 }
             } catch (searchError) {
                 console.warn('Web search failed:', searchError);
+                // Graceful fallback message
+                if (webSearchService.detectExplicitSearch(query)) {
+                    searchResults = `I attempted to search the web but encountered an issue. Let me provide information based on my knowledge instead.\n\n`;
+                }
             }
         }
 

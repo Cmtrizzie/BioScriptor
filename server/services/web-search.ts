@@ -34,8 +34,20 @@ interface SearXNGResponse {
   unresponsive_engines: string[];
 }
 
-// Enhanced Python-based web search
+// Simple in-memory cache for recent searches (5 minute expiry)
+const searchCache = new Map<string, { results: WebSearchResult[], timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Enhanced Python-based web search with caching
 async function pythonWebSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
+  // Check cache first
+  const cacheKey = `${query.toLowerCase().trim()}_${maxResults}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+    console.log('📋 Using cached search results');
+    return cached.results;
+  }
+
   return new Promise((resolve) => {
     console.log('🔍 Starting Python web search...');
 
@@ -62,12 +74,17 @@ async function pythonWebSearch(query: string, maxResults: number = 5): Promise<W
         try {
           const result = JSON.parse(output.trim());
           if (result.results && Array.isArray(result.results) && result.results.length > 0) {
-            console.log(`✅ Python search found ${result.results.length} results`);
-            resolve(result.results.map(r => ({
+            const searchResults = result.results.map(r => ({
               title: r.title || 'Untitled',
               url: r.url || '',
               snippet: r.snippet || r.title || 'No description available'
-            })));
+            }));
+            
+            // Cache the results
+            searchCache.set(cacheKey, { results: searchResults, timestamp: Date.now() });
+            
+            console.log(`✅ Python search found ${result.results.length} results`);
+            resolve(searchResults);
           } else {
             console.warn('Python search returned no results');
             resolve([]);
