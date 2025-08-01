@@ -397,6 +397,11 @@ function generateBioinformaticsDiagram(query: string): string {
     A[Raw FASTQ] --> B[Quality Control]
     B --> C[Trimming]
     C --> D[Alignment --> STAR/HISAT2]
+    D --> E[Quantification --> featureCounts]
+    E --> F[Differential Expression]
+    F --> G[Pathway Analysis]
+    style D fill:#f9f,stroke:#333
+    style E fill:#bbf,stroke:#333`;
 
 // ========== ENHANCED PERSONALITY SELECTION ==========
 export function getEnhancedPersonalityForContext(
@@ -777,6 +782,7 @@ function personalizeAnswer(answer: string, context?: any): string {
   }
 
   return null;
+}
 
 // ========== BACKEND RESPONSE FORMATTING ==========
 // Note: Frontend rendering components should be in the client directory
