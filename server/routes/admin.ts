@@ -20,11 +20,11 @@ export const adminAuth = async (req: any, res: any, next: any) => {
     // In development mode, always allow admin access but try to get real user data
     if (process.env.NODE_ENV === 'development') {
       console.log('🔓 Development mode: Allowing admin access for:', userEmail);
-      
+
       try {
         // Try to get the actual user from database
         const user = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
-        
+
         if (user.length > 0) {
           req.adminUser = { 
             id: user[0].id, 
@@ -52,7 +52,7 @@ export const adminAuth = async (req: any, res: any, next: any) => {
           displayName: 'Dev Admin User' 
         };
       }
-      
+
       return next();
     }
 
@@ -121,7 +121,7 @@ router.get('/analytics', async (req: any, res: any) => {
     // Try to get real data from database
     try {
       console.log('🔍 Attempting to fetch real analytics data...');
-      
+
       // Get total users with safe fallback
       const totalUsersResult = await db.select({ count: count() }).from(users);
       analytics.totalUsers = totalUsersResult[0]?.count || 5;
@@ -165,7 +165,7 @@ router.get('/analytics', async (req: any, res: any) => {
 
     } catch (dbError) {
       console.warn('⚠️ Database query failed, using enhanced fallback data:', dbError.message);
-      
+
       // Enhanced fallback data that looks realistic
       analytics = {
         totalUsers: 127,
@@ -243,7 +243,7 @@ router.get('/users', async (req: any, res: any) => {
     console.log('🔍 Fetching users for admin:', req.adminUser?.email);
 
     let query = db.select().from(users);
-    
+
     // Apply filters if provided
     if (search) {
       query = query.where(
@@ -252,7 +252,7 @@ router.get('/users', async (req: any, res: any) => {
             CAST(${users.id} AS TEXT) LIKE ${`%${search}%`}`
       );
     }
-    
+
     if (tier !== 'all') {
       query = query.where(eq(users.tier, tier));
     }
@@ -264,7 +264,7 @@ router.get('/users', async (req: any, res: any) => {
     try {
       const usersList = await query;
       console.log('✅ Fetched users from database:', usersList.length);
-      
+
       // Format the response to match frontend expectations
       const formattedUsers = usersList.map(user => ({
         id: user.id,
@@ -282,7 +282,7 @@ router.get('/users', async (req: any, res: any) => {
       return res.json(formattedUsers);
     } catch (dbError) {
       console.warn('⚠️ Database query failed, using enhanced fallback data:', dbError.message);
-      
+
       // Enhanced fallback data that looks realistic
       const fallbackUsers = [
         {
@@ -350,7 +350,7 @@ router.get('/users', async (req: any, res: any) => {
 router.get('/subscriptions', async (req: any, res: any) => {
   try {
     console.log('🔍 Fetching subscriptions for admin:', req.adminUser?.email);
-    
+
     // Provide fallback data for development
     const fallbackSubscriptions = [
       {
@@ -573,7 +573,7 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
     } catch (dbError) {
       console.warn('⚠️ Database update failed, using simulated response:', dbError.message);
     }
-    
+
     // Log the action
     try {
       await db.insert(adminLogs).values({
@@ -585,7 +585,7 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    
+
     res.json({ 
       success: true, 
       message: 'User daily limit has been reset successfully.',
@@ -626,7 +626,7 @@ router.post('/users/:userId/ban', async (req: any, res: any) => {
     } catch (dbError) {
       console.warn('⚠️ Database update failed, using simulated response:', dbError.message);
     }
-    
+
     // Log the action
     try {
       await db.insert(adminLogs).values({
@@ -638,7 +638,7 @@ router.post('/users/:userId/ban', async (req: any, res: any) => {
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    
+
     res.json({ 
       success: true, 
       message: `User ${banned ? 'banned' : 'unbanned'} successfully.`,
@@ -683,7 +683,7 @@ router.post('/users/:userId/upgrade', async (req: any, res: any) => {
     } catch (dbError) {
       console.warn('⚠️ Database update failed, using simulated response:', dbError.message);
     }
-    
+
     // Log the action
     try {
       await db.insert(adminLogs).values({
@@ -695,7 +695,7 @@ router.post('/users/:userId/upgrade', async (req: any, res: any) => {
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    
+
     res.json({ 
       success: true, 
       message: `User upgraded to ${tier} successfully.`,
@@ -756,7 +756,7 @@ router.post('/users/:userId/add-credits', async (req: any, res: any) => {
       currentCredits = Math.floor(Math.random() * 100);
       newCredits = currentCredits + Number(credits);
     }
-    
+
     // Log the action
     try {
       await db.insert(adminLogs).values({
@@ -768,7 +768,7 @@ router.post('/users/:userId/add-credits', async (req: any, res: any) => {
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    
+
     res.json({ 
       success: true, 
       message: `Added ${credits} credits successfully.`,
@@ -1158,7 +1158,7 @@ router.post('/promo-codes', async (req, res) => {
 router.get('/promo-codes', async (req: any, res: any) => {
   try {
     console.log('🔍 Fetching promo codes for admin:', req.adminUser?.email);
-    
+
     // Return mock data that matches the frontend expectations
     const mockPromos = [
       {
@@ -1274,7 +1274,7 @@ router.post('/promo-codes/:promoId/toggle', async (req: any, res: any) => {
 
     // Mock response for development
     const mockPromoCode = `PROMO${promoId}`;
-    
+
     // Return immediate success response to fix the HTML issue
     console.log('✅ Successfully toggled promo code (mock):', mockPromoCode);
     return res.status(200).json({ 
