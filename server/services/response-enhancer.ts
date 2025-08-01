@@ -764,7 +764,6 @@ function personalizeAnswer(answer: string, context?: any): string {
     F --> G[Pathway Analysis]
     style D fill:#f9f,stroke:#333
     style E fill:#bbf,stroke:#333`;
-  };
   }
 
   if (query.includes('variant')) {
@@ -774,11 +773,10 @@ function personalizeAnswer(answer: string, context?: any): string {
     C --> D[Base Recalibration]
     D --> E[Variant Calling --> GATK]
     E --> F[Variant Filtering]
-    F --> G[Annotation --> ANNOVAR]`;;
+    F --> G[Annotation --> ANNOVAR]`;
   }
 
   return null;
-}
 
 // ========== BACKEND RESPONSE FORMATTING ==========
 // Note: Frontend rendering components should be in the client directory
