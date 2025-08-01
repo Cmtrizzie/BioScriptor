@@ -525,8 +525,13 @@ function detectUserIntent(query: string): string {
     }
     const lowerQuery = query.toLowerCase().trim();
 
-    // Casual greetings and small talk - improved detection
-    if (/(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)$)|(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)\s*[!.]*$)|greetings|how are you|how's it going/i.test(lowerQuery)) {
+    // Casual greetings and small talk - improved detection with typos and variations
+    if (/(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)$)|(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)\s*[!.]*$)|greetings|how are you|how's it going|how are you doing|how r u|how u doing/i.test(lowerQuery)) {
+        return 'casual_greeting';
+    }
+
+    // Extended greetings with casual language and typos
+    if (/(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|how are you doing today|what's new|how's your day|nice to meet you/i.test(lowerQuery)) {
         return 'casual_greeting';
     }
 

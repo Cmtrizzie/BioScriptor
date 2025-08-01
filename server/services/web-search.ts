@@ -366,13 +366,23 @@ function shouldPerformWebSearch(query: string): boolean {
 
   const queryLower = query.toLowerCase().trim();
 
-  // Skip very basic conversational queries
-  if (/^(hi|hello|hey|thanks|thank you|bye|goodbye|yes|no|ok|okay)$/i.test(queryLower)) {
+  // Skip all basic conversational queries and greetings
+  if (/^(hi|hello|hey|thanks|thank you|bye|goodbye|yes|no|ok|okay|sup|yo|howdy|greetings)$/i.test(queryLower)) {
     return false;
   }
 
-  // Skip very basic personal questions
-  if (/^(how are you|what's your name|who are you)$/i.test(queryLower)) {
+  // Skip extended greetings and casual conversation
+  if (/^(hi there|hello there|hey there|good morning|good afternoon|good evening|how are you|how's it going|what's up|how are you doing|how are you doing today|what's new|how's your day|nice to meet you|pleasure to meet you)$/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip casual conversation with variations and typos
+  if (/(^|\s)(thy|ur|u|r)\s+(doing|going|been|feeling|up to)/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip personal questions about the AI
+  if (/^(what's your name|who are you|what are you|tell me about yourself|introduce yourself)$/i.test(queryLower)) {
     return false;
   }
 
