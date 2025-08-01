@@ -303,7 +303,7 @@ export function analyzeUserTone(message: string): {
   // Calculate tone scores
   Object.entries(toneMarkers).forEach(([tone, markers]) => {
     toneScores[tone] = markers.reduce((score, marker) => {
-      return score + (lowerMessage.includes(marker) ? 1 : 0;
+      return score + (lowerMessage.includes(marker) ? 1 : 0);
     }, 0);
   });
 
@@ -340,5 +340,34 @@ function activateCreativeMode(userMessage: string): boolean {
 // generateBioinformaticsDiagram, etc. with minor enhancements) ...
 
 export function shouldPerformWebSearch(query: string): boolean {
-  // ... existing implementation ...
+  const webSearchKeywords = [
+    'recent', 'this year', '2024', '2025', 'what\'s happening',
+    'tutorial', 'guide', 'example', 'documentation',
+    'research', 'study', 'paper', 'publication', 'article',
+    'database', 'tool', 'software', 'algorithm', 'method',
+    'current', 'latest', 'new', 'update', 'news'
+  ];
+  
+  const lowerQuery = query.toLowerCase();
+  return webSearchKeywords.some(keyword => lowerQuery.includes(keyword));
+}
+
+function generateWorkflowDiagram(query: string): string | null {
+  const lowerQuery = query.toLowerCase();
+  
+  if (lowerQuery.includes('workflow') || lowerQuery.includes('pipeline')) {
+    return `graph TD
+    A[Start] --> B[Process Input]
+    B --> C[Analysis]
+    C --> D[Generate Output]
+    D --> E[End]
+    style A fill:#e1f5fe
+    style E fill:#c8e6c9`;
+  }
+  
+  if (lowerQuery.includes('rnaseq') || lowerQuery.includes('rna-seq')) {
+    return generateBioinformaticsDiagram(query);
+  }
+  
+  return null;
 }
