@@ -47,6 +47,8 @@ export type BioinformaticsQueryType = 'crispr' | 'pcr' | 'codon_optimization' | 
 export interface BioinformaticsQuery {
     type: BioinformaticsQueryType;
     content: string;
+    fileAnalysis?: BioFileAnalysis;
+}
 
 // Enhanced AI response generation
 async function getEnhancedAIResponse(
