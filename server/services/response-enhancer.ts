@@ -133,19 +133,19 @@ function determineResponseDomain(query: string): string {
     'analysis', 'python', 'script', 'pipeline', 'fastq', 'bam', 'vcf',
     'snp', 'gene', 'chromosome', 'nucleotide', 'amino acid', 'phylogenetic'
   ];
-  
+
   const isBio = BIO_KEYWORDS.some(kw => query.toLowerCase().includes(kw));
-  
+
   // Prioritize bioinformatics for ambiguous queries
   if (isBio || query.length < 5) return "bio";
-  
+
   // Check for specific non-bio domains
   if (/(president|minister|king|queen|prime|government|politics)/i.test(query)) return "politics";
   if (/(sports|team|player|match|football|soccer|basketball)/i.test(query)) return "sports";
   if (/(movie|actor|director|film|entertainment)/i.test(query)) return "entertainment";
   if (/(weather|temperature|climate)/i.test(query)) return "weather";
   if (/(news|latest|trending|headlines)/i.test(query)) return "news";
-  
+
   return "general";
 }
 
@@ -163,37 +163,37 @@ const GENERAL_KNOWLEDGE: Record<string, string> = {
 
 function getFactualAnswer(query: string): string {
   const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, "");
-  
+
   // Try to find direct match
   for (const [key, answer] of Object.entries(GENERAL_KNOWLEDGE)) {
     if (cleanQuery.includes(key)) return answer;
   }
-  
+
   // Handle common question patterns
   if (cleanQuery.includes("who is") && cleanQuery.includes("president")) {
     return "I have limited information about current political leaders. As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, or scientific computing tasks.";
   }
-  
+
   if (cleanQuery.includes("what is") && cleanQuery.includes("largest")) {
     return "For geographical questions, I have basic information. However, my expertise is in bioinformatics - would you like to explore genomic data analysis instead?";
   }
-  
+
   // Fallback for unknown questions
   return `I don't have specific information about "${query}". As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, protein structures, or scientific computing tasks.`;
 }
 
 function handleGeneralKnowledge(message: ChatMessage, options: any): ChatMessage {
   const personality = PERSONALITY_PROFILES.generalist;
-  
+
   // Get concise answer
   const directAnswer = getFactualAnswer(options.userMessage || "");
-  
+
   // Create response structure with redirection
   const content = `${personality.response_patterns.transitions[0]} ${directAnswer}\n\n` +
                  `💡 *While I specialize in bioinformatics, I'm happy to help with general questions too.* ` +
                  `Need expert help with DNA sequencing or data analysis next?\n\n` +
                  `🧬 Ask me about DNA sequencing or protein structures!`;
-  
+
   return {
     ...message,
     content,
@@ -214,7 +214,7 @@ export function getPersonalityForContext(
 ): PersonalityConfig {
   // Determine response domain first
   const domain = determineResponseDomain(userMessage);
-  
+
   // Return generalist personality for non-bio domains
   if (domain !== "bio") {
     return PERSONALITY_PROFILES.generalist;
@@ -455,7 +455,7 @@ export function getEnhancedPersonalityForContext(
 
   // Determine response domain first
   const domain = determineResponseDomain(userMessage);
-  
+
   // Return generalist personality for non-bio domains
   if (domain !== "bio") {
     return PERSONALITY_PROFILES.generalist;
@@ -486,7 +486,7 @@ export function getEnhancedPersonalityForContext(
 
   // Default logic based on conversation history and skill level
   const skillLevel = userPreferences?.skillLevel || 'intermediate';
-  
+
   if (skillLevel === 'expert') {
     return PERSONALITY_PROFILES.expert;
   } else if (skillLevel === 'beginner') {
@@ -531,7 +531,7 @@ export function generateEnhancedStructuredResponse(
         copyable: true
       });
     }
-    
+
     const table = generateComparisonTable(context.userMessage || '');
     if (table) {
       sections.push({
@@ -540,7 +540,7 @@ export function generateEnhancedStructuredResponse(
         copyable: false
       });
     }
-    
+
     sections.push({
       type: 'text',
       content: content,
@@ -619,11 +619,11 @@ function summarizeContent(content: string): string {
   const paragraphs = content.split('\n\n');
   const firstParagraph = paragraphs[0];
   const keyPoints = content.match(/(?:^|\n)-\s.+/g) || [];
-  
+
   if (keyPoints.length > 0) {
     return firstParagraph + '\n\nKey points:\n' + keyPoints.slice(0, 3).join('\n');
   }
-  
+
   return firstParagraph.slice(0, 200) + (firstParagraph.length > 200 ? '...' : '');
 }
 
@@ -631,7 +631,7 @@ function addPersonalityOpener(content: string, personality?: PersonalityConfig):
   if (!personality?.response_patterns?.acknowledgments) {
     return content;
   }
-  
+
   const opener = personality.response_patterns.acknowledgments[0];
   return `${opener} ${content}`;
 }
@@ -640,14 +640,14 @@ function extractCodeBlocks(content: string): Array<{code: string, language: stri
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
   const blocks: Array<{code: string, language: string}> = [];
   let match;
-  
+
   while ((match = codeBlockRegex.exec(content)) !== null) {
     blocks.push({
       language: match[1] || 'text',
       code: match[2].trim()
     });
   }
-  
+
   return blocks;
 }
 
@@ -656,7 +656,7 @@ function shouldAddDiagram(userMessage: string, content: string): boolean {
     'workflow', 'pipeline', 'process', 'steps', 'flowchart',
     'relationship', 'structure', 'hierarchy', 'flow'
   ];
-  
+
   const text = (userMessage + ' ' + content).toLowerCase();
   return diagramTriggers.some(trigger => text.includes(trigger));
 }
@@ -666,7 +666,7 @@ function shouldAddTable(userMessage: string, content: string): boolean {
     'compare', 'comparison', 'versus', 'vs', 'differences',
     'options', 'tools', 'methods', 'parameters', 'features'
   ];
-  
+
   const text = (userMessage + ' ' + content).toLowerCase();
   return tableTriggers.some(trigger => text.includes(trigger));
 }
@@ -678,11 +678,11 @@ function generateLearningFollowUps(topics: string[]): string {
     "Should we explore practical applications next?",
     "Are there related topics you'd like to learn about?"
   ];
-  
+
   const topicSuggestions = topics.length > 0 
     ? `\n\n💡 **Related topics you might find interesting:**\n${topics.map(t => `- ${t}`).join('\n')}`
     : '';
-  
+
   return `\n\n**What's next?**\n${followUps[Math.floor(Math.random() * followUps.length)]}${topicSuggestions}`;
 }
 
@@ -693,21 +693,21 @@ function handleGeneralKnowledge(
 ): ChatMessage {
   const personality = options.personality || PERSONALITY_PROFILES.generalist;
   const context = options.conversationContext;
-  
+
   // Get more contextual answer
   const directAnswer = getEnhancedFactualAnswer(options.userMessage || "", context);
-  
+
   // Personalize based on conversation context
   let redirectionStyle = "bioinformatics";
   if (context?.topics?.length > 0) {
     redirectionStyle = context.topics[0];
   }
-  
+
   const content = `${personality.response_patterns?.transitions?.[0] || "Here's what I know:"} ${directAnswer}\n\n` +
                  `💡 *While I can help with general questions, my specialty is bioinformatics!* ` +
                  `Ready to explore ${redirectionStyle} analysis or DNA sequencing?\n\n` +
                  `🧬 Try asking about: CRISPR design, sequence analysis, or PCR optimization!`;
-  
+
   return {
     ...message,
     content,
@@ -723,38 +723,38 @@ function handleGeneralKnowledge(
 
 function getEnhancedFactualAnswer(query: string, context?: any): string {
   const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, "");
-  
+
   // Enhanced pattern matching with context awareness
   for (const [key, answer] of Object.entries(GENERAL_KNOWLEDGE)) {
     if (cleanQuery.includes(key)) {
       return personalizeAnswer(answer, context);
     }
   }
-  
+
   // Context-aware fallback responses
   if (context?.emotionalContext === 'curious') {
     return `That's a fascinating question about "${query}"! While I don't have specific details on that topic, I'm always eager to help with scientific inquiries.`;
   }
-  
+
   if (context?.userExpertiseLevel === 'expert') {
     return `I don't have comprehensive data on "${query}" in my current knowledge base. For specialized information beyond bioinformatics, I'd recommend consulting domain-specific resources.`;
   }
-  
+
   return `I don't have specific information about "${query}". As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, protein structures, or scientific computing tasks.`;
 }
 
 function personalizeAnswer(answer: string, context?: any): string {
   if (!context) return answer;
-  
+
   // Add context-appropriate detail level
   if (context.preferredResponseStyle === 'detailed' && answer.length < 100) {
     return answer + " This information is current as of my last update and may have changed.";
   }
-  
+
   if (context.preferredResponseStyle === 'concise' && answer.length > 100) {
     return answer.split('.')[0] + '.';
   }
-  
+
   return answer;
 }
 
@@ -801,7 +801,7 @@ export async function enhanceResponse(
 ): Promise<ChatMessage> {
   const domain = determineResponseDomain(options.userMessage || "");
   const conversationContext = options.context.conversationContext;
-  
+
   // Enhanced personality selection based on conversation context
   const personality = getEnhancedPersonalityForContext(
     options.userMessage || '',
@@ -814,8 +814,8 @@ export async function enhanceResponse(
     }
   );
 
-  // Handle general knowledge queries with enhanced context
-  if (domain !== "bio") {
+  // Handle greetings and non-bio domains
+  if (domain === "greeting" || domain !== "bio") {
     return handleGeneralKnowledge(message, { ...options, personality, conversationContext });
   }
 
@@ -835,7 +835,7 @@ export async function enhanceResponse(
 
   // Apply personality to content
   let enhancedContent = message.content;
-  
+
   // Add personality-based greeting if it's the start of conversation
   if (options.context.previousResponses.length === 0) {
     const greeting = personality.response_patterns?.acknowledgments?.[0] || "Hello!";
@@ -949,27 +949,84 @@ export function shouldPerformWebSearch(query: string): boolean {
     'database', 'tool', 'software', 'algorithm', 'method',
     'current', 'latest', 'new', 'update', 'news'
   ];
-  
+
   const lowerQuery = query.toLowerCase();
   return webSearchKeywords.some(keyword => lowerQuery.includes(keyword));
 }
 
 function generateWorkflowDiagram(query: string): string | null {
   const lowerQuery = query.toLowerCase();
-  
+
   if (lowerQuery.includes('workflow') || lowerQuery.includes('pipeline')) {
     return `graph TD
     A[Start] --> B[Process Input]
-    B --> C[Analysis]
+    B --> C[The code has been modified to handle greeting domain in enhance response.
+```typescript
+Analysis]
     C --> D[Generate Output]
     D --> E[End]
     style A fill:#e1f5fe
     style E fill:#c8e6c9`;
   }
-  
+
   if (lowerQuery.includes('rnaseq') || lowerQuery.includes('rna-seq')) {
     return generateBioinformaticsDiagram(query);
   }
-  
+
   return null;
+}
+
+function determineResponseDomain(query: string): string {
+  const BIO_KEYWORDS = [
+    'dna', 'rna', 'protein', 'sequence', 'genomic', 'alignment', 
+    'blast', 'crispr', 'pcr', 'bioinformatics', 'genome', 'variant',
+    'analysis', 'python', 'script', 'pipeline', 'fastq', 'bam', 'vcf',
+    'snp', 'gene', 'chromosome', 'nucleotide', 'amino acid', 'phylogenetic'
+  ];
+
+  const isBio = BIO_KEYWORDS.some(kw => query.toLowerCase().includes(kw));
+
+    if (/(hello|hi|hey|greetings|good morning|good afternoon|good evening)/i.test(query)) return "greeting";
+
+  // Prioritize bioinformatics for ambiguous queries
+  if (isBio || query.length < 5) return "bio";
+
+  // Check for specific non-bio domains
+  if (/(president|minister|king|queen|prime|government|politics)/i.test(query)) return "politics";
+  if (/(sports|team|player|match|football|soccer|basketball)/i.test(query)) return "sports";
+  if (/(movie|actor|director|film|entertainment)/i.test(query)) return "entertainment";
+  if (/(weather|temperature|climate)/i.test(query)) return "weather";
+  if (/(news|latest|trending|headlines)/i.test(query)) return "news";
+
+  return "general";
+}
+
+function handleGeneralKnowledge(message: ChatMessage, options: any): ChatMessage {
+  const personality = PERSONALITY_PROFILES.generalist;
+  let greeting = "Hello! 👋";
+  let ask = "general questions";
+  // Get concise answer
+  let directAnswer = getFactualAnswer(options.userMessage || "");
+   if (options.userMessage && /(hello|hi|hey|greetings|good morning|good afternoon|good evening)/i.test(options.userMessage)) {
+        directAnswer = "Hello there! How can I assist you today?";
+        ask = "anything else";
+    }
+
+
+  // Create response structure with redirection
+  const content = `${personality.response_patterns.transitions[0]} ${directAnswer}\n\n` +
+                 `💡 *While I specialize in bioinformatics, I'm happy to help with ${ask} too.* ` +
+                 `Need expert help with DNA sequencing or data analysis next?\n\n` +
+                 `🧬 Ask me about DNA sequencing or protein structures!`;
+
+  return {
+    ...message,
+    content,
+    metadata: {
+      ...message.metadata,
+      domain: "general",
+      personality: "generalist",
+      suggestedRedirect: "bioinformatics"
+    }
+  };
 }
