@@ -1852,7 +1852,7 @@ export function shouldPerformWebSearch(query: string): boolean {
   }
 
   const webSearchKeywords = [
-    'recent', 'this year', '2024', '2025', 'what's happening',
+    'recent', 'this year', '2024', '2025', 'what\'s happening',
     'tutorial', 'guide', 'example', 'documentation',
     'research', 'study', 'paper', 'publication', 'article',
     'database', 'tool', 'software', 'algorithm', 'method',
