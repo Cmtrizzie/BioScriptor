@@ -4,6 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["glibcLocales"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -67,10 +68,6 @@ args = "npm run dev"
 name = "Dev Server"
 author = 45409384
 mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm install --no-audit"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

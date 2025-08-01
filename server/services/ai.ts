@@ -844,35 +844,33 @@ export const processQuery = async (
         // 4. AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
-        // 5. Get multiple candidate responses for comparison
-        const candidates = await Promise.allSettled([
-            getEnhancedAIResponse(query, optimalProvider, conversationContext, context.history),
-            // Get backup response from different provider
-            getEnhancedAIResponse(query, 'together', conversationContext, context.history)
-        ]);
+        // 5. Use the fault-tolerant AI system
+        const aiResponse = await faultTolerantAI.processQuery(
+            query,
+            { 
+                conversationContext,
+                userIntent: detectUserIntent(query)
+            },
+            conversationContext.emotionalContext,
+            context.history.slice(-6).map(m => ({
+                role: m.role,
+                content: m.content
+            })),
+            userTier || 'free'
+        );
 
-        // 6. Select best response
-        const successfulResponses = candidates
-            .filter(c => c.status === 'fulfilled')
-            .map(c => (c as PromiseFulfilledResult<any>).value);
-
-        let bestResponse = successfulResponses[0];
-        if (successfulResponses.length > 1) {
-            bestResponse = selectBestResponse(successfulResponses, query, conversationContext);
-        }
-
-        // Minimal response processing - avoid over-enhancement
+        // Create response message
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
-            content: bestResponse.content,
+            content: aiResponse.content,
             timestamp: Date.now(),
             status: 'complete',
             metadata: {
                 tone,
                 intent: userIntent,
                 queryType,
-                model: optimalprovider,
+                model: optimalProvider,
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
@@ -886,66 +884,12 @@ export const processQuery = async (
 
         return finalResponseMessage;
 
-        // Legacy bioinformatics handling (keep for compatibility)
-        if (false) { // This block ishandled above
-            let responseContent = '';
-            let metadata: any = { confidence: 0.95, processingTime: 1200 };
-
-            switch (queryType) {
-                case 'crispr':
-                    const guides = generateCRISPRGuides(fileAnalysis.sequence);
-                    responseContent = `CRISPR guide RNA analysis completed. Found ${guides.length} potential targets:\n` +
-                        guides.map((g, i) => `${i+1}. ${g.sequence} (PAM: ${g.pam})`).join('\n');
-                    metadata.guides = guides;
-                    break;
-
-                case 'pcr':
-                    const pcrResults = simulatePCR(fileAnalysis.sequence);
-                    responseContent = `PCR simulation completed:\n- Optimal annealing: ${pcrResults.annealingTemp}°C\n` +
-                        `- Product size: ${pcrResults.productSize}bp\n- Efficiency: ${pcrResults.efficiency}%`;
-                    metadata.pcrResults = pcrResults;
-                    break;
-
-                case 'codon_optimization':
-                    const optimized = optimizeCodonUsage(fileAnalysis.sequence);
-                    responseContent = `Codon optimization completed:\n- Original CAI: ${optimized.originalCAI.toFixed(2)}\n` +
-                        `- Optimized CAI: ${optimized.optimizedCAI.toFixed(2)}\n- Host: ${optimized.host}`;
-                    metadata.optimization = optimized;
-                    break;
-
-                case 'sequence_analysis':
-                    responseContent = `Sequence analysis completed:\n- Length: ${fileAnalysis.sequence.length}bp\n` +
-                        `- GC Content: ${fileAnalysis.gcContent}%\n- Type: ${fileAnalysis.sequenceType}`;
-                    if (fileAnalysis.features) {
-                        responseContent += `\n- Features: ${fileAnalysis.features.join(', ')}`;
-                    }
-                    break;
-            }
-
-// Create response message without over-enhancement
-        const aiResponseMessage: ChatMessage = {
-            id: generateUniqueId(),
-            role: 'assistant',
-            content: aiResponse.content,
-            timestamp: Date.now(),
-            status: 'complete',
-            metadata: {
-                tone,
-                intent: userIntent,
-                model: aiResponse.provider,
-                processingTime,
-                confidence: 0.85,
-                dataPrivacyMode: dataPrivacyMode || 'private',
-                ...(aiResponse.tokens && { tokens: aiResponse.tokens })
-            }
-        };
-
         // Add to conversation history only if user allows data usage
         if (dataPrivacyMode !== 'private') {
-            conversationManager.addMessage(aiResponseMessage);
+            conversationManager.addMessage(finalResponseMessage);
         }
 
-        return aiResponseMessage;
+        return finalResponseMessage;
 
     } catch (error) {
         console.error('Error processing query:', error);
