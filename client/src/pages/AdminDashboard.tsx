@@ -995,10 +995,11 @@ export default function AdminDashboard() {
       const promoToDelete = promoCodesData.find(p => p.id === promoId);
       if (promoToDelete) {
         setPromoCodesData(prev => [...prev, promoToDelete]);
-        
-          title: "Error",
-          description: "Network error occurred.",
-          variant: "destructive",
+      }
+      toast({
+        title: "Error",
+        description: "Network error occurred.",
+        variant: "destructive",
       });
     }
   };
