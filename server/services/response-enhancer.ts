@@ -397,6 +397,368 @@ function generateBioinformaticsDiagram(query: string): string {
     A[Raw FASTQ] --> B[Quality Control]
     B --> C[Trimming]
     C --> D[Alignment --> STAR/HISAT2]
+
+// ========== ENHANCED PERSONALITY SELECTION ==========
+export function getEnhancedPersonalityForContext(
+  userMessage: string,
+  conversationHistory: ChatMessage[],
+  conversationContext?: any,
+  userPreferences?: { 
+    preferredPersonality?: string;
+    skillLevel?: string;
+    preferredStyle?: string;
+  }
+): PersonalityConfig {
+  // Use conversation context for smarter personality selection
+  if (conversationContext) {
+    // Match personality to user expertise and emotional context
+    if (conversationContext.userExpertiseLevel === 'expert' && 
+        conversationContext.emotionalContext === 'frustrated') {
+      return {
+        ...PERSONALITY_PROFILES.expert,
+        tone: "supportive and solution-focused",
+        response_patterns: {
+          ...PERSONALITY_PROFILES.expert.response_patterns,
+          acknowledgments: [
+            "I understand this can be challenging.",
+            "Let's work through this systematically.",
+            "I'll help you solve this step by step."
+          ]
+        }
+      };
+    }
+
+    if (conversationContext.userExpertiseLevel === 'beginner' && 
+        conversationContext.emotionalContext === 'curious') {
+      return {
+        ...PERSONALITY_PROFILES.mentor,
+        tone: "encouraging and educational",
+        response_patterns: {
+          ...PERSONALITY_PROFILES.mentor.response_patterns,
+          acknowledgments: [
+            "Great question! I love your curiosity!",
+            "That's exactly the right thing to ask!",
+            "Let's explore this together!"
+          ]
+        }
+      };
+    }
+
+    if (conversationContext.conversationFlow === 'task_focused') {
+      return {
+        ...PERSONALITY_PROFILES.expert,
+        tone: "efficient and precise",
+        explanation_style: "direct with actionable steps"
+      };
+    }
+  }
+
+  // Determine response domain first
+  const domain = determineResponseDomain(userMessage);
+  
+  // Return generalist personality for non-bio domains
+  if (domain !== "bio") {
+    return PERSONALITY_PROFILES.generalist;
+  }
+
+  // Use user preference if specified
+  if (userPreferences?.preferredPersonality && 
+      PERSONALITY_PROFILES[userPreferences.preferredPersonality]) {
+    return PERSONALITY_PROFILES[userPreferences.preferredPersonality];
+  }
+
+  // Enhanced tone detection for bio domains
+  const userTone = analyzeUserTone(userMessage);
+  if (TONE_ADAPTATION_RULES[userTone.dominantTone]) {
+    const baseProfile = PERSONALITY_PROFILES.mentor;
+    return {
+      ...baseProfile,
+      tone: TONE_ADAPTATION_RULES[userTone.dominantTone],
+      response_patterns: {
+        ...baseProfile.response_patterns,
+        acknowledgments: [
+          `I sense your ${userTone.dominantTone} tone!`,
+          ...(baseProfile.response_patterns?.acknowledgments || [])
+        ]
+      }
+    };
+  }
+
+  // Default logic based on conversation history and skill level
+  const skillLevel = userPreferences?.skillLevel || 'intermediate';
+  
+  if (skillLevel === 'expert') {
+    return PERSONALITY_PROFILES.expert;
+  } else if (skillLevel === 'beginner') {
+    return PERSONALITY_PROFILES.mentor;
+  }
+
+  return PERSONALITY_PROFILES.mentor; // Default to mentor for bioinformatics
+}
+
+// ========== ENHANCED STRUCTURED RESPONSE GENERATION ==========
+export function generateEnhancedStructuredResponse(
+  content: string,
+  context: {
+    complexity: string;
+    topics: string[];
+    intent?: string;
+    userMessage?: string;
+    conversationContext?: any;
+    preferredStyle?: string;
+    personality?: PersonalityConfig;
+  }
+): StructuredResponse {
+  const sections: ResponseSection[] = [];
+  const { intent = 'general' } = context;
+
+  // Adapt structure based on user preferences
+  if (context.preferredStyle === 'concise') {
+    // Single, focused section for concise responses
+    sections.push({
+      type: 'text',
+      content: summarizeContent(content),
+      copyable: false
+    });
+  } else if (context.preferredStyle === 'visual') {
+    // Prioritize visual elements
+    const diagram = generateWorkflowDiagram(context.userMessage || '');
+    if (diagram) {
+      sections.push({
+        type: 'diagram',
+        format: 'mermaid',
+        content: diagram,
+        copyable: true
+      });
+    }
+    
+    const table = generateComparisonTable(context.userMessage || '');
+    if (table) {
+      sections.push({
+        type: 'table',
+        content: formatTable(table),
+        copyable: false
+      });
+    }
+    
+    sections.push({
+      type: 'text',
+      content: content,
+      copyable: false
+    });
+  } else {
+    // Detailed response structure
+    sections.push({
+      type: 'text',
+      content: addPersonalityOpener(content, context.personality),
+      copyable: false
+    });
+
+    // Add code blocks if detected
+    const codeBlocks = extractCodeBlocks(content);
+    codeBlocks.forEach(block => {
+      sections.push({
+        type: 'code',
+        content: block.code,
+        language: block.language,
+        copyable: true
+      });
+    });
+
+    // Add visual elements based on content analysis
+    if (shouldAddDiagram(context.userMessage || '', content)) {
+      const diagram = generateWorkflowDiagram(context.userMessage || '');
+      if (diagram) {
+        sections.push({
+          type: 'diagram',
+          format: 'mermaid',
+          content: diagram,
+          copyable: true
+        });
+      }
+    }
+
+    if (shouldAddTable(context.userMessage || '', content)) {
+      const table = generateComparisonTable(context.userMessage || '');
+      if (table) {
+        sections.push({
+          type: 'table',
+          content: formatTable(table),
+          copyable: false
+        });
+      }
+    }
+  }
+
+  // Add follow-up suggestions based on conversation context
+  if (context.conversationContext?.conversationFlow === 'learning') {
+    sections.push({
+      type: 'text',
+      content: generateLearningFollowUps(context.topics),
+      copyable: false
+    });
+  }
+
+  return {
+    sections,
+    metadata: {
+      intent,
+      complexity: context.complexity,
+      hasCode: sections.some(s => s.type === 'code'),
+      hasDiagram: sections.some(s => s.type === 'diagram'),
+      hasTable: sections.some(s => s.type === 'table'),
+      personalityApplied: !!context.personality,
+      responseStyle: context.preferredStyle || 'detailed'
+    }
+  };
+}
+
+// Helper functions for enhanced response processing
+function summarizeContent(content: string): string {
+  // Simple summarization - take first paragraph and key points
+  const paragraphs = content.split('\n\n');
+  const firstParagraph = paragraphs[0];
+  const keyPoints = content.match(/(?:^|\n)-\s.+/g) || [];
+  
+  if (keyPoints.length > 0) {
+    return firstParagraph + '\n\nKey points:\n' + keyPoints.slice(0, 3).join('\n');
+  }
+  
+  return firstParagraph.slice(0, 200) + (firstParagraph.length > 200 ? '...' : '');
+}
+
+function addPersonalityOpener(content: string, personality?: PersonalityConfig): string {
+  if (!personality?.response_patterns?.acknowledgments) {
+    return content;
+  }
+  
+  const opener = personality.response_patterns.acknowledgments[0];
+  return `${opener} ${content}`;
+}
+
+function extractCodeBlocks(content: string): Array<{code: string, language: string}> {
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const blocks: Array<{code: string, language: string}> = [];
+  let match;
+  
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    blocks.push({
+      language: match[1] || 'text',
+      code: match[2].trim()
+    });
+  }
+  
+  return blocks;
+}
+
+function shouldAddDiagram(userMessage: string, content: string): boolean {
+  const diagramTriggers = [
+    'workflow', 'pipeline', 'process', 'steps', 'flowchart',
+    'relationship', 'structure', 'hierarchy', 'flow'
+  ];
+  
+  const text = (userMessage + ' ' + content).toLowerCase();
+  return diagramTriggers.some(trigger => text.includes(trigger));
+}
+
+function shouldAddTable(userMessage: string, content: string): boolean {
+  const tableTriggers = [
+    'compare', 'comparison', 'versus', 'vs', 'differences',
+    'options', 'tools', 'methods', 'parameters', 'features'
+  ];
+  
+  const text = (userMessage + ' ' + content).toLowerCase();
+  return tableTriggers.some(trigger => text.includes(trigger));
+}
+
+function generateLearningFollowUps(topics: string[]): string {
+  const followUps = [
+    "Would you like me to explain any of these concepts in more detail?",
+    "What specific aspect interests you most?",
+    "Should we explore practical applications next?",
+    "Are there related topics you'd like to learn about?"
+  ];
+  
+  const topicSuggestions = topics.length > 0 
+    ? `\n\n💡 **Related topics you might find interesting:**\n${topics.map(t => `- ${t}`).join('\n')}`
+    : '';
+  
+  return `\n\n**What's next?**\n${followUps[Math.floor(Math.random() * followUps.length)]}${topicSuggestions}`;
+}
+
+// Enhanced general knowledge handler
+function handleGeneralKnowledge(
+  message: ChatMessage, 
+  options: any & { personality?: PersonalityConfig; conversationContext?: any }
+): ChatMessage {
+  const personality = options.personality || PERSONALITY_PROFILES.generalist;
+  const context = options.conversationContext;
+  
+  // Get more contextual answer
+  const directAnswer = getEnhancedFactualAnswer(options.userMessage || "", context);
+  
+  // Personalize based on conversation context
+  let redirectionStyle = "bioinformatics";
+  if (context?.topics?.length > 0) {
+    redirectionStyle = context.topics[0];
+  }
+  
+  const content = `${personality.response_patterns?.transitions?.[0] || "Here's what I know:"} ${directAnswer}\n\n` +
+                 `💡 *While I can help with general questions, my specialty is bioinformatics!* ` +
+                 `Ready to explore ${redirectionStyle} analysis or DNA sequencing?\n\n` +
+                 `🧬 Try asking about: CRISPR design, sequence analysis, or PCR optimization!`;
+  
+  return {
+    ...message,
+    content,
+    metadata: {
+      ...message.metadata,
+      domain: "general",
+      personality: personality.name,
+      suggestedRedirect: redirectionStyle,
+      responseStyle: options.preferredStyle || "friendly"
+    }
+  };
+}
+
+function getEnhancedFactualAnswer(query: string, context?: any): string {
+  const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, "");
+  
+  // Enhanced pattern matching with context awareness
+  for (const [key, answer] of Object.entries(GENERAL_KNOWLEDGE)) {
+    if (cleanQuery.includes(key)) {
+      return personalizeAnswer(answer, context);
+    }
+  }
+  
+  // Context-aware fallback responses
+  if (context?.emotionalContext === 'curious') {
+    return `That's a fascinating question about "${query}"! While I don't have specific details on that topic, I'm always eager to help with scientific inquiries.`;
+  }
+  
+  if (context?.userExpertiseLevel === 'expert') {
+    return `I don't have comprehensive data on "${query}" in my current knowledge base. For specialized information beyond bioinformatics, I'd recommend consulting domain-specific resources.`;
+  }
+  
+  return `I don't have specific information about "${query}". As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, protein structures, or scientific computing tasks.`;
+}
+
+function personalizeAnswer(answer: string, context?: any): string {
+  if (!context) return answer;
+  
+  // Add context-appropriate detail level
+  if (context.preferredResponseStyle === 'detailed' && answer.length < 100) {
+    return answer + " This information is current as of my last update and may have changed.";
+  }
+  
+  if (context.preferredResponseStyle === 'concise' && answer.length > 100) {
+    return answer.split('.')[0] + '.';
+  }
+  
+  return answer;
+}
+
+
     D --> E[Quantification --> featureCounts]
     E --> F[Differential Expression]
     F --> G[Pathway Analysis]
@@ -429,34 +791,45 @@ export async function enhanceResponse(
       previousResponses: ChatMessage[];
       currentTopic?: string;
       taskType?: string;
+      conversationContext?: any;
     };
     tone?: string;
     userSkillLevel?: string;
     userMessage?: string;
+    preferredStyle?: string;
   },
 ): Promise<ChatMessage> {
   const domain = determineResponseDomain(options.userMessage || "");
+  const conversationContext = options.context.conversationContext;
   
-  // Handle general knowledge queries
-  if (domain !== "bio") {
-    return handleGeneralKnowledge(message, options);
-  }
-
-  // Continue with existing bioinformatics enhancement logic
-  const personality = getPersonalityForContext(
+  // Enhanced personality selection based on conversation context
+  const personality = getEnhancedPersonalityForContext(
     options.userMessage || '',
     options.context.previousResponses,
-    { preferredPersonality: options.tone }
+    conversationContext,
+    { 
+      preferredPersonality: options.tone,
+      skillLevel: options.userSkillLevel,
+      preferredStyle: options.preferredStyle
+    }
   );
 
-  // Generate structured response for bioinformatics content
-  const structuredResponse = generateStructuredResponse(
+  // Handle general knowledge queries with enhanced context
+  if (domain !== "bio") {
+    return handleGeneralKnowledge(message, { ...options, personality, conversationContext });
+  }
+
+  // Generate enhanced structured response
+  const structuredResponse = generateEnhancedStructuredResponse(
     message.content,
     {
       complexity: options.userSkillLevel || 'intermediate',
       topics: [options.context.currentTopic || 'general'],
       intent: options.context.taskType,
-      userMessage: options.userMessage
+      userMessage: options.userMessage,
+      conversationContext,
+      preferredStyle: options.preferredStyle || 'detailed',
+      personality
     }
   );
 
