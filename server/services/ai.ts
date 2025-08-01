@@ -2,6 +2,7 @@
 import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
 import { enhanceResponse } from './response-enhancer';
+import { webSearchService, formatSearchResults } from './web-search';
 
 // ========== Type Definitions ==========
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'error';
@@ -841,15 +842,42 @@ export const processQuery = async (
             return await processBioQuery(query, userMessage, conversationContext, fileAnalysis, userTier);
         }
 
-        // 4. AI provider selection based on query type and context
+        // 4. Check if web search is needed
+        let searchResults = '';
+        const needsWebSearch = webSearchService.detectExplicitSearch(query) || 
+                              webSearchService.detectImplicitTriggers(query);
+
+        if (needsWebSearch) {
+            console.log('🌐 Performing web search for query...');
+            try {
+                const searchResponse = await webSearchService.search(query, { maxResults: 5 });
+                if (searchResponse.results.length > 0) {
+                    searchResults = webSearchService.formatResultsForAI(searchResponse);
+                    console.log(`✅ Web search completed: ${searchResponse.results.length} results`);
+                } else {
+                    console.log('⚠️ Web search returned no results');
+                }
+            } catch (searchError) {
+                console.warn('Web search failed:', searchError);
+            }
+        }
+
+        // 5. AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
-        // 5. Use the fault-tolerant AI system
+        // 6. Prepare enhanced query with search context
+        let enhancedQuery = query;
+        if (searchResults) {
+            enhancedQuery = `User Query: ${query}\n\nWeb Search Results:\n${searchResults}\n\nPlease provide a comprehensive answer using both your knowledge and the search results above.`;
+        }
+
+        // 7. Use the fault-tolerant AI system
         const aiResponse = await faultTolerantAI.processQuery(
-            query,
+            enhancedQuery,
             { 
                 conversationContext,
-                userIntent: detectUserIntent(query)
+                userIntent: detectUserIntent(query),
+                hasWebSearchResults: !!searchResults
             },
             conversationContext.emotionalContext,
             context.history.slice(-6).map(m => ({

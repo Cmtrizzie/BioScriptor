@@ -34,15 +34,15 @@ interface SearXNGResponse {
   unresponsive_engines: string[];
 }
 
-// Scrapy-based web search
-async function scrapySearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
-  return new Promise((resolve, reject) => {
-    console.log('🕷️ Starting Scrapy web search...');
+// Enhanced Python-based web search
+async function pythonWebSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
+  return new Promise((resolve) => {
+    console.log('🔍 Starting Python web search...');
 
-    const scrapyScript = path.join(process.cwd(), 'server', 'services', 'scrapy-search.py');
-    const pythonProcess = spawn('python3', [scrapyScript, query, maxResults.toString()], {
+    const searchScript = path.join(process.cwd(), 'server', 'services', 'scrapy-search.py');
+    const pythonProcess = spawn('python3', [searchScript, query, maxResults.toString()], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 30000,
+      timeout: 20000,
       env: { ...process.env, PYTHONPATH: process.cwd() }
     });
 
@@ -61,34 +61,46 @@ async function scrapySearch(query: string, maxResults: number = 5): Promise<WebS
       if (code === 0 && output.trim()) {
         try {
           const result = JSON.parse(output.trim());
-          if (result.results && Array.isArray(result.results)) {
-            console.log(`✅ Scrapy found ${result.results.length} results`);
-            resolve(result.results);
+          if (result.results && Array.isArray(result.results) && result.results.length > 0) {
+            console.log(`✅ Python search found ${result.results.length} results`);
+            resolve(result.results.map(r => ({
+              title: r.title || 'Untitled',
+              url: r.url || '',
+              snippet: r.snippet || r.title || 'No description available'
+            })));
           } else {
-            console.warn('Scrapy returned invalid results format');
+            console.warn('Python search returned no results');
             resolve([]);
           }
         } catch (parseError) {
-          console.warn('Failed to parse Scrapy output:', parseError.message);
+          console.warn('Failed to parse Python search output:', parseError.message);
           resolve([]);
         }
       } else {
-        console.warn(`Scrapy process failed with code ${code}:`, errorOutput);
+        console.warn(`Python search failed with code ${code}`);
+        if (errorOutput) {
+          console.warn('Error output:', errorOutput);
+        }
         resolve([]);
       }
     });
 
     pythonProcess.on('error', (error) => {
-      console.warn('Scrapy process error:', error.message);
+      console.warn('Python search process error:', error.message);
       resolve([]);
     });
 
-    // Handle timeout
-    setTimeout(() => {
-      pythonProcess.kill();
-      console.warn('Scrapy search timed out');
+    // Timeout handler
+    const timeoutId = setTimeout(() => {
+      pythonProcess.kill('SIGTERM');
+      console.warn('Python search timed out');
       resolve([]);
-    }, 25000);
+    }, 18000);
+
+    // Clear timeout if process ends normally
+    pythonProcess.on('close', () => {
+      clearTimeout(timeoutId);
+    });
   });
 }
 
@@ -266,32 +278,37 @@ async function searxngSearch(query: string, maxResults: number = 5): Promise<Web
 
 export async function performWebSearch(query: string, maxResults: number = 5): Promise<WebSearchResult[]> {
   try {
-    // Try Scrapy first (most reliable)
-    const scrapyResults = await scrapySearch(query, maxResults);
-    if (scrapyResults.length > 0) {
-      return scrapyResults;
+    console.log(`🔍 Performing web search for: "${query}"`);
+
+    // Try Python-based search first (most reliable)
+    const pythonResults = await pythonWebSearch(query, maxResults);
+    if (pythonResults.length > 0) {
+      console.log(`✅ Python search successful: ${pythonResults.length} results`);
+      return pythonResults;
     }
 
-    // Fallback to SearXNG
-    console.log('🔄 Scrapy failed, trying SearXNG fallback...');
-    const searxResults = await searxngSearch(query, maxResults);
-    if (searxResults.length > 0) {
-      return searxResults;
-    }
-
-    // Fallback to DuckDuckGo if SearXNG fails
-    console.log('🔄 SearXNG failed, trying DuckDuckGo fallback...');
+    // Fallback to DuckDuckGo direct search
+    console.log('🔄 Python search failed, trying DuckDuckGo fallback...');
     const ddgResults = await duckduckgoSearch(query, maxResults);
     if (ddgResults.length > 0) {
+      console.log(`✅ DuckDuckGo search successful: ${ddgResults.length} results`);
       return ddgResults;
     }
 
-    // If all methods fail, return empty array to let AI handle it naturally
-    console.log('⚠️ All search methods failed, letting AI respond naturally');
+    // Fallback to SearXNG
+    console.log('🔄 DuckDuckGo failed, trying SearXNG fallback...');
+    const searxResults = await searxngSearch(query, maxResults);
+    if (searxResults.length > 0) {
+      console.log(`✅ SearXNG search successful: ${searxResults.length} results`);
+      return searxResults;
+    }
+
+    // If all methods fail, return empty array
+    console.log('⚠️ All search methods failed');
     return [];
 
   } catch (error) {
-    console.error('Web search failed:', error);
+    console.error('Web search error:', error);
     return [];
   }
 }
@@ -315,7 +332,7 @@ export function formatSearchResults(results: WebSearchResult[]): string {
   return `## 🌐 Web Search Results\n\n${formattedResults}`;
 }
 
-// Helper function to determine if a query might benefit from web search
+// Enhanced function to determine if a query should trigger web search
 function shouldPerformWebSearch(query: string): boolean {
   if (!query || typeof query !== 'string') {
     return false;
@@ -323,28 +340,43 @@ function shouldPerformWebSearch(query: string): boolean {
 
   const queryLower = query.toLowerCase();
 
+  // Explicit search requests
+  if (/\b(search|find|lookup|look up|google|web search)\b/i.test(queryLower)) {
+    return true;
+  }
+
   // Current events and news
-  if (/\b(latest|recent|current|today|news|trending|happening|update|headlines)\b/i.test(queryLower)) {
+  if (/\b(latest|recent|current|today|news|trending|happening|update|headlines|breaking)\b/i.test(queryLower)) {
     return true;
   }
 
   // Prices and market data
-  if (/\b(price|cost|value|market|stock|crypto|bitcoin|ethereum|btc|eth)\b/i.test(queryLower)) {
+  if (/\b(price|cost|value|market|stock|crypto|bitcoin|ethereum|btc|eth|trading|exchange)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Weather
-  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy)\b/i.test(queryLower)) {
+  // Weather and location-based queries
+  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy|climate)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Events and schedules
-  if (/\b(when|schedule|event|happening|concert|movie|game)\b/i.test(queryLower)) {
+  // Time-sensitive information
+  if (/\b(when|schedule|event|happening|concert|movie|game|match|time|date)\b/i.test(queryLower)) {
     return true;
   }
 
   // Research and scientific updates
-  if (/\b(research|study|discovery|breakthrough|publication|findings)\b/i.test(queryLower)) {
+  if (/\b(research|study|discovery|breakthrough|publication|findings|paper|journal|article)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Company/product information
+  if (/\b(company|startup|product|release|announcement|launch)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // General knowledge that might need current info
+  if (/\b(who is|what is|president|leader|ceo|status|update)\b/i.test(queryLower)) {
     return true;
   }
 
