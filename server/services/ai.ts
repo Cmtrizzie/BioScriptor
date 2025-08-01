@@ -847,7 +847,7 @@ export const processQuery = async (
             preferredStyle: conversationContext.preferredResponseStyle
         });
 
-        const responseMessage: ChatMessage = {
+        const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
             content: typeof enhancedResponse === 'string' ? enhancedResponse : enhancedResponse.content,
@@ -866,10 +866,10 @@ export const processQuery = async (
         };
 
         if (dataPrivacyMode !== 'private') {
-            conversationManager.addMessage(responseMessage);
+            conversationManager.addMessage(finalResponseMessage);
         }
 
-        return responseMessage;
+        return finalResponseMessage;
 
         // Legacy bioinformatics handling (keep for compatibility)
         if (false) { // This block ishandled above
@@ -1034,7 +1034,7 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
         }
 
         // Create response message
-        const responseMessage: ChatMessage = {
+        const aiResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
             content: enhancedContent,
@@ -1053,10 +1053,10 @@ Always provide helpful, accurate, and scientifically sound responses. When discu
 
         // Add to conversation history only if user allows data usage
         if (dataPrivacyMode !== 'private') {
-            conversationManager.addMessage(responseMessage);
+            conversationManager.addMessage(aiResponseMessage);
         }
 
-        return responseMessage;
+        return aiResponseMessage;
 
     } catch (error) {
         console.error('Error processing query:', error);
