@@ -566,17 +566,17 @@ body {
     min-width: 0;
     overflow-x: auto;
   }
-  
+
   /* Better button spacing on mobile */
   .admin-actions {
     gap: 0.25rem !important;
   }
-  
+
   /* Compact card headers */
   .admin-card-header {
     padding: 0.75rem !important;
   }
-  
+
   /* Better text truncation */
   .admin-text-truncate {
     max-width: 100px;
@@ -584,32 +584,32 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+
   /* Mobile-first admin dashboard improvements */
   .admin-grid-mobile {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
   }
-  
+
   .admin-card-mobile {
     padding: 1rem !important;
     margin: 0.5rem 0 !important;
   }
-  
+
   .admin-button-mobile {
     padding: 0.5rem 0.75rem !important;
     font-size: 0.875rem !important;
   }
-  
+
   .admin-table-mobile {
     font-size: 0.75rem !important;
   }
-  
+
   .admin-table-mobile td,
   .admin-table-mobile th {
     padding: 0.5rem !important;
   }
-  
+
   /* Better form spacing on mobile */
   .admin-form-mobile input,
   .admin-form-mobile select,
@@ -617,56 +617,56 @@ body {
     padding: 0.75rem !important;
     font-size: 1rem !important;
   }
-  
+
   /* Responsive tabs */
   .admin-tabs-mobile {
     overflow-x: auto !important;
     white-space: nowrap !important;
   }
-  
+
   .admin-tabs-mobile > * {
     min-width: max-content !important;
   }
-  
+
   /* Enhanced admin dashboard mobile visibility */
   .admin-dashboard {
     padding: 0.75rem !important;
   }
-  
+
   .admin-analytics-cards {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
     gap: 0.75rem !important;
   }
-  
+
   .admin-card-content {
     padding: 0.75rem !important;
   }
-  
+
   /* Ensure all admin content is visible */
   .admin-content-mobile {
     min-height: 100vh;
     overflow-y: auto;
   }
-  
+
   /* Better visibility for form elements */
   .admin-form-element {
     margin-bottom: 1rem !important;
   }
-  
+
   .admin-form-label {
     display: block !important;
     margin-bottom: 0.5rem !important;
     font-weight: 600 !important;
     color: var(--foreground) !important;
   }
-  
+
   /* Enhanced button visibility */
   .admin-button {
     min-height: 44px !important;
     font-size: 0.875rem !important;
     font-weight: 500 !important;
   }
-  
+
   /* Improved modal visibility */
   .admin-modal {
     margin: 1rem !important;
@@ -1057,4 +1057,94 @@ button, input, textarea, select {
 .markdown-content code {
   word-wrap: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Enhanced admin dashboard mobile visibility */
+.admin-dashboard {
+  padding: 0.75rem !important;
+}
+
+/* Real-time settings toggle animations */
+.settings-toggle-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.settings-toggle-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.settings-toggle-button:hover::before {
+  left: 100%;
+}
+
+.settings-toggle-on {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.settings-toggle-off {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.settings-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.settings-status-on {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.settings-status-off {
+  background-color: #ef4444;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Settings card hover effects */
+.settings-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.settings-card:hover {
+  border-color: rgb(59 130 246 / 0.5);
+  box-shadow: 0 4px 12px rgb(59 130 246 / 0.15);
+}
+
+/* Live mode badge animation */
+.live-mode-badge {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
