@@ -174,30 +174,33 @@ export function enhanceResponse(
     preferredStyle?: string;
   }
 ): ChatMessage {
-  // Return the message as-is for most cases to avoid templated responses
-  const userMessage = options.userMessage || '';
-  const isGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening)$/i.test(userMessage.trim());
-  const isBio = /(dna|rna|protein|sequence|crispr|pcr|gene|genome|bioinformatics)/i.test(userMessage);
-  
-  // Only enhance for specific cases where it adds value
-  if (isGreeting && message.content.length < 50) {
-    return {
-      ...message,
-      content: `Hello! How can I assist you today?`
-    };
-  }
-  
-  // For bioinformatics queries, keep the response but clean it up
-  if (isBio && message.content.includes('molecular picture')) {
-    return {
-      ...message,
-      content: message.content.replace(/Let me paint you a molecular picture\.\.\. Here's where it gets interesting\.\.\. /g, '')
-                              .replace(/💡 \*[^*]+\* [^🧬]+🧬 [^⚡]+⚡/g, '')
-    };
-  }
-  
-  // Return original message without templated enhancements
+  // Return the message as-is to avoid templated responses
   return message;
+}
+
+// Simplified general knowledge handler
+export function handleGeneralKnowledge(
+  message: ChatMessage,
+  options: any & {
+    personality?: PersonalityConfig;
+    conversationContext?: any;
+    preferredStyle?: string;
+  },
+): ChatMessage {
+  const directAnswer = getFactualAnswer(options.userMessage || "");
+
+  // Simple, direct response without templates
+  const content = directAnswer;
+
+  return {
+    ...message,
+    content,
+    metadata: {
+      ...message.metadata,
+      domain: "general",
+      responseStyle: "direct",
+    },
+  };
 }
 
 // === FACTUAL ANSWER GENERATION ===
@@ -217,51 +220,4 @@ function getFactualAnswer(query: string): string {
   }
 
   return `I don't have specific information about "${query}". As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, protein structures, or scientific computing tasks.`;
-}
-
-// ✅ ✅ ✅ === FIXED: SINGLE VERSION OF handleGeneralKnowledge ===
-export function handleGeneralKnowledge(
-  message: ChatMessage,
-  options: any & {
-    personality?: PersonalityConfig;
-    conversationContext?: any;
-    preferredStyle?: string;
-  },
-): ChatMessage {
-  const personality = options.personality || PERSONALITY_PROFILES.generalist;
-  const context = options.conversationContext;
-
-  let ask = "general questions";
-  let directAnswer = getFactualAnswer(options.userMessage || "");
-
-  if (
-    options.userMessage &&
-    /(hello|hi|hey|greetings|good morning|good afternoon|good evening)/i.test(
-      options.userMessage,
-    )
-  ) {
-    directAnswer = "Hello there! How can I assist you today?";
-    ask = "anything else";
-  }
-
-  const transition =
-    personality.response_patterns?.transitions?.[0] || "Here's what I know:";
-
-  const content =
-    `${transition} ${directAnswer}\n\n` +
-    `💡 *While I specialize in bioinformatics, I'm happy to help with ${ask} too.* ` +
-    `Need expert help with DNA sequencing or data analysis next?\n\n` +
-    `🧬 Ask me about DNA sequencing or protein structures!`;
-
-  return {
-    ...message,
-    content,
-    metadata: {
-      ...message.metadata,
-      domain: "general",
-      personality: personality.name,
-      suggestedRedirect: "bioinformatics",
-      responseStyle: options.preferredStyle || "friendly",
-    },
-  };
 }

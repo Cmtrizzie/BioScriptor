@@ -286,36 +286,9 @@ export async function performWebSearch(query: string, maxResults: number = 5): P
       return ddgResults;
     }
 
-    // If all methods fail, provide contextual mock results
-    console.log('⚠️ All search methods (Scrapy, SearXNG, DuckDuckGo) failed, providing contextual information');
-
-    // Provide topic-specific mock results based on query
-    if (/bitcoin|btc|cryptocurrency|crypto/i.test(query)) {
-      return [
-        {
-          title: "Bitcoin Price and News - Real-time Updates",
-          url: "https://coinmarketcap.com/currencies/bitcoin/",
-          snippet: "Bitcoin (BTC) is the world's first cryptocurrency. Current market trends, price analysis, and news updates are available on major cryptocurrency platforms."
-        },
-        {
-          title: "Latest Bitcoin Developments and Market Analysis",
-          url: "https://coindesk.com/tag/bitcoin/",
-          snippet: "Stay updated with the latest Bitcoin news, including market analysis, regulatory updates, and technological developments in the cryptocurrency space."
-        },
-        {
-          title: "Bitcoin News and Price Analysis",
-          url: "https://cointelegraph.com/tags/bitcoin",
-          snippet: "Comprehensive coverage of Bitcoin news, including price movements, institutional adoption, and regulatory developments affecting the cryptocurrency market."
-        }
-      ];
-    }
-
-    // Generic fallback
-    return [{
-      title: `Search Results for: ${query}`,
-      url: 'https://search.brave.com/search?q=' + encodeURIComponent(query),
-      snippet: 'Web search is temporarily unavailable. You can try searching manually on major search engines for the most current information.'
-    }];
+    // If all methods fail, return empty array to let AI handle it naturally
+    console.log('⚠️ All search methods failed, letting AI respond naturally');
+    return [];
 
   } catch (error) {
     console.error('Web search failed:', error);

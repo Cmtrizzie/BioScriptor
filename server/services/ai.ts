@@ -880,14 +880,6 @@ export const processQuery = async (
 
         if (dataPrivacyMode !== 'private') {
             conversationManager.addMessage(finalResponseMessage);
-            conversationManager.addMessage(finalResponseMessage);
-        }
-
-        return finalResponseMessage;
-
-        // Add to conversation history only if user allows data usage
-        if (dataPrivacyMode !== 'private') {
-            conversationManager.addMessage(finalResponseMessage);
         }
 
         return finalResponseMessage;
