@@ -182,29 +182,7 @@ function getFactualAnswer(query: string): string {
   return `I don't have specific information about "${query}". As a bioinformatics specialist, I can best help with DNA analysis, sequence alignment, protein structures, or scientific computing tasks.`;
 }
 
-function handleGeneralKnowledge(message: ChatMessage, options: any): ChatMessage {
-  const personality = PERSONALITY_PROFILES.generalist;
 
-  // Get concise answer
-  const directAnswer = getFactualAnswer(options.userMessage || "");
-
-  // Create response structure with redirection
-  const content = `${personality.response_patterns.transitions[0]} ${directAnswer}\n\n` +
-                 `💡 *While I specialize in bioinformatics, I'm happy to help with general questions too.* ` +
-                 `Need expert help with DNA sequencing or data analysis next?\n\n` +
-                 `🧬 Ask me about DNA sequencing or protein structures!`;
-
-  return {
-    ...message,
-    content,
-    metadata: {
-      ...message.metadata,
-      domain: "general",
-      personality: "generalist",
-      suggestedRedirect: "bioinformatics"
-    }
-  };
-}
 
 // ========== ENHANCED PERSONALITY SELECTION ==========
 export function getPersonalityForContext(
@@ -692,15 +670,22 @@ function generateLearningFollowUps(topics: string[]): string {
 }
 
 // Enhanced general knowledge handler
-function handleGeneralKnowledge(
+export function handleGeneralKnowledge(
   message: ChatMessage, 
   options: any & { personality?: PersonalityConfig; conversationContext?: any }
 ): ChatMessage {
   const personality = options.personality || PERSONALITY_PROFILES.generalist;
   const context = options.conversationContext;
+  let ask = "general questions";
 
   // Get more contextual answer
-  const directAnswer = getEnhancedFactualAnswer(options.userMessage || "", context);
+  let directAnswer = getEnhancedFactualAnswer(options.userMessage || "", context);
+  
+  // Handle greetings specifically
+  if (options.userMessage && /(hello|hi|hey|greetings|good morning|good afternoon|good evening)/i.test(options.userMessage)) {
+    directAnswer = "Hello there! How can I assist you today?";
+    ask = "anything else";
+  }
 
   // Personalize based on conversation context
   let redirectionStyle = "bioinformatics";
@@ -709,7 +694,7 @@ function handleGeneralKnowledge(
   }
 
   const content = `${personality.response_patterns?.transitions?.[0] || "Here's what I know:"} ${directAnswer}\n\n` +
-                 `💡 *While I can help with general questions, my specialty is bioinformatics!* ` +
+                 `💡 *While I can help with ${ask}, my specialty is bioinformatics!* ` +
                  `Ready to explore ${redirectionStyle} analysis or DNA sequencing?\n\n` +
                  `🧬 Try asking about: CRISPR design, sequence analysis, or PCR optimization!`;
 
@@ -1006,32 +991,3 @@ function determineResponseDomain(query: string): string {
   return "general";
 }
 
-function handleGeneralKnowledge(message: ChatMessage, options: any): ChatMessage {
-  const personality = PERSONALITY_PROFILES.generalist;
-  let greeting = "Hello! 👋";
-  let ask = "general questions";
-  // Get concise answer
-  let directAnswer = getFactualAnswer(options.userMessage || "");
-   if (options.userMessage && /(hello|hi|hey|greetings|good morning|good afternoon|good evening)/i.test(options.userMessage)) {
-        directAnswer = "Hello there! How can I assist you today?";
-        ask = "anything else";
-    }
-
-
-  // Create response structure with redirection
-  const content = `${personality.response_patterns.transitions[0]} ${directAnswer}\n\n` +
-                 `💡 *While I specialize in bioinformatics, I'm happy to help with ${ask} too.* ` +
-                 `Need expert help with DNA sequencing or data analysis next?\n\n` +
-                 `🧬 Ask me about DNA sequencing or protein structures!`;
-
-  return {
-    ...message,
-    content,
-    metadata: {
-      ...message.metadata,
-      domain: "general",
-      personality: "generalist",
-      suggestedRedirect: "bioinformatics"
-    }
-  };
-}
