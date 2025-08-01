@@ -1387,7 +1387,7 @@ router.delete('/promo-codes/:promoId', async (req: any, res: any) => {
   }
 });
 
-// Corrected Upgrade user tier endpoint
+// Upgrade user tier endpoint
 router.post('/users/:userId/upgrade', async (req: any, res: any) => {
   try {
     const { userId } = req.params;
@@ -1463,52 +1463,7 @@ router.post('/users/:userId/upgrade', async (req: any, res: any) => {
   }
 });
 
-// Admin authentication middleware
-const requireAdminAuth = async (req: any, res: any, next: any) => {
-  try {
-    const firebaseUid = req.headers['x-firebase-uid'];
-    if (!firebaseUid) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
 
-    const { eq } = await import('drizzle-orm');
-    const user = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid as string)).limit(1);
-
-    if (!user.length || user[0].tier !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    req.user = user[0];
-    next();
-  } catch (error) {
-    console.error('Admin auth error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
-  }
-};
-
-// Get user analytics
-router.get('/analytics/users', requireAdminAuth, async (req, res) => {
-  try {
-    const analytics = await db.select({
-      totalUsers: count(),
-      activeUsers: sql<number>`COUNT(CASE WHEN last_seen > NOW() - INTERVAL '30 days' THEN 1 END)`,
-      newUsers: sql<number>`COUNT(CASE WHEN created_at > NOW() - INTERVAL '7 days' THEN 1 END)`
-    }).from(users);
-
-    const tierDistribution = await db.select({
-      tier: users.tier,
-      count: count()
-    }).from(users).groupBy(users.tier);
-
-    res.json({
-      analytics: analytics[0],
-      tierDistribution
-    });
-  } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ error: 'Failed to fetch analytics' });
-  }
-});
 
 // Export router
 export default router;
