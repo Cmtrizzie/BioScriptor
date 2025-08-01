@@ -908,7 +908,6 @@ router.post('/plans/:tier/pricing', async (req, res) => {
     console.log(`Plan ${tier} pricing updated to $${price}. Reason: ${reason}`);
 
     res.json({ success: true, message: `${tier} plan pricing updated successfully` });
-  ```text
   } catch (error) {
     console.error('Update pricing error:', error);
     res.status(500).json({ error: 'Failed to update pricing' });
