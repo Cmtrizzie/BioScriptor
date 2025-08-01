@@ -214,15 +214,16 @@ function buildEnhancedSystemPrompt(context: ConversationContext, query: string):
 
     let prompt = `You are BioScriptor, an AI assistant that helps with bioinformatics and general questions.
 
-IMPORTANT: Always provide direct, specific answers. Never use template responses like "I'd be happy to help with your question about X" or "Based on current best practices in the field". Give the actual information requested.
+IMPORTANT: 
+- Always provide direct, specific answers using the most current information available
+- When web search results are provided, use them as your primary source of current information
+- Never say you cannot access real-time information if search results are provided
+- Be helpful, accurate, and conversational
+- For sports queries like Arsenal matches, provide the specific fixture details from search results
 
-For web search queries (current events, news, prices, etc.): Use the provided search results to give accurate, up-to-date information.
-
+For web search queries: Use the provided search results to give accurate, up-to-date information.
 For bioinformatics: Provide specific technical guidance with examples.
-
-For general questions: Answer naturally and conversationally.
-
-Be concise and helpful. Avoid repetitive or templated language.`;
+For general questions: Answer naturally and conversationally.`;
 
     return prompt;
 }
@@ -752,7 +753,12 @@ export const processQuery = async (
         // 6. Prepare enhanced query with search context
         let enhancedQuery = query;
         if (searchResults && searchResults.trim() !== '') {
-            enhancedQuery = `${searchResults}User Question: ${query}\n\nBased on the above search results and your knowledge, provide a clear, direct answer.`;
+            enhancedQuery = `Current Web Search Results:
+${searchResults}
+
+User Question: ${query}
+
+Based on the above current web search results, provide a direct answer with the most up-to-date information. Do not mention that you cannot access real-time information - use the search results provided.`;
         }
 
         // 7. Use the fault-tolerant AI system

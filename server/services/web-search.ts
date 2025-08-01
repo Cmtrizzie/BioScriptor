@@ -337,7 +337,7 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 
   const validResults = results
     .filter(result => result.title && result.snippet && result.title.trim() !== '' && result.snippet.trim() !== '')
-    .slice(0, 3); // Limit to 3 most relevant results
+    .slice(0, 5); // Use more results for better context
 
   if (validResults.length === 0) {
     return '';
@@ -345,14 +345,17 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 
   const formattedResults = validResults
     .map((result, index) => {
-      const title = result.title.length > 80 ? result.title.substring(0, 80) + '...' : result.title;
-      const snippet = result.snippet.length > 150 ? result.snippet.substring(0, 150) + '...' : result.snippet;
+      const title = result.title.length > 100 ? result.title.substring(0, 100) + '...' : result.title;
+      const snippet = result.snippet.length > 200 ? result.snippet.substring(0, 200) + '...' : result.snippet;
+      const url = result.url.length > 80 ? result.url.substring(0, 80) + '...' : result.url;
       
-      return `**${title}**: ${snippet}`;
+      return `Source ${index + 1}: ${title}
+URL: ${url}
+Content: ${snippet}`;
     })
     .join('\n\n');
 
-  return `Based on current web search results:\n\n${formattedResults}\n\n`;
+  return formattedResults;
 }
 
 // Enhanced function to determine if a query should trigger web search
