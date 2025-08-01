@@ -345,11 +345,13 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 
   const formattedResults = validResults
     .map((result, index) => {
-      const title = result.title.length > 120 ? result.title.substring(0, 120) + '...' : result.title;
-      const snippet = result.snippet.length > 300 ? result.snippet.substring(0, 300) + '...' : result.snippet;
+      const title = result.title.length > 100 ? result.title.substring(0, 100) + '...' : result.title;
+      const snippet = result.snippet.length > 400 ? result.snippet.substring(0, 400) + '...' : result.snippet;
       
-      return `[${index + 1}] ${title}
-${snippet}`;
+      return `RESULT ${index + 1}:
+TITLE: ${title}
+CONTENT: ${snippet}
+---`;
     })
     .join('\n\n');
 

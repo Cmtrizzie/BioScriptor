@@ -214,16 +214,17 @@ function buildEnhancedSystemPrompt(context: ConversationContext, query: string):
 
     let prompt = `You are BioScriptor, an AI assistant that helps with bioinformatics and general questions.
 
-IMPORTANT: 
-- Always provide direct, specific answers using the most current information available
-- When web search results are provided, use them as your primary source of current information
-- Never say you cannot access real-time information if search results are provided
-- Be helpful, accurate, and conversational
-- For sports queries like Arsenal matches, provide the specific fixture details from search results
+CRITICAL RULES:
+- When web search results are provided, you MUST use ONLY that information
+- NEVER provide generic template responses or pre-trained knowledge when search results exist
+- Extract specific facts, dates, names, and numbers directly from search results
+- If search results don't contain the answer, explicitly say so
+- Be direct and factual, not vague or generic
+- For sports/current events: Use exact information from search results
+- For bioinformatics: Provide specific technical guidance with examples
+- For general questions: Answer naturally using available data
 
-For web search queries: Use the provided search results to give accurate, up-to-date information.
-For bioinformatics: Provide specific technical guidance with examples.
-For general questions: Answer naturally and conversationally.`;
+NEVER say you cannot access real-time information when search results are provided.`;
 
     return prompt;
 }
@@ -757,25 +758,40 @@ export const processQuery = async (
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
             
             if (isSportsQuery) {
-                enhancedQuery = `CURRENT WEB SEARCH RESULTS (Use this as your primary source):
+                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+
+===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
+=============================================
 
 User Question: ${query}
 
-INSTRUCTIONS: You have access to current web search results above. Extract specific information from these results to answer the user's sports question. If the results contain:
-- Match fixtures: Provide exact dates, times, and opponents
-- League winners: State who won and when
-- Scores/results: Give specific match results
-- Current standings: Share the latest table positions
+STRICT INSTRUCTIONS:
+1. ONLY use information from the search results above
+2. If match dates/times are in the results, provide them exactly as shown
+3. If winners/champions are mentioned, state them directly
+4. If no specific information is found in results, say "The search results don't contain specific information about [query]"
+5. NEVER say you cannot access real-time information
+6. Be direct and specific using ONLY the search data provided
 
-DO NOT say you cannot access real-time information. USE the search results provided to give a direct, factual answer.`;
+Answer based EXCLUSIVELY on the search results above:`;
             } else {
-                enhancedQuery = `CURRENT WEB SEARCH RESULTS (Use this as your primary source):
+                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+
+===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
+=============================================
 
 User Question: ${query}
 
-INSTRUCTIONS: Use the web search results above to provide a current, accurate answer. Extract specific facts, dates, numbers, and details from the search results. Do not mention limitations about real-time access - you have current information from the search results.`;
+STRICT INSTRUCTIONS:
+1. Extract specific facts, dates, numbers, and details ONLY from the search results above
+2. If the results contain current information, present it directly
+3. If the search results don't contain relevant information, say "The search results don't contain specific information about [query]"
+4. NEVER mention limitations about real-time access
+5. Format your response based on what's actually in the search results
+
+Answer based EXCLUSIVELY on the search results above:`;
             }
         }
 
