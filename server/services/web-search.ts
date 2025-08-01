@@ -358,56 +358,107 @@ Content: ${snippet}`;
   return formattedResults;
 }
 
-// Enhanced function to determine if a query should trigger web search
+// Enhanced function to determine if a query should trigger web search - now more open and responsive
 function shouldPerformWebSearch(query: string): boolean {
   if (!query || typeof query !== 'string') {
     return false;
   }
 
-  const queryLower = query.toLowerCase();
+  const queryLower = query.toLowerCase().trim();
 
-  // Explicit search requests
-  if (/\b(search|find|lookup|look up|google|web search)\b/i.test(queryLower)) {
+  // Skip very basic conversational queries
+  if (/^(hi|hello|hey|thanks|thank you|bye|goodbye|yes|no|ok|okay)$/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip very basic personal questions
+  if (/^(how are you|what's your name|who are you)$/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip simple math or basic programming questions
+  if (/^(what is \d+[\+\-\*\/]\d+|calculate \d+|simple math)$/i.test(queryLower)) {
+    return false;
+  }
+
+  // ALWAYS search for explicit search requests
+  if (/\b(search|find|lookup|look up|google|web search|check|verify)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Sports queries - always need current information
-  if (/\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(queryLower)) {
+  // ALWAYS search for current/time-sensitive information
+  if (/\b(latest|recent|current|today|now|this week|this month|2024|2025|news|trending|happening|update|headlines|breaking|live)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Current events and news
-  if (/\b(latest|recent|current|today|news|trending|happening|update|headlines|breaking)\b/i.test(queryLower)) {
+  // ALWAYS search for sports queries
+  if (/\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result|transfer|player)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Prices and market data
-  if (/\b(price|cost|value|market|stock|crypto|bitcoin|ethereum|btc|eth|trading|exchange)\b/i.test(queryLower)) {
+  // ALWAYS search for financial/market data
+  if (/\b(price|cost|value|market|stock|crypto|bitcoin|ethereum|btc|eth|trading|exchange|usd|eur|inflation|economy)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Weather and location-based queries
-  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy|climate)\b/i.test(queryLower)) {
+  // ALWAYS search for weather and location queries
+  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy|climate|location|city|country|population)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Time-sensitive information
-  if (/\b(when|schedule|event|happening|concert|movie|game|match|time|date)\b/i.test(queryLower)) {
+  // ALWAYS search for events and schedules
+  if (/\b(when|schedule|event|happening|concert|movie|show|festival|conference|meeting|time|date)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Research and scientific updates
-  if (/\b(research|study|discovery|breakthrough|publication|findings|paper|journal|article)\b/i.test(queryLower)) {
+  // ALWAYS search for research and scientific updates
+  if (/\b(research|study|discovery|breakthrough|publication|findings|paper|journal|article|scientist|university|lab)\b/i.test(queryLower)) {
     return true;
   }
 
-  // Company/product information
-  if (/\b(company|startup|product|release|announcement|launch)\b/i.test(queryLower)) {
+  // ALWAYS search for company/product/technology information
+  if (/\b(company|startup|product|release|announcement|launch|ceo|founder|tech|technology|software|app)\b/i.test(queryLower)) {
     return true;
   }
 
-  // General knowledge that might need current info
-  if (/\b(who is|what is|president|leader|ceo|status|update|who won|winner)\b/i.test(queryLower)) {
+  // ALWAYS search for people and biographical information
+  if (/\b(who is|who are|biography|born|age|nationality|career|achievements)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for health and medical information
+  if (/\b(health|medical|disease|medicine|treatment|vaccine|virus|symptoms|doctor|hospital)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for travel and transportation
+  if (/\b(travel|flight|hotel|restaurant|tourism|transport|train|bus|airport)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for education and learning resources
+  if (/\b(course|tutorial|learn|education|university|college|degree|certification)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for entertainment and media
+  if (/\b(movie|film|tv show|series|music|album|book|author|actor|director|celebrity)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for questions starting with interrogative words (indicating information seeking)
+  if (/^(what|where|when|why|how|which|who)(?:\s|')/i.test(queryLower)) {
+    return true;
+  }
+
+  // ALWAYS search for factual information requests
+  if (/\b(fact|facts|information|data|statistics|stats|details|explain|definition|meaning)\b/i.test(queryLower)) {
+    return true;
+  }
+
+  // Default to searching for most queries - be liberal about web search
+  // Only skip if it's clearly a simple conversation, basic math, or coding question
+  if (queryLower.length > 10 && !/\b(code|function|script|programming|syntax|variable|array|loop)\b/i.test(queryLower)) {
     return true;
   }
 
@@ -449,25 +500,60 @@ export const webSearchService = {
 
     // For crypto queries, use specific terms
     if (/(crypto|bitcoin|ethereum|price)/i.test(query)) {
-      return 'cryptocurrency prices bitcoin ethereum latest';
+      return 'cryptocurrency prices bitcoin ethereum latest market value';
     }
 
     // For sports queries, enhance with current season info
     if (/(arsenal|man u|manchester united|chelsea|liverpool|tottenham|premier league|next match|fixture)/i.test(query)) {
-      return query + ' 2024 2025 season current fixtures schedule';
+      return query + ' 2024 2025 season current fixtures schedule upcoming matches';
     }
 
     // For sports results queries
     if (/(who won|winner|champion|last season|premier league)/i.test(query)) {
-      return query + ' 2023 2024 season winner champion';
+      return query + ' 2023 2024 season winner champion latest results';
     }
 
-    // Remove common question words and extract key terms
+    // For weather queries
+    if (/(weather|temperature|forecast)/i.test(query)) {
+      return query + ' current conditions today forecast';
+    }
+
+    // For news/current events
+    if (/(news|latest|trending|current events)/i.test(query)) {
+      return query + ' today latest breaking news current';
+    }
+
+    // For technology/company queries
+    if (/(company|startup|tech|software|app|product)/i.test(query)) {
+      return query + ' latest news updates current information';
+    }
+
+    // For research/scientific queries
+    if (/(research|study|discovery|paper|findings)/i.test(query)) {
+      return query + ' latest research current findings recent studies';
+    }
+
+    // For people/biographical queries
+    if (/(who is|biography|age|career)/i.test(query)) {
+      return query + ' biography current information latest news';
+    }
+
+    // For general factual queries, keep original terms but add currency indicators
+    if (/^(what|where|when|why|how|which|who)(?:\s|')/i.test(query)) {
+      const cleanQuery = query
+        .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')
+        .replace(/\b(is|are|was|were|the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return cleanQuery + ' current information latest';
+    }
+
+    // Default: clean up query and add currency indicators
     return query
       .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')
       .replace(/\b(is|are|was|were|the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/gi, ' ')
       .replace(/\s+/g, ' ')
-      .trim();
+      .trim() + ' latest current';
   },
 
   formatResultsForAI(searchResponse: WebSearchResponse): string {

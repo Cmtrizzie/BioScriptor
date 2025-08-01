@@ -715,7 +715,7 @@ export const processQuery = async (
             return await processBioQuery(query, userMessage, conversationContext, fileAnalysis, userTier);
         }
 
-        // 4. Enhanced web search with better detection and caching
+        // 4. Enhanced web search with more liberal detection and better caching
         let searchResults = '';
         const needsWebSearch = webSearchService.detectExplicitSearch(query) || 
                               webSearchService.detectImplicitTriggers(query);
@@ -724,7 +724,7 @@ export const processQuery = async (
             console.log(`🌐 Performing web search for: "${query}"`);
             try {
                 const searchResponse = await webSearchService.search(query, { 
-                    maxResults: 5,
+                    maxResults: 6, // Increased for better context
                     bioinformatics: queryType === 'bioinformatics'
                 });
                 
@@ -733,16 +733,16 @@ export const processQuery = async (
                     console.log(`✅ Web search completed: ${searchResponse.results.length} results in ${searchResponse.searchTime}ms`);
                 } else {
                     console.log('⚠️ Web search returned no results');
-                    // For some queries, provide context that search was attempted
-                    if (webSearchService.detectExplicitSearch(query)) {
-                        searchResults = `I searched the web for "${query}" but couldn't find current results. I'll provide information based on my knowledge instead.\n\n`;
+                    // For information-seeking queries, acknowledge the search attempt
+                    if (webSearchService.detectExplicitSearch(query) || /^(what|where|when|why|how|which|who)(?:\s|')/i.test(query)) {
+                        searchResults = `I searched the web for current information about "${query}" but didn't find specific results. I'll provide information based on my knowledge.\n\n`;
                     }
                 }
             } catch (searchError) {
                 console.warn('Web search failed:', searchError);
-                // Graceful fallback message
-                if (webSearchService.detectExplicitSearch(query)) {
-                    searchResults = `I attempted to search the web but encountered an issue. Let me provide information based on my knowledge instead.\n\n`;
+                // Graceful fallback for information-seeking queries
+                if (webSearchService.detectExplicitSearch(query) || /^(what|where|when|why|how|which|who)(?:\s|')/i.test(query)) {
+                    searchResults = `I attempted to search for current information but encountered an issue. Let me provide information based on my knowledge.\n\n`;
                 }
             }
         }
