@@ -1772,7 +1772,8 @@ export default function AdminDashboard() {
                             <TableRow>
                               <TableCell>PAYMENT.SALE.COMPLETED</TableCell>
                               <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
-                              <TableCell                              <Badge variant="default">Processed</Badge>
+                              <TableCell>
+                                <Badge variant="default">Processed</Badge>
                               </TableCell>
                               <TableCell>$9.99</TableCell>
                               <TableCell className="text-sm text-slate-500">
