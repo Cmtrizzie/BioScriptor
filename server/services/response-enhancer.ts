@@ -776,7 +776,8 @@ function personalizeAnswer(answer: string, context?: any): string {
     F --> G[Annotation --> ANNOVAR]`;
   }
 
-  // ... existing code ...
+  return null;
+}
 }
 
 // ========== BACKEND RESPONSE FORMATTING ==========
