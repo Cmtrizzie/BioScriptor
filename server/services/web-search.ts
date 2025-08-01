@@ -398,6 +398,11 @@ export const webSearchService = {
       return '';
     }
     
+    // For crypto queries, use specific terms
+    if (/(crypto|bitcoin|ethereum|price)/i.test(query)) {
+      return 'cryptocurrency prices bitcoin ethereum latest';
+    }
+    
     // Remove common question words and extract key terms
     return query
       .replace(/^(what|how|when|where|why|who|can|could|should|would|please|help)\s+/i, '')

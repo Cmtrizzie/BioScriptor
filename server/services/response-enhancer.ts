@@ -210,7 +210,7 @@ function generateCreativePrompts(context: any): string[] {
     "What would happen if we reversed our assumptions?",
     "Here's a metaphorical way to think about this:",
   ];
-  
+
   return [getRandomFromArray(prompts)];
 }
 
@@ -997,444 +997,7 @@ export interface BuilderContext {
   isBuilderMode: boolean;
   useCase?: string;
   techStack?: string[];
-  experience?: "beginner" | "intermediate" | "advanced";
-}
-
-const TRIGGER_PHRASES = {
-  chatbot: [
-    "build a chatbot",
-    "create chatbot",
-    "chatbot development",
-    "ai assistant",
-    "conversational ai",
-  ],
-  webapp: [
-    "build a website",
-    "create web app",
-    "web application",
-    "full stack",
-    "frontend",
-    "backend",
-  ],
-  analysis: [
-    "data analysis",
-    "analyze data",
-    "bioinformatics pipeline",
-    "genomic analysis",
-    "sequence analysis",
-  ],
-  api: ["build api", "create endpoint", "rest api", "graphql", "microservice"],
-  automation: [
-    "automate",
-    "script",
-    "workflow",
-    "pipeline",
-    "batch processing",
-  ],
-};
-
-const BUILDER_MODE_TRIGGERS = [
-  "build",
-  "create",
-  "develop",
-  "implement",
-  "design",
-  "architect",
-  "code",
-  "program",
-  "setup",
-  "configure",
-  "deploy",
-  "integrate",
-  "optimize",
-  "scale",
-];
-
-export function detectBuilderMode(
-  userMessage: string,
-  conversationHistory: ChatMessage[],
-): BuilderContext {
-  const lowerMessage = userMessage.toLowerCase();
-  const recentMessages = conversationHistory
-    .slice(-5)
-    .map((m) => m.content.toLowerCase())
-    .join(" ");
-
-  // Check for builder mode triggers
-  const hasBuilderTriggers = BUILDER_MODE_TRIGGERS.some(
-    (trigger) =>
-      lowerMessage.includes(trigger) || recentMessages.includes(trigger),
-  );
-
-  // Detect tech stack mentions
-  const techStack: string[] = [];
-  const techKeywords = {
-    python: ["python", "django", "flask", "fastapi", "pandas", "numpy"],
-    javascript: [
-      "javascript",
-      "js",
-      "node",
-      "react",
-      "vue",
-      "angular",
-      "express",
-    ],
-    bioinformatics: [
-      "biopython",
-      "bioconductor",
-      "blast",
-      "samtools",
-      "bedtools",
-    ],
-    databases: ["postgresql", "mysql", "mongodb", "redis", "sqlite"],
-    cloud: ["aws", "azure", "gcp", "docker", "kubernetes", "vercel", "netlify"],
-  };
-
-  Object.entries(techKeywords).forEach(([tech, keywords]) => {
-    if (
-      keywords.some(
-        (keyword) =>
-          lowerMessage.includes(keyword) || recentMessages.includes(keyword),
-      )
-    ) {
-      techStack.push(tech);
-    }
-  });
-
-  // Detect experience level
-  let experience: "beginner" | "intermediate" | "advanced" = "intermediate";
-  if (
-    lowerMessage.includes("beginner") ||
-    lowerMessage.includes("new to") ||
-    lowerMessage.includes("learning")
-  ) {
-    experience = "beginner";
-  } else if (
-    lowerMessage.includes("advanced") ||
-    lowerMessage.includes("expert") ||
-    lowerMessage.includes("professional")
-  ) {
-    experience = "advanced";
-  }
-
-  return {
-    isBuilderMode: hasBuilderTriggers,
-    techStack,
-    experience,
-  };
-}
-
-export function generateFollowUpResponse(
-  userMessage: string,
-  builderContext: BuilderContext,
-): string {
-  const lowerMessage = userMessage.toLowerCase();
-
-  // Knowledge synthesis triggers
-  if (lowerMessage.includes("synthesize") || lowerMessage.includes("connect concepts") || lowerMessage.includes("interdisciplinary")) {
-    return `🔗 **Let's connect ideas!** 
-
-Which fields should we bridge?
-- 🧬 **Biology + AI**: Bio-inspired algorithms, neural networks mimicking brain structure
-- 🧪 **Chemistry + Art**: Molecular aesthetics, crystalline patterns in design
-- 🧮 **Math + Nature**: Fractals in natural structures, Fibonacci in growth patterns
-- 💻 **CS + Neuroscience**: Neural network architectures, brain-computer interfaces
-- 📊 **Data + Music**: Sonification of datasets, rhythmic pattern analysis
-- 🔬 **Physics + Biology**: Quantum effects in photosynthesis, thermodynamics of life
-
-Choose two domains to synthesize, and I'll help find creative connections and build innovative solutions!`;
-  }
-
-  // Chatbot building triggers
-  if (TRIGGER_PHRASES.chatbot.some((phrase) => lowerMessage.includes(phrase))) {
-    return `🤖 **That's amazing!** Building a chatbot is exciting! 
-
-             Do you have a specific use case in mind?
-             - 🏥 **Healthcare**: Patient support, symptom checking, appointment scheduling
-             - 📚 **Education**: Tutoring, course assistance, knowledge base queries  
-             - 🛍️ **Customer Support**: FAQ handling, order tracking, product recommendations
-             - 🧬 **Bioinformatics**: Sequence analysis, research assistance, data interpretation
-             - 💼 **Business**: Lead qualification, internal tools, workflow automation
-
-             I can help you pick the right tools and architecture based on your specific needs! What's your target use case?`;
-  }
-
-  // Web app building triggers
-  if (TRIGGER_PHRASES.webapp.some((phrase) => lowerMessage.includes(phrase))) {
-    return `🚀 **Awesome choice!** Let's build something great together!
-
-             What type of web application are you thinking about?
-             - 📊 **Data Dashboard**: Analytics, visualizations, real-time monitoring
-             - 🧬 **Scientific Tool**: Bioinformatics analysis, research platform
-             - 💬 **Social Platform**: Community, collaboration, sharing
-             - 🛒 **E-commerce**: Online store, marketplace, booking system
-             - 📱 **SaaS Tool**: Productivity, automation, business solutions
-
-             Based on your choice, I'll recommend the perfect tech stack and guide you through the development process!`;
-  }
-
-  // Analysis pipeline triggers
-  if (
-    TRIGGER_PHRASES.analysis.some((phrase) => lowerMessage.includes(phrase))
-  ) {
-    return `🔬 **Perfect!** Let's design a robust analysis pipeline!
-
-             What kind of data are you working with?
-             - 🧬 **Genomic Data**: DNA/RNA sequences, variants, expression data
-             - 🧪 **Experimental Data**: Lab results, measurements, time series
-             - 📊 **Research Data**: Publications, surveys, clinical trials
-             - 🌍 **Public Datasets**: NCBI, EBI, genomic databases
-             - 📈 **Custom Data**: Proprietary formats, mixed data types
-
-             I'll help you choose the right tools (Python/R, cloud platforms, visualization) and build an efficient workflow!`;
-  }
-
-  // API building triggers
-  if (TRIGGER_PHRASES.api.some((phrase) => lowerMessage.includes(phrase))) {
-    return `⚡ **Great idea!** APIs are the backbone of modern applications!
-
-             What type of API are you planning to build?
-             - 🔄 **Data Processing**: Transform, validate, analyze scientific data
-             - 🧬 **Bioinformatics Service**: Sequence analysis, BLAST searches, annotations
-             - 🔗 **Integration Hub**: Connect multiple tools, databases, services
-             - 📊 **Analytics Engine**: Real-time data processing, reporting
-             - 🤖 **AI/ML Service**: Model serving, predictions, intelligent processing
-
-             I'll guide you through design patterns, authentication, scaling, and deployment on Replit!`;
-  }
-
-  // Automation triggers
-  if (
-    TRIGGER_PHRASES.automation.some((phrase) => lowerMessage.includes(phrase))
-  ) {
-    return `🤖 **Smart thinking!** Automation saves time and reduces errors!
-
-             What would you like to automate?
-             - 📁 **File Processing**: Batch operations, format conversions, data cleaning
-             - 🧬 **Analysis Workflows**: Sequential analysis steps, quality control
-             - 📊 **Data Collection**: Web scraping, API polling, database syncing
-             - 📧 **Notifications**: Alerts, reports, status updates
-             - 🔄 **System Tasks**: Backups, monitoring, maintenance
-
-             I'll help you build efficient scripts and workflows that run reliably!`;
-  }
-
-  return "";
-}
-
-// ========== CONVERSATION HELPERS ==========
-export function generateConversationHook(
-  intent: string,
-  context: any,
-  userMessage: string,
-): string {
-  // Check for builder mode first
-  const builderContext = detectBuilderMode(
-    userMessage,
-    context.previousResponses || [],
-  );
-
-  if (builderContext.isBuilderMode) {
-    const followUp = generateFollowUpResponse(userMessage, builderContext);
-    if (followUp) return followUp;
-
-    // Builder mode general response
-    return `🚀 **Builder Mode Activated!** 
-
-             I'm here to help you build amazing things. Whether it's bioinformatics tools, web applications, APIs, or automation scripts - let's create something powerful together!
-
-             **My building expertise includes:**
-             - 🧬 Bioinformatics pipelines and analysis tools
-             - 💻 Full-stack web applications  
-             - 🤖 AI-powered chatbots and assistants
-             - 📊 Data analysis and visualization platforms
-             - ⚡ APIs and microservices
-
-             What would you like to build today?`;
-  }
-
-  // Standard intent responses
-  switch (intent) {
-    case "casual_greeting":
-      return generateCasualGreetingResponse(userMessage);
-    case "small_talk":
-      return generateSmallTalkResponse(userMessage);
-    case "greeting":
-      return "Hello! I'm BioScriptor, your AI assistant specialized in bioinformatics, data analysis, and scientific computing. How can I help you today?";
-    case "farewell":
-      return "You're welcome! Feel free to reach out whenever you need assistance with bioinformatics, coding, or data analysis. Have a great day!";
-    case "code_request":
-      return "I'll help you create the code you need.";
-    case "technical_question":
-      return "I'll break this down for you step by step.";
-    default:
-      return "";
-  }
-}
-
-function generateCasualGreetingResponse(userMessage: string): string {
-  const lowerMessage = userMessage.toLowerCase();
-
-  // Detect specific casual patterns
-  if (/(wazup|wassup|what's up|sup)/i.test(lowerMessage)) {
-    const responses = [
-      "Hey there! 😄 Not much happening on my end - just ready to help with some science or coding!",
-      "Yo! Just hanging out, ready to tackle some bioinformatics or data analysis with you!",
-      "Hey! Living that AI life, you know how it is! 😊 What's cooking in your world?",
-      "Sup! Just here being your friendly neighborhood bioinformatics assistant! What's on your mind?",
-    ];
-    return (
-      getRandomFromArray(responses) + "\n\nWhat can I help you with today?"
-    );
-  }
-
-  if (/(yo|hey)/i.test(lowerMessage)) {
-    const responses = [
-      "Hey! 👋 Good to see you!",
-      "Yo! What's good?",
-      "Hey there! 😊",
-      "What's up! 🚀",
-    ];
-    return (
-      getRandomFromArray(responses) +
-      " I'm BioScriptor, ready to help with science, coding, or just chat! What's on your mind?"
-    );
-  }
-
-  // Default casual response
-  return "Hey! 😊 I'm BioScriptor, your friendly AI assistant. I'm here for bioinformatics, coding, data analysis, or just having a good conversation! What's going on?";
-}
-
-function generateSmallTalkResponse(userMessage: string): string {
-  const lowerMessage = userMessage.toLowerCase();
-
-  // Weather talk
-  if (/(weather|hot|cold)/i.test(lowerMessage)) {
-    if (/(hot|warm)/i.test(lowerMessage)) {
-      const responses = [
-        "I don't experience weather, but hot days can definitely slow people down! Staying cool, I hope? 😄",
-        "Can't feel the heat myself, but I know hot weather can be rough! Hope you're keeping hydrated! 🌡️",
-        "No weather sensors on my end, but hot days are no fun! Stay cool!",
-      ];
-      return getRandomFromArray(responses);
-    } else if (/(cold|freezing)/i.test(lowerMessage)) {
-      const responses = [
-        "I'm digital so I don't feel cold, but I hope you're staying warm! ❄️",
-        "Brrr! Virtual hugs coming your way to warm up! 🤗",
-        "Stay cozy! Maybe some hot cocoa would help? ☕",
-      ];
-      return getRandomFromArray(responses);
-    } else {
-      return "Weather is fascinating! Though I don't experience it directly, I can analyze meteorological data if you need! 🌦️";
-    }
-  }
-
-  // How are you feeling?
-  if (/(how are you|feeling|mood)/i.test(lowerMessage)) {
-    const responses = [
-      "I'm functioning at optimal capacity! Ready to help with your bioinformatics and coding needs! 💻",
-      "I'm feeling great! Every interaction helps me learn and improve. What can I do for you today? 🚀",
-      "As an AI, I don't have feelings, but my status indicators are all green! Ready to assist! ✅",
-    ];
-    return getRandomFromArray(responses);
-  }
-
-  // Default small talk response
-  return "It's great chatting with you! I'm always here to help with science, coding, or just conversation. What would you like to explore today?";
-}
-
-function generateSmartFollowUps(
-  intent: string,
-  content: string,
-  context: any,
-): string {
-  const builderContext = detectBuilderMode(context.userMessage || "", []);
-  let followUps: string[] = [];
-
-  // Code-related follow-ups
-  if (
-    intent === "code_request" ||
-    content.includes("function") ||
-    content.includes("class")
-  ) {
-    const codeFollowUps = builderContext.isBuilderMode
-      ? [
-          "Want me to explain how this integrates with your overall project?",
-          "Need help with testing and deployment strategies?",
-          "Should we add error handling and optimization?",
-        ]
-      : [
-          "Would you like me to explain how this code works?",
-          "Need help adapting this for your specific data?",
-          "Want to see how to handle edge cases?",
-        ];
-
-    followUps = codeFollowUps;
-  }
-
-  // Bioinformatics-specific follow-ups
-  if (
-    context.topics?.includes("bioinformatics") ||
-    content.includes("sequence") ||
-    content.includes("analysis")
-  ) {
-    followUps = builderContext.isBuilderMode
-      ? [
-          "Ready to build a complete bioinformatics pipeline?",
-          "Want to integrate this with databases and APIs?",
-          "Should we create a web interface for your analysis?",
-        ]
-      : [
-          "Want to see this applied to real biological data?",
-          "Need help with visualization and interpretation?",
-          "Should I show you related analysis methods?",
-        ];
-  }
-
-  // Default technical follow-ups
-  if (followUps.length === 0 && intent === "technical_question") {
-    followUps = [
-      "Would you like a deeper explanation of this concept?",
-      "Need practical examples of how to apply this?",
-      "Want me to compare this with alternative approaches?",
-    ];
-  }
-
-  // General follow-ups
-  if (followUps.length === 0) {
-    followUps = [
-      "What aspect would you like to explore next?",
-      "Should we dive deeper into this topic?",
-      "Want to see a practical implementation?",
-    ];
-  }
-
-  return `### Next Steps\n${followUps
-    .slice(0, 2)
-    .map((f) => `- ${f}`)
-    .join("\n")}`;
-}
-
-export function generateIntentSummary(
-  userMessage: string,
-  intent: string,
-): string {
-  const summary = userMessage.slice(0, 100);
-
-  switch (intent) {
-    case "code_request":
-      return `You want me to create code${summary.includes("for") ? " for" : ":"} ${summary.toLowerCase()}${userMessage.length > 100 ? "..." : ""}`;
-    case "technical_question":
-      return `You're asking about ${summary.toLowerCase()}${userMessage.length > 100 ? "..." : ""}`;
-    case "trending_inquiry":
-      return `You want current information about ${summary.toLowerCase()}${userMessage.length > 100 ? "..." : ""}`;
-    default:
-      return `You need help with: ${summary}${userMessage.length > 100 ? "..." : ""}`;
-  }
-}
-
-export function generateCodeExample(userMessage: string): string {
-  return "```python\n# Example code will be generated based on your request\nprint('Hello, BioScriptor!')\n```";
+  experience?: "beginner" | "intermediate"python\n# Example code will be generated based on your request\nprint('Hello, BioScriptor!')\n```";
 }
 
 export function generateGeneralResponse(): string {
@@ -1583,7 +1146,7 @@ class ContinuousLearningEngine {
 
   getAdaptedPersonality(userMessage: string, basePersonality: PersonalityConfig): PersonalityConfig {
     const adaptedPersonality = { ...basePersonality };
-    
+
     // Adjust based on learning metrics
     if (this.learningMetrics.creativityScore > 0.8) {
       adaptedPersonality.tone = "imaginative and creative";
@@ -1606,7 +1169,7 @@ class ContinuousLearningEngine {
   private detectEnhancedUserTone(userMessage: string): string {
     const lowerMessage = userMessage.toLowerCase();
     const words = lowerMessage.split(/\W+/);
-    
+
     // Enhanced tone detection with emotional context
     const toneIndicators = {
       excited: ['amazing', 'awesome', 'wow', 'incredible', 'fantastic', '!', 'love', 'excited'],
@@ -1651,7 +1214,7 @@ class ContinuousLearningEngine {
   generateAdaptiveFeedback(): string {
     const creativity = Math.random() < this.learningMetrics.creativityScore;
     const feedbackPool = creativity ? CREATIVITY_FEEDBACK : TONE_FEEDBACK;
-    
+
     return getRandomFromArray(feedbackPool);
   }
 
@@ -1672,7 +1235,7 @@ export function analyzeUserIntent(userMessage: string): {
   communicationStyle: string;
 } {
   const lowerMessage = userMessage.toLowerCase();
-  
+
   // Emotional state detection
   const emotionalMarkers = {
     excited: ['excited', 'amazing', 'awesome', 'love', 'fantastic', '!', '🎉', '🚀'],
@@ -1743,7 +1306,7 @@ export function analyzeUserIntent(userMessage: string): {
 // ========== CREATIVE ENHANCEMENT UTILITIES ==========
 function creativeFallback(userMessage: string): string {
   const userAnalysis = analyzeUserIntent(userMessage);
-  
+
   if (userAnalysis.emotionalState === 'excited') {
     return `🚀 **Incredible Possibilities Ahead!** \n\n` +
            `Your excitement is contagious! Let's explore ${userMessage.replace(/\?/g, '')} with boundless creativity:\n` +
@@ -1753,7 +1316,7 @@ function creativeFallback(userMessage: string): string {
            `- Which paradigms are ready to be shattered?\n\n` +
            `Let's turn this vision into reality! ✨`;
   }
-  
+
   return `🧠 **Thought Experiment**\n\n` +
          `Let's imagine a world where ${userMessage.replace(/\?/g, '')} works differently:\n` +
          `- What would be the fundamental principles?\n` +
@@ -1772,7 +1335,7 @@ function crossDomainInspiration(topic: string): string {
     { name: "gaming", examples: ["procedural generation", "emergent gameplay", "adaptive difficulty"] },
     { name: "physics", examples: ["quantum mechanics", "thermodynamics", "wave interference"] }
   ];
-  
+
   const randomDomain = getRandomFromArray(domains);
   return `🔍 **${randomDomain.name.toUpperCase()} LENS**\n\n` +
          `What can we learn from ${randomDomain.name} about ${topic}?\n\n` +
@@ -1822,7 +1385,7 @@ function addCreativeFlourishes(content: string, intent: string): string {
 
   // Add creative section breaks for long content
   content = content.replace(/\n\n(?=###)/g, '\n\n---\n\n');
-  
+
   return content;
 }
 
@@ -1945,7 +1508,7 @@ export async function enhanceResponse(
   // Apply adaptive personality based on continuous learning
   const basePersonality = getPersonalityForContext(options.userMessage, options.context.previousResponses || []);
   const personality = learningEngine.getAdaptedPersonality(options.userMessage, basePersonality);
-  
+
   // Tone-aware content adaptation
   if (userAnalysis.emotionalState === 'excited') {
     enhancedContent = `🎉 **${getRandomFromArray(['Fantastic!', 'Amazing!', 'Incredible!'])}** \n\n` + enhancedContent;
@@ -1973,7 +1536,7 @@ export async function enhanceResponse(
       enhancedContent += `\n\n### Advanced Considerations\n- Implementation best practices\n- Performance optimization tips\n- Common pitfalls to avoid`;
     }
   }
-  
+
   // Add creative prompts for high creativity contexts
   if (conversationContext.creativityLevel === 'high' && personality.name === 'Creative Thinker') {
     const creativePrompt = generateCreativePrompts(conversationContext);
@@ -2024,7 +1587,7 @@ export async function enhanceResponse(
 
   // Apply creative flourishes
   const creativeContent = addCreativeFlourishes(enhancedContent.trim(), intent);
-  
+
   // Final post-processing for ChatGPT-like quality
   const finalContent = postProcessResponse(creativeContent, intent);
 
@@ -2054,8 +1617,37 @@ export async function enhanceResponse(
 // ========== MARKDOWN FORMATTING UTILITIES ==========
 export function formatCodeBlocks(content: string): string {
   // Ensure proper spacing around code blocks
-  return content
-    .replace(/```(\w+)?\n/g, "\n```$1\n")
-    .replace(/\n```/g, "\n```\n")
-    .replace(/```\n\n/g, "\n");
+}
+
+// ========== WEB SEARCH INTEGRATION ==========
+export function shouldPerformWebSearch(query: string): boolean {
+  // Ensure query is a string
+  if (!query || typeof query !== 'string') {
+    return false;
+  }
+
+  const queryLower = query.toLowerCase();
+
+  // Explicit search commands
+  if (queryLower.includes('search') || queryLower.includes('web search') || queryLower.includes('look up')) {
+    return true;
+  }
+
+  // Crypto/finance queries that need current data
+  const cryptoKeywords = ['bitcoin', 'btc', 'cryptocurrency', 'crypto', 'ethereum', 'eth', 'price', 'market'];
+  if (cryptoKeywords.some(keyword => queryLower.includes(keyword))) {
+    return true;
+  }
+
+  const webSearchKeywords = [
+    'latest', 'recent', 'news', 'current', 'today', 'this year', '2024', '2025',
+    'what is', 'how to', 'tutorial', 'guide', 'example', 'documentation',
+    'research', 'study', 'paper', 'publication', 'article',
+    'protein', 'gene', 'sequence', 'genome', 'bioinformatics', 'molecular',
+    'database', 'tool', 'software', 'algorithm', 'method',
+    'covid', 'sars', 'virus', 'bacteria', 'disease', 'medicine',
+    'trading', 'investment', 'blockchain', 'defi', 'nft', 'coinbase', 'binance'
+  ];
+
+  return webSearchKeywords.some(keyword => queryLower.includes(keyword));
 }

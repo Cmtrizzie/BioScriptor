@@ -15,7 +15,7 @@ export interface ChatMessage {
     metadata?: {
         tone?: string;
         intent?: string;
-        fileAnalysis?: BioFileAnalysis;
+        fileAnalysis?: BioFileFileAnalysis;
         model?: string;
         processingTime?: number;
         tokens?: {
@@ -560,3 +560,4 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
         return errorMessage;
     }
 };
+```
