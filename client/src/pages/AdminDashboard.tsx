@@ -633,11 +633,19 @@ export default function AdminDashboard() {
         headers
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to reset user limit');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to reset user limit';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
 
       console.log('✅ Successfully reset user limit');
       toast({
@@ -646,13 +654,12 @@ export default function AdminDashboard() {
       });
 
       // Refresh users data immediately for real-time updates
-      await refetchUsers();
-      refetchAnalytics();
+      await Promise.all([refetchUsers(), refetchAnalytics()]);
     } catch (error) {
       console.error('❌ Reset limit error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to reset user limit.",
+        description: error instanceof Error ? error.message : "Failed to reset user limit.",
         variant: "destructive",
       });
     }
@@ -660,37 +667,52 @@ export default function AdminDashboard() {
 
   const handleBanUser = async (userId: number, banned: boolean, reason?: string) => {
     try {
-      const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+      console.log('🚫 Updating user status:', userId, 'banned:', banned);
 
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
+      // Show loading state
+      toast({
+        title: "Processing",
+        description: `${banned ? 'Banning' : 'Unbanning'} user...`,
+      });
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-User-Email': user?.email || 'admin@dev.local',
+        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+      };
+
       const response = await fetch(`/api/admin/users/${userId}/ban`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ banned, reason })
+        body: JSON.stringify({ banned, reason: reason || 'Admin action' })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update user status');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to update user status';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
 
       toast({
         title: "Success",
-        description: `User ${banned ? 'banned' : 'unbanned'} successfully.`,
+        description: result.message || `User ${banned ? 'banned' : 'unbanned'} successfully.`,
       });
-      refetchUsers();
+
+      // Refresh data to ensure consistency
+      await Promise.all([refetchUsers(), refetchAnalytics()]);
     } catch (error) {
+      console.error('❌ Ban user error:', error);
       toast({
         title: "Error",
-        description: "Failed to update user status.",
+        description: error instanceof Error ? error.message : "Failed to update user status.",
         variant: "destructive",
       });
     }
@@ -698,18 +720,26 @@ export default function AdminDashboard() {
 
   const handleUpgradeUser = async (userId: number, tier: string) => {
     try {
-      const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+      console.log('⬆️ Upgrading user:', userId, 'to tier:', tier);
 
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
+      // Optimistic update - immediately update local state
+      const currentUsers = users || [];
+      const optimisticUsers = currentUsers.map(u => 
+        u.id === userId ? { ...u, tier, queryCount: 0 } : u
+      );
+
+      // Show loading state
+      toast({
+        title: "Processing",
+        description: `Upgrading user to ${tier}...`,
+      });
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-User-Email': user?.email || 'admin@dev.local',
+        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+      };
+
       const response = await fetch(`/api/admin/users/${userId}/upgrade`, {
         method: 'POST',
         headers,
@@ -717,26 +747,50 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upgrade user');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to upgrade user';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
 
       toast({
         title: "Success",
-        description: `User upgraded to ${tier} successfully.`,
+        description: result.message || `User upgraded to ${tier} successfully.`,
       });
-      refetchUsers();
+
+      // Refresh data to ensure consistency
+      await Promise.all([refetchUsers(), refetchAnalytics()]);
     } catch (error) {
+      console.error('❌ Upgrade user error:', error);
       toast({
         title: "Error",
-        description: "Failed to upgrade user.",
+        description: error instanceof Error ? error.message : "Failed to upgrade user.",
         variant: "destructive",
       });
+      // Revert optimistic update by refetching
+      refetchUsers();
     }
   };
 
   const handleAddCredits = async (userId: number, credits: number) => {
     try {
       console.log('💰 Adding credits:', credits, 'to user:', userId);
+
+      if (!credits || credits <= 0) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid number of credits.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Show immediate loading state
       toast({
@@ -753,14 +807,22 @@ export default function AdminDashboard() {
       const response = await fetch(`/api/admin/users/${userId}/add-credits`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ credits })
+        body: JSON.stringify({ credits: Number(credits) })
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to add credits');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to add credits';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
 
       console.log('✅ Successfully added credits');
       toast({
@@ -769,13 +831,12 @@ export default function AdminDashboard() {
       });
 
       // Refresh users data immediately to show updated credits
-      await refetchUsers();
-      refetchAnalytics();
+      await Promise.all([refetchUsers(), refetchAnalytics()]);
     } catch (error) {
       console.error('❌ Add credits error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to add credits.",
+        description: error instanceof Error ? error.message : "Failed to add credits.",
         variant: "destructive",
       });
     }
@@ -1570,12 +1631,18 @@ export default function AdminDashboard() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleResetUserLimit(user.id)}
+                                    disabled={usersLoading}
                                   >
                                     Reset Limit
                                   </Button>
                                   <Select 
                                     value={user.tier} 
-                                    onValueChange={(tier) => handleUpgradeUser(user.id, tier)}
+                                    onValueChange={(tier) => {
+                                      if (tier !== user.tier) {
+                                        handleUpgradeUser(user.id, tier);
+                                      }
+                                    }}
+                                    disabled={usersLoading}
                                   >
                                     <SelectTrigger className="w-24 h-8">
                                       <SelectValue />
@@ -1590,18 +1657,37 @@ export default function AdminDashboard() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => {
-                                      const credits = prompt('Enter credits to add:');
-                                      if (credits && !isNaN(Number(credits))) {
-                                        handleAddCredits(user.id, Number(credits));
+                                      const credits = prompt('Enter credits to add (positive number):');
+                                      if (credits) {
+                                        const creditsNum = parseInt(credits, 10);
+                                        if (!isNaN(creditsNum) && creditsNum > 0) {
+                                          handleAddCredits(user.id, creditsNum);
+                                        } else {
+                                          toast({
+                                            title: "Invalid Input",
+                                            description: "Please enter a valid positive number.",
+                                            variant: "destructive",
+                                          });
+                                        }
                                       }
                                     }}
+                                    disabled={usersLoading}
                                   >
                                     Add Credits
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant={user.status === 'banned' ? 'default' : 'destructive'}
-                                    onClick={() => handleBanUser(user.id, user.status !== 'banned')}
+                                    onClick={() => {
+                                      const action = user.status === 'banned' ? 'unban' : 'ban';
+                                      if (confirm(`Are you sure you want to ${action} this user?`)) {
+                                        const reason = user.status !== 'banned' ? 
+                                          prompt('Reason for ban (optional):') : 
+                                          'Admin unbanned user';
+                                        handleBanUser(user.id, user.status !== 'banned', reason || undefined);
+                                      }
+                                    }}
+                                    disabled={usersLoading}
                                   >
                                     {user.status === 'banned' ? 'Unban' : 'Ban'}
                                   </Button>

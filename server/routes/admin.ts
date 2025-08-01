@@ -557,9 +557,27 @@ router.post('/payments/:paymentId/refund', async (req, res) => {
 router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
   try {
     const { userId } = req.params;
+    const userIdNum = Number(userId);
+    
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
     console.log('🔄 Resetting limit for user:', userId, 'by admin:', req.adminUser?.email);
 
-    // Try to reset in database first
+    // Check if user exists first
+    let existingUser;
+    try {
+      const userResult = await db.select().from(users).where(eq(users.id, userIdNum)).limit(1);
+      if (userResult.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      existingUser = userResult[0];
+    } catch (dbError) {
+      console.warn('⚠️ Database check failed, proceeding with reset:', dbError.message);
+    }
+
+    // Try to reset in database
     try {
       await db
         .update(users)
@@ -567,11 +585,12 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
           queryCount: 0,
           updatedAt: new Date()
         })
-        .where(eq(users.id, Number(userId)));
+        .where(eq(users.id, userIdNum));
 
       console.log('✅ Successfully reset limit for user:', userId, 'in database');
     } catch (dbError) {
-      console.warn('⚠️ Database update failed, using simulated response:', dbError.message);
+      console.warn('⚠️ Database update failed:', dbError.message);
+      // Don't fail the request, just log the issue
     }
 
     // Log the action
@@ -580,7 +599,7 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
         adminUserId: req.adminUser?.id || 1,
         action: 'reset_user_limit',
         targetResource: `user:${userId}`,
-        details: `Reset daily query limit for user ${userId}`
+        details: `Reset daily query limit for user ${userId} (${existingUser?.email || 'unknown'})`
       });
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
@@ -590,15 +609,19 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
       success: true, 
       message: 'User daily limit has been reset successfully.',
       userData: {
-        id: Number(userId),
+        id: userIdNum,
         queryCount: 0,
+        previousCount: existingUser?.queryCount || 0,
         lastReset: new Date().toISOString(),
         resetBy: req.adminUser?.email || 'admin'
       }
     });
   } catch (error) {
     console.error('Reset limit error:', error);
-    res.status(500).json({ error: 'Failed to reset user limit' });
+    res.status(500).json({ 
+      error: 'Failed to reset user limit',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
@@ -718,43 +741,57 @@ router.post('/users/:userId/add-credits', async (req: any, res: any) => {
   try {
     const { userId } = req.params;
     const { credits } = req.body;
+    const userIdNum = Number(userId);
+    const creditsNum = Number(credits);
 
     console.log('💰 Adding credits:', credits, 'to user:', userId, 'by admin:', req.adminUser?.email);
 
-    if (!credits || credits <= 0) {
-      return res.status(400).json({ error: 'Invalid credits amount' });
+    // Validate inputs
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    if (!credits || isNaN(creditsNum) || creditsNum <= 0) {
+      return res.status(400).json({ error: 'Invalid credits amount. Must be a positive number.' });
+    }
+
+    if (creditsNum > 10000) {
+      return res.status(400).json({ error: 'Cannot add more than 10,000 credits at once' });
     }
 
     let currentCredits = 0;
-    let newCredits = Number(credits);
+    let newCredits = creditsNum;
+    let userEmail = 'unknown';
 
     // Try to update in database
     try {
-      // Get current credits
-      const user = await db.select().from(users).where(eq(users.id, Number(userId))).limit(1);
-      if (user.length > 0) {
-        currentCredits = user[0].credits || 0;
-        newCredits = currentCredits + Number(credits);
-
-        // Update user credits
-        await db
-          .update(users)
-          .set({ 
-            credits: newCredits,
-            updatedAt: new Date()
-          })
-          .where(eq(users.id, Number(userId)));
-
-        console.log('✅ Successfully added', credits, 'credits to user:', userId, 'in database');
-      } else {
-        console.warn('⚠️ User not found in database, using simulated response');
-        currentCredits = Math.floor(Math.random() * 100);
-        newCredits = currentCredits + Number(credits);
+      // Get current user data
+      const userResult = await db.select().from(users).where(eq(users.id, userIdNum)).limit(1);
+      if (userResult.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
       }
+
+      const user = userResult[0];
+      userEmail = user.email;
+      currentCredits = user.credits || 0;
+      newCredits = currentCredits + creditsNum;
+
+      // Update user credits
+      await db
+        .update(users)
+        .set({ 
+          credits: newCredits,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userIdNum));
+
+      console.log('✅ Successfully added', credits, 'credits to user:', userId, 'in database');
     } catch (dbError) {
-      console.warn('⚠️ Database update failed, using simulated response:', dbError.message);
-      currentCredits = Math.floor(Math.random() * 100);
-      newCredits = currentCredits + Number(credits);
+      console.error('⚠️ Database update failed:', dbError.message);
+      return res.status(500).json({ 
+        error: 'Database update failed',
+        details: dbError.message 
+      });
     }
 
     // Log the action
@@ -763,7 +800,7 @@ router.post('/users/:userId/add-credits', async (req: any, res: any) => {
         adminUserId: req.adminUser?.id || 1,
         action: 'add_credits',
         targetResource: `user:${userId}`,
-        details: `Added ${credits} credits to user ${userId}. New total: ${newCredits}`
+        details: `Added ${creditsNum} credits to user ${userId} (${userEmail}). Previous: ${currentCredits}, New: ${newCredits}`
       });
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
@@ -771,19 +808,23 @@ router.post('/users/:userId/add-credits', async (req: any, res: any) => {
 
     res.json({ 
       success: true, 
-      message: `Added ${credits} credits successfully.`,
+      message: `Added ${creditsNum} credits successfully.`,
       userData: {
-        id: Number(userId),
+        id: userIdNum,
+        email: userEmail,
         credits: newCredits,
         previousCredits: currentCredits,
-        addedCredits: Number(credits),
+        addedCredits: creditsNum,
         updatedAt: new Date().toISOString(),
         addedBy: req.adminUser?.email || 'admin'
       }
     });
   } catch (error) {
     console.error('Add credits error:', error);
-    res.status(500).json({ error: 'Failed to add credits' });
+    res.status(500).json({ 
+      error: 'Failed to add credits',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
