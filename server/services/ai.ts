@@ -402,8 +402,6 @@ function generateSequenceGuidance(query: string, context: ConversationContext): 
            `Upload your file or paste the sequence for detailed analysis!`;
 }
 
-}
-
 // ========== Conversation Manager ==========
 class ConversationManager {
     private currentConversation: ConversationContext;
