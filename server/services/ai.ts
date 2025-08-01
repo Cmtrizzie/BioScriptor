@@ -871,9 +871,8 @@ export const processQuery = async (
             conversationManager.addMessage(responseMessage);
         }
 
-        return responseMessage;```tool_code
-Syntax error fixed by removing an extra closing curly brace.
-</tool_code>
+        return responseMessage;
+
         // Legacy bioinformatics handling (keep for compatibility)
         if (false) { // This block is now handled above
             let responseContent = '';
