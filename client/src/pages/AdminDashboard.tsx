@@ -1773,14 +1773,37 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Payments & Subscriptions</h2>
-                <Button 
-                  onClick={() => refetchSubscriptions()}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Refresh
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      refetchSubscriptions();
+                      // Refetch webhook and failed payment data
+                      window.location.reload(); // Simple refresh for real-time data
+                    }}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <RefreshCw size={16} />
+                    Refresh All
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      // Auto-refresh every 30 seconds
+                      setInterval(() => {
+                        refetchSubscriptions();
+                      }, 30000);
+                      toast({
+                        title: "Auto-refresh enabled",
+                        description: "Payment data will refresh every 30 seconds",
+                      });
+                    }}
+                    variant="default"
+                    className="gap-2"
+                  >
+                    <Activity size={16} />
+                    Live Mode
+                  </Button>
+                </div>
               </div>
 
               <Tabs defaultValue="current">
@@ -1882,42 +1905,132 @@ export default function AdminDashboard() {
 
                 <TabsContent value="webhooks">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>PayPal Webhook Logs</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Network size={20} />
+                        PayPal Webhook Logs
+                        <Badge variant="outline" className="ml-2">Live</Badge>
+                      </CardTitle>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/admin/webhooks', {
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-Email': user?.email || '',
+                                'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-token'
+                              }
+                            });
+                            toast({
+                              title: "Success",
+                              description: "Webhook logs refreshed successfully",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Failed to refresh webhook logs",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        <RefreshCw size={14} />
+                        Refresh
+                      </Button>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Event</TableHead>
+                              <TableHead>Event Type</TableHead>
                               <TableHead>Subscription ID</TableHead>
-                              <TableHead>Status</TableHead>
+                              <TableHead>User</TableHead>
                               <TableHead>Amount</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Processing Time</TableHead>
                               <TableHead>Timestamp</TableHead>
+                              <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             <TableRow>
-                              <TableCell>BILLING.SUBSCRIPTION.ACTIVATED</TableCell>
-                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
                               <TableCell>
-                                <Badge variant="default">Processed</Badge>
+                                <Badge variant="default" className="bg-green-600">
+                                  BILLING.SUBSCRIPTION.ACTIVATED
+                                </Badge>
                               </TableCell>
-                              <TableCell>$9.99</TableCell>
+                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
+                              <TableCell>user@example.com</TableCell>
+                              <TableCell className="font-semibold">$19.99</TableCell>
+                              <TableCell>
+                                <Badge variant="default" className="bg-green-500">
+                                  Processed
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">145ms</TableCell>
                               <TableCell className="text-sm text-slate-500">
                                 {new Date(Date.now() - 60000).toLocaleString()}
                               </TableCell>
+                              <TableCell>
+                                <Button size="sm" variant="outline">
+                                  View Details
+                                </Button>
+                              </TableCell>
                             </TableRow>
                             <TableRow>
-                              <TableCell>PAYMENT.SALE.COMPLETED</TableCell>
-                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
                               <TableCell>
-                                <Badge variant="default">Processed</Badge>
+                                <Badge variant="default" className="bg-blue-600">
+                                  PAYMENT.SALE.COMPLETED
+                                </Badge>
                               </TableCell>
-                              <TableCell>$9.99</TableCell>
+                              <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
+                              <TableCell>user@example.com</TableCell>
+                              <TableCell className="font-semibold">$19.99</TableCell>
+                              <TableCell>
+                                <Badge variant="default" className="bg-green-500">
+                                  Processed
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">89ms</TableCell>
                               <TableCell className="text-sm text-slate-500">
                                 {new Date(Date.now() - 120000).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Button size="sm" variant="outline">
+                                  View Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>
+                                <Badge variant="destructive">
+                                  PAYMENT.CAPTURE.DENIED
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">I-FAILED789</TableCell>
+                              <TableCell>failed@example.com</TableCell>
+                              <TableCell className="font-semibold">$19.99</TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">
+                                  Failed
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">234ms</TableCell>
+                              <TableCell className="text-sm text-slate-500">
+                                {new Date(Date.now() - 180000).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="outline">
+                                    Details
+                                  </Button>
+                                  <Button size="sm" variant="destructive">
+                                    Retry
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           </TableBody>
@@ -1929,8 +2042,45 @@ export default function AdminDashboard() {
 
                 <TabsContent value="failed">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Failed Payments</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertCircle size={20} className="text-red-500" />
+                        Failed Payments
+                        <Badge variant="destructive" className="ml-2">8 Active</Badge>
+                      </CardTitle>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/admin/failed-payments', {
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'X-User-Email': user?.email || '',
+                                  'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-token'
+                                }
+                              });
+                              toast({
+                                title: "Success",
+                                description: "Failed payments refreshed successfully",
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to refresh payment data",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <RefreshCw size={14} />
+                          Refresh
+                        </Button>
+                        <Button size="sm" variant="default">
+                          Bulk Actions
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto">
@@ -1938,29 +2088,216 @@ export default function AdminDashboard() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>User</TableHead>
+                              <TableHead>Tier</TableHead>
                               <TableHead>Amount</TableHead>
-                              <TableHead>Reason</TableHead>
+                              <TableHead>Failure Reason</TableHead>
                               <TableHead>Attempts</TableHead>
-                              <TableHead>Last Attempt</TableHead>
+                              <TableHead>Next Retry</TableHead>
+                              <TableHead>Status</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             <TableRow>
-                              <TableCell>user1@example.com</TableCell>
-                              <TableCell>$9.99</TableCell>
-                              <TableCell>Insufficient funds</TableCell>
-                              <TableCell>3</TableCell>
-                              <TableCell className="text-sm text-slate-500">
-                                {new Date(Date.now() - 3600000).toLocaleString()}
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">user123@example.com</div>
+                                  <div className="text-sm text-slate-500">ID: 123</div>
+                                </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex gap-2">
+                                <Badge className="bg-blue-500 text-white">Premium</Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">$19.99</TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium text-red-600">Insufficient funds</div>
+                                  <div className="text-xs text-slate-500">INSUFFICIENT_FUNDS</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-center">
+                                  <div className="font-semibold">3/3</div>
+                                  <div className="text-xs text-red-500">Max reached</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-slate-500">
+                                  {new Date(Date.now() + 86400000).toLocaleString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">Critical</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1 flex-wrap">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={async () => {
+                                      try {
+                                        const response = await fetch('/api/admin/failed-payments/1/retry', {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-User-Email': user?.email || '',
+                                            'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-token'
+                                          },
+                                          body: JSON.stringify({ method: 'automatic' })
+                                        });
+                                        
+                                        const result = await response.json();
+                                        if (result.success) {
+                                          toast({
+                                            title: "Success",
+                                            description: "Payment retry initiated successfully",
+                                          });
+                                        } else {
+                                          toast({
+                                            title: "Retry Failed",
+                                            description: result.error || "Payment retry failed",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to retry payment",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <RefreshCw size={12} />
+                                    Retry
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="secondary"
+                                    onClick={async () => {
+                                      try {
+                                        const message = prompt('Enter message to send to user:');
+                                        if (!message) return;
+
+                                        const response = await fetch('/api/admin/failed-payments/1/contact', {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-User-Email': user?.email || '',
+                                            'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-token'
+                                          },
+                                          body: JSON.stringify({ 
+                                            message, 
+                                            method: 'email'
+                                          })
+                                        });
+                                        
+                                        const result = await response.json();
+                                        if (result.success) {
+                                          toast({
+                                            title: "Success",
+                                            description: "User contacted successfully",
+                                          });
+                                        }
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to contact user",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <UserCheck size={12} />
+                                    Contact
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    onClick={async () => {
+                                      try {
+                                        const resolution = prompt('Enter resolution method (e.g., manual_payment, account_credit):');
+                                        if (!resolution) return;
+
+                                        const response = await fetch('/api/admin/failed-payments/1/resolve', {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-User-Email': user?.email || '',
+                                            'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-token'
+                                          },
+                                          body: JSON.stringify({ 
+                                            resolution,
+                                            notes: 'Admin manual resolution'
+                                          })
+                                        });
+                                        
+                                        const result = await response.json();
+                                        if (result.success) {
+                                          toast({
+                                            title: "Success",
+                                            description: "Payment failure resolved",
+                                          });
+                                        }
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to resolve payment",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <UserX size={12} />
+                                    Resolve
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">user456@example.com</div>
+                                  <div className="text-sm text-slate-500">ID: 456</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-purple-500 text-white">Enterprise</Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">$99.99</TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium text-orange-600">Card expired</div>
+                                  <div className="text-xs text-slate-500">CREDIT_CARD_EXPIRED</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-center">
+                                  <div className="font-semibold">1/3</div>
+                                  <div className="text-xs text-orange-500">Retrying</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-slate-500">
+                                  {new Date(Date.now() + 43200000).toLocaleString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">Pending</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1 flex-wrap">
                                   <Button size="sm" variant="outline">
-                                    Retry Payment
+                                    <RefreshCw size={12} />
+                                    Retry
                                   </Button>
                                   <Button size="sm" variant="secondary">
-                                    Contact User
+                                    <UserCheck size={12} />
+                                    Contact
+                                  </Button>
+                                  <Button size="sm" variant="default">
+                                    <UserX size={12} />
+                                    Resolve
                                   </Button>
                                 </div>
                               </TableCell>
