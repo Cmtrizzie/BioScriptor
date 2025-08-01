@@ -345,13 +345,11 @@ export function formatSearchResults(results: WebSearchResult[]): string {
 
   const formattedResults = validResults
     .map((result, index) => {
-      const title = result.title.length > 100 ? result.title.substring(0, 100) + '...' : result.title;
-      const snippet = result.snippet.length > 200 ? result.snippet.substring(0, 200) + '...' : result.snippet;
-      const url = result.url.length > 80 ? result.url.substring(0, 80) + '...' : result.url;
+      const title = result.title.length > 120 ? result.title.substring(0, 120) + '...' : result.title;
+      const snippet = result.snippet.length > 300 ? result.snippet.substring(0, 300) + '...' : result.snippet;
       
-      return `Source ${index + 1}: ${title}
-URL: ${url}
-Content: ${snippet}`;
+      return `[${index + 1}] ${title}
+${snippet}`;
     })
     .join('\n\n');
 
@@ -510,7 +508,7 @@ export const webSearchService = {
 
     // For sports results queries
     if (/(who won|winner|champion|last season|premier league)/i.test(query)) {
-      return query + ' 2023 2024 season winner champion latest results';
+      return query + ' 2023-24 2024-25 season winner champion final table Manchester City Arsenal latest results';
     }
 
     // For weather queries

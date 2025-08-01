@@ -757,19 +757,25 @@ export const processQuery = async (
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
             
             if (isSportsQuery) {
-                enhancedQuery = `Current Web Search Results:
+                enhancedQuery = `CURRENT WEB SEARCH RESULTS (Use this as your primary source):
 ${searchResults}
 
 User Question: ${query}
 
-You are a knowledgeable sports assistant. Based on the current web search results above, provide specific information about the sports query. For fixture queries, give exact dates, times, and opponents. For results queries, provide specific winners and scores. Be direct and factual using the search results provided.`;
+INSTRUCTIONS: You have access to current web search results above. Extract specific information from these results to answer the user's sports question. If the results contain:
+- Match fixtures: Provide exact dates, times, and opponents
+- League winners: State who won and when
+- Scores/results: Give specific match results
+- Current standings: Share the latest table positions
+
+DO NOT say you cannot access real-time information. USE the search results provided to give a direct, factual answer.`;
             } else {
-                enhancedQuery = `Current Web Search Results:
+                enhancedQuery = `CURRENT WEB SEARCH RESULTS (Use this as your primary source):
 ${searchResults}
 
 User Question: ${query}
 
-Based on the above current web search results, provide a direct answer with the most up-to-date information. Do not mention that you cannot access real-time information - use the search results provided.`;
+INSTRUCTIONS: Use the web search results above to provide a current, accurate answer. Extract specific facts, dates, numbers, and details from the search results. Do not mention limitations about real-time access - you have current information from the search results.`;
             }
         }
 
