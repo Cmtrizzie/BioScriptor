@@ -1202,61 +1202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  return httpServer;
-}
-
-const verifyFirebaseToken = async (token: string) => {
-  // Mock implementation - replace with actual Firebase token verification
-  return {
-    uid: 'mock-firebase-uid',
-    email: 'test@example.com',
-    displayName: 'Test User'
-  };
-};
-
-// Authentication middleware
-const requireAuth = async (req: any, res: any, next: any) => {
-    try {
-      const authHeader = req.headers.authorization;
-      const firebaseUid = req.headers['x-firebase-uid'];
-
-      if (!authHeader && !firebaseUid) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      let userData;
-      if (firebaseUid) {
-        // Use Firebase UID directly (for testing)
-        userData = {
-          uid: firebaseUid,
-          email: 'demo@biobuddy.dev',
-          displayName: 'Demo User'
-        };
-      } else {
-        // Verify Firebase token
-        const token = authHeader.replace('Bearer ', '');
-        userData = await verifyFirebaseToken(token);
-      }
-
-      // Check if user exists first, then create if needed
-      let user = await storage.getUserByFirebaseUid(userData.uid);
-      if (!user) {
-        user = await storage.createUser({
-          firebaseUid: userData.uid,
-          email: userData.email,
-          displayName: userData.displayName || 'Anonymous User',
-          tier: 'free'
-        });
-      }
-
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error('Auth error:', error);
-      res.status(401).json({ error: 'Invalid authentication' });
-    }
-  };
-
   // Subscription endpoint  
   app.post("/api/subscribe", async (req: any, res) => {
     try {
@@ -1302,9 +1247,15 @@ const requireAuth = async (req: any, res: any, next: any) => {
     }
   });
 
-  // Start server
-  const PORT = process.env.PORT || 5000;
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 BioScriptor serving on port ${PORT}`);
-    console.log(`🌐 Visit: http://0.0.0.0:${PORT}`);
-  });
+  const httpServer = createServer(app);
+  return httpServer;
+}
+
+const verifyFirebaseToken = async (token: string) => {
+  // Mock implementation - replace with actual Firebase token verification
+  return {
+    uid: 'mock-firebase-uid',
+    email: 'test@example.com',
+    displayName: 'Test User'
+  };
+};
