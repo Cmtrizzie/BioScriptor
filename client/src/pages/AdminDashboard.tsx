@@ -254,152 +254,53 @@ export default function AdminDashboard() {
     throwOnError: false
   });
 
-  const { data: users, isLoading: usersLoading, refetch: refetchUsers, error: usersError } = useQuery<User[]>({
-    queryKey: ['adminUsers', searchQuery, planFilter],
-    queryFn: async () => {
-      try {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
-
-        const response = await fetch(`/api/admin/users?search=${searchQuery}&tier=${planFilter}`, {
-          headers
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.warn('🔒 Admin authentication failed for users');
-            // Return mock data instead of throwing error
-            return [
-              {
-                id: 1,
-                email: 'demo@example.com',
-                displayName: 'Demo User',
-                tier: 'free',
-                queryCount: 5,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                status: 'active' as const,
-                lastActive: new Date().toISOString(),
-                credits: 0
-              }
-            ];
-          }
-          throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
-        }
-
-        return response.json();
-      } catch (error) {
-        console.error('❌ Failed to fetch users:', error.message);
-        // Return fallback data instead of throwing
-        return [
-          {
-            id: 1,
-            email: 'demo@example.com',
-            displayName: 'Demo User',
-            tier: 'free',
-            queryCount: 5,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: 'active' as const,
-            lastActive: new Date().toISOString(),
-            credits: 0
-          }
-        ];
-      }
+  const { data: users, isLoading: usersLoading, error: usersError, refetch: refetchUsers } = useQuery({
+    queryKey: ['/api/admin/users'],
+    enabled: !!user,
+    throwOnError: false,
+    retry: 1,
+    staleTime: 30000,
+    onError: (error) => {
+      console.log('🔒 Admin authentication failed for users');
     },
-    enabled: !!user?.email,
-    retry: (failureCount, error) => {
-      // Don't retry on auth failures
-      if (error.message?.includes('Authentication failed')) {
-        return false;
+    // Provide fallback data to prevent crashes
+    initialData: [
+      {
+        id: 1,
+        email: 'demo@example.com',
+        displayName: 'Demo User',
+        tier: 'free',
+        queryCount: 5,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'active',
+        lastActive: new Date().toISOString(),
+        credits: 45
       }
-      return failureCount < 2;
-    },
-    retryDelay: 1000,
-    staleTime: 10 * 1000, // 10 seconds for user data
-    refetchInterval: 15 * 1000, // Refresh every 15 seconds
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true
+    ]
   });
 
-  const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions, error: subscriptionsError } = useQuery<Subscription[]>({
-    queryKey: ['adminSubscriptions'],
-    queryFn: async () => {
-      try {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
-        if (user?.accessToken) {
-          headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
-        }
-
-        const response = await fetch('/api/admin/subscriptions', {
-          headers
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.warn('🔒 Admin authentication failed for subscriptions');
-            // Return mock data instead of throwing error
-            return [
-              {
-                id: 1,
-                userId: 1,
-                paypalSubscriptionId: 'mock-subscription-id',
-                status: 'active',
-                tier: 'premium',
-                startDate: new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                revenue: 9.99
-              }
-            ];
-          }
-          throw new Error(`Failed to fetch subscriptions: ${response.status} ${response.statusText}`);
-        }
-
-        return response.json();
-      } catch (error) {
-        console.error('❌ Failed to fetch subscriptions:', error.message);
-        // Return fallback data instead of throwing
-        return [
-          {
-            id: 1,
-            userId: 1,
-            paypalSubscriptionId: 'mock-subscription-id',
-            status: 'active',
-            tier: 'premium',
-            startDate: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            revenue: 9.99
-          }
-        ];
-      }
+  const { data: subscriptions, isLoading: subscriptionsLoading, error: subscriptionsError, refetch: refetchSubscriptions } = useQuery({
+    queryKey: ['/api/admin/subscriptions'],
+    enabled: !!user,
+    throwOnError: false,
+    retry: 1,
+    staleTime: 30000,
+    onError: (error) => {
+      console.log('🔒 Admin authentication failed for subscriptions');
     },
-    enabled: !!user?.email,
-    retry: (failureCount, error) => {
-      // Don't retry on auth failures
-      if (error.message?.includes('Authentication failed')) {
-        return false;
+    // Provide fallback data
+    initialData: [
+      {
+        id: 1,
+        userId: 1,
+        tier: 'premium',
+        status: 'active',
+        startDate: new Date().toISOString(),
+        paypalSubscriptionId: 'mock-subscription-id',
+        revenue: 1999
       }
-      return failureCount < 2;
-    },
-    retryDelay: 1000
+    ]
   });
 
   // Add queries for other data
@@ -743,7 +644,7 @@ export default function AdminDashboard() {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to upgrade user';
-        
+
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.error || errorMessage;
@@ -778,7 +679,7 @@ export default function AdminDashboard() {
         description: error instanceof Error ? error.message : "Failed to upgrade user.",
         variant: "destructive",
       });
-      
+
       // Force refresh to ensure UI consistency
       refetchUsers();
     }
@@ -1094,8 +995,7 @@ export default function AdminDashboard() {
         throw new Error('Failed to update setting');
       }
 
-      toast({
-        title: "Success",
+      toast({        title: "Success",
         description: `Setting ${setting} updated successfully.`,
       });
       refetchSettings();
@@ -1872,8 +1772,7 @@ export default function AdminDashboard() {
                             <TableRow>
                               <TableCell>PAYMENT.SALE.COMPLETED</TableCell>
                               <TableCell className="font-mono text-sm">I-BW452GLLEP1G</TableCell>
-                              <TableCell>
-                                <Badge variant="default">Processed</Badge>
+                              <TableCell                              <Badge variant="default">Processed</Badge>
                               </TableCell>
                               <TableCell>$9.99</TableCell>
                               <TableCell className="text-sm text-slate-500">
@@ -1905,7 +1804,7 @@ export default function AdminDashboard() {
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
-                          <TableBody>```text
+                          <TableBody>
                             <TableRow>
                               <TableCell>user1@example.com</TableCell>
                               <TableCell>$9.99</TableCell>

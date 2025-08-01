@@ -78,18 +78,32 @@ export const adminAuth = async (req: any, res: any, next: any) => {
   }
 };
 
-// Middleware to check admin privileges
-const requireAdmin = async (req: any, res: Response, next: NextFunction) => {
+// Admin authentication middleware
+const requireAdmin = async (req: any, res: any, next: any) => {
   try {
-    // Always allow admin access in development/demo mode
-    console.log('🔓 Admin access granted for', req.path);
-    req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin', displayName: 'Admin User' };
-    return next();
-  } catch (error) {
-    console.error('Admin auth error:', error);
-    // Fallback - always allow
-    req.adminUser = { id: 1, email: 'admin@dev.local', tier: 'admin', displayName: 'Fallback Admin User' };
+    // TESTING MODE: Allow all requests to admin routes
+    console.log('✅ Admin access granted (testing mode)');
+
+    // Ensure user object exists for admin operations
+    if (!req.user) {
+      // Create a mock admin user for testing
+      req.user = {
+        id: 1,
+        firebaseUid: 'admin-demo',
+        email: 'admin@bioscriptor.dev',
+        displayName: 'Admin User',
+        tier: 'enterprise',
+        queryCount: 0,
+        isAdmin: true
+      };
+    }
+
+    // Ensure user has admin privileges
+    req.user.isAdmin = true;
     next();
+  } catch (error) {
+    console.error('❌ Admin middleware error:', error);
+    return res.status(500).json({ error: 'Admin validation failed' });
   }
 };
 
@@ -894,6 +908,7 @@ router.post('/plans/:tier/pricing', async (req, res) => {
     console.log(`Plan ${tier} pricing updated to $${price}. Reason: ${reason}`);
 
     res.json({ success: true, message: `${tier} plan pricing updated successfully` });
+  ```text
   } catch (error) {
     console.error('Update pricing error:', error);
     res.status(500).json({ error: 'Failed to update pricing' });

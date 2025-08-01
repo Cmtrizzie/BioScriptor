@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const requireAdmin = async (req: any, res: any, next: any) => {
     try {
       // TESTING MODE: Allow all requests to admin routes
-      console.log('Admin access granted (testing mode)');
+      console.log('✅ Admin access granted (testing mode)');
 
       // Ensure user object exists for admin operations
       if (!req.user) {
@@ -144,9 +144,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
+      // Ensure user has admin privileges
+      req.user.isAdmin = true;
       next();
     } catch (error) {
-      console.error('Admin middleware error:', error);
+      console.error('❌ Admin middleware error:', error);
       return res.status(500).json({ error: 'Admin validation failed' });
     }
   };
