@@ -15,7 +15,7 @@ export interface ChatMessage {
     metadata?: {
         tone?: string;
         intent?: string;
-        fileAnalysis?: BioFileFileAnalysis;
+        fileAnalysis?: BioFileAnalysis;
         model?: string;
         processingTime?: number;
         tokens?: {
@@ -872,7 +872,7 @@ export const processQuery = async (
         return responseMessage;
 
         // Legacy bioinformatics handling (keep for compatibility)
-        if (false) { // This block is now handled above
+        if (false) { // This block ishandled above
             let responseContent = '';
             let metadata: any = { confidence: 0.95, processingTime: 1200 };
 
