@@ -722,12 +722,6 @@ export default function AdminDashboard() {
     try {
       console.log('⬆️ Upgrading user:', userId, 'to tier:', tier);
 
-      // Optimistic update - immediately update local state
-      const currentUsers = users || [];
-      const optimisticUsers = currentUsers.map(u => 
-        u.id === userId ? { ...u, tier, queryCount: 0 } : u
-      );
-
       // Show loading state
       toast({
         title: "Processing",
@@ -749,17 +743,27 @@ export default function AdminDashboard() {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to upgrade user';
+        
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.error || errorMessage;
         } catch {
-          errorMessage = `Server error: ${response.status}`;
+          if (response.status === 404) {
+            errorMessage = 'User not found';
+          } else if (response.status === 403) {
+            errorMessage = 'Access denied';
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid tier selection';
+          } else {
+            errorMessage = `Server error: ${response.status}`;
+          }
         }
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
 
+      console.log('✅ Successfully upgraded user');
       toast({
         title: "Success",
         description: result.message || `User upgraded to ${tier} successfully.`,
@@ -774,7 +778,8 @@ export default function AdminDashboard() {
         description: error instanceof Error ? error.message : "Failed to upgrade user.",
         variant: "destructive",
       });
-      // Revert optimistic update by refetching
+      
+      // Force refresh to ensure UI consistency
       refetchUsers();
     }
   };
@@ -1644,13 +1649,28 @@ export default function AdminDashboard() {
                                     }}
                                     disabled={usersLoading}
                                   >
-                                    <SelectTrigger className="w-24 h-8">
-                                      <SelectValue />
+                                    <SelectTrigger className="w-32 h-8 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600">
+                                      <SelectValue placeholder="Select tier" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="free">Free</SelectItem>
-                                      <SelectItem value="premium">Premium</SelectItem>
-                                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                                    <SelectContent className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg z-50">
+                                      <SelectItem 
+                                        value="free" 
+                                        className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 py-2 px-3"
+                                      >
+                                        Free
+                                      </SelectItem>
+                                      <SelectItem 
+                                        value="premium" 
+                                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 text-slate-900 dark:text-slate-100 py-2 px-3"
+                                      >
+                                        Premium
+                                      </SelectItem>
+                                      <SelectItem 
+                                        value="enterprise" 
+                                        className="cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900 text-slate-900 dark:text-slate-100 py-2 px-3"
+                                      >
+                                        Enterprise
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <Button

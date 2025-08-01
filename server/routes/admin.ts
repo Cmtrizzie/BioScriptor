@@ -318,7 +318,7 @@ router.get('/users', async (req: any, res: any) => {
           createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           status: 'active',
-          lastActive: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          lastActive: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
           credits: 500
         }
       ];
@@ -406,14 +406,14 @@ router.get('/failed-payments', async (req, res) => {
   try {
     const failedPayments = await db
       .select()
-      .from(paymentFailures)
+      .from(paymentFailures) // Assuming paymentFailures is defined in your schema
       .orderBy(desc(paymentFailures.lastAttempt))
       .limit(50);
 
     res.json(failedPayments);
   } catch (error) {
     console.error('Failed payments fetch error:', error);
-    // Return mock data if table doesn't exist
+    // Return mock data if table doesn't exist or query fails
     res.json([
       {
         id: 1,
@@ -558,7 +558,7 @@ router.post('/users/:userId/reset-limit', async (req: any, res: any) => {
   try {
     const { userId } = req.params;
     const userIdNum = Number(userId);
-    
+
     if (isNaN(userIdNum) || userIdNum <= 0) {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
@@ -1369,6 +1369,82 @@ router.delete('/promo-codes/:promoId', async (req: any, res: any) => {
       success: false, 
       error: 'Failed to delete promo code',
       message: error?.message || 'Unknown error occurred'
+    });
+  }
+});
+
+// Corrected Upgrade user tier endpoint
+router.post('/users/:userId/upgrade', async (req: any, res: any) => {
+  try {
+    const { userId } = req.params;
+    const { tier } = req.body;
+
+    console.log('🔄 Processing upgrade request:', { userId, tier });
+
+    if (!['free', 'premium', 'enterprise'].includes(tier)) {
+      console.error('❌ Invalid tier provided:', tier);
+      return res.status(400).json({ error: 'Invalid tier. Must be free, premium, or enterprise.' });
+    }
+
+    const userIdInt = parseInt(userId);
+    if (isNaN(userIdInt)) {
+      console.error('❌ Invalid user ID:', userId);
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    // Check if user exists first
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userIdInt))
+      .limit(1);
+
+    if (!existingUser.length) {
+      console.error('❌ User not found:', userIdInt);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('✅ User found, updating tier...');
+
+    const updatedUser = await db
+      .update(users)
+      .set({ 
+        tier,
+        queryCount: 0, // Reset query count on upgrade
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userIdInt))
+      .returning();
+
+    if (!updatedUser.length) {
+      console.error('❌ Failed to update user');
+      return res.status(500).json({ error: 'Failed to update user' });
+    }
+
+    console.log('✅ User upgraded successfully:', updatedUser[0]);
+
+    // Log the action
+    try {
+      await db.insert(adminLogs).values({
+        adminUserId: req.adminUser?.id || 1,
+        action: 'upgrade_user',
+        targetResource: `user:${userId}`,
+        details: `Upgraded user ${existingUser[0].email} to ${tier} tier`
+      });
+    } catch (logError) {
+      console.warn('⚠️ Failed to log admin activity:', logError);
+    }
+
+    res.json({ 
+      success: true, 
+      message: `User upgraded to ${tier} successfully`,
+      userData: updatedUser[0]
+    });
+  } catch (error) {
+    console.error('❌ Upgrade user error:', error);
+    res.status(500).json({ 
+      error: 'Failed to upgrade user',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
