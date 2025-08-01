@@ -753,12 +753,24 @@ export const processQuery = async (
         // 6. Prepare enhanced query with search context
         let enhancedQuery = query;
         if (searchResults && searchResults.trim() !== '') {
-            enhancedQuery = `Current Web Search Results:
+            // Enhanced prompt for sports queries
+            const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
+            
+            if (isSportsQuery) {
+                enhancedQuery = `Current Web Search Results:
+${searchResults}
+
+User Question: ${query}
+
+You are a knowledgeable sports assistant. Based on the current web search results above, provide specific information about the sports query. For fixture queries, give exact dates, times, and opponents. For results queries, provide specific winners and scores. Be direct and factual using the search results provided.`;
+            } else {
+                enhancedQuery = `Current Web Search Results:
 ${searchResults}
 
 User Question: ${query}
 
 Based on the above current web search results, provide a direct answer with the most up-to-date information. Do not mention that you cannot access real-time information - use the search results provided.`;
+            }
         }
 
         // 7. Use the fault-tolerant AI system

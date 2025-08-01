@@ -371,6 +371,11 @@ function shouldPerformWebSearch(query: string): boolean {
     return true;
   }
 
+  // Sports queries - always need current information
+  if (/\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(queryLower)) {
+    return true;
+  }
+
   // Current events and news
   if (/\b(latest|recent|current|today|news|trending|happening|update|headlines|breaking)\b/i.test(queryLower)) {
     return true;
@@ -402,7 +407,7 @@ function shouldPerformWebSearch(query: string): boolean {
   }
 
   // General knowledge that might need current info
-  if (/\b(who is|what is|president|leader|ceo|status|update)\b/i.test(queryLower)) {
+  if (/\b(who is|what is|president|leader|ceo|status|update|who won|winner)\b/i.test(queryLower)) {
     return true;
   }
 
@@ -445,6 +450,16 @@ export const webSearchService = {
     // For crypto queries, use specific terms
     if (/(crypto|bitcoin|ethereum|price)/i.test(query)) {
       return 'cryptocurrency prices bitcoin ethereum latest';
+    }
+
+    // For sports queries, enhance with current season info
+    if (/(arsenal|man u|manchester united|chelsea|liverpool|tottenham|premier league|next match|fixture)/i.test(query)) {
+      return query + ' 2024 2025 season current fixtures schedule';
+    }
+
+    // For sports results queries
+    if (/(who won|winner|champion|last season|premier league)/i.test(query)) {
+      return query + ' 2023 2024 season winner champion';
     }
 
     // Remove common question words and extract key terms
