@@ -101,7 +101,7 @@ async function processBioQuery(
     userTier?: string
 ): Promise<ChatMessage> {
     const analysisType = detectQueryType(query);
-    
+
     try {
         // Use AI for all bioinformatics queries instead of templates
         const aiResponse = await faultTolerantAI.processQuery(
@@ -530,8 +530,8 @@ function detectUserIntent(query: string): string {
         return 'casual_greeting';
     }
 
-    // Extended greetings with casual language and typos
-    if (/(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|how are you doing today|what's new|how's your day|nice to meet you/i.test(lowerQuery)) {
+    // Casual conversation with variations and typos - EXPANDED
+    if (/(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|how are you doing today|what's new|how's your day|nice to meet you|ntin big|nothing much|not much|just chilling|just hanging|what about you|wbu|same here|cool|nice|awesome|great|good|fine|alright/i.test(lowerQuery)) {
         return 'casual_greeting';
     }
 
@@ -733,7 +733,7 @@ export const processQuery = async (
                     maxResults: 6, // Increased for better context
                     bioinformatics: queryType === 'bioinformatics'
                 });
-                
+
                 if (searchResponse.results.length > 0) {
                     searchResults = webSearchService.formatResultsForAI(searchResponse);
                     console.log(`✅ Web search completed: ${searchResponse.results.length} results in ${searchResponse.searchTime}ms`);
@@ -761,7 +761,7 @@ export const processQuery = async (
         if (searchResults && searchResults.trim() !== '') {
             // Enhanced prompt for sports queries
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
-            
+
             if (isSportsQuery) {
                 enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
 

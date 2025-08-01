@@ -358,7 +358,7 @@ CONTENT: ${snippet}
   return formattedResults;
 }
 
-// Enhanced function to determine if a query should trigger web search - now more open and responsive
+// Enhanced function to determine if a query should trigger web search - more selective and intelligent
 function shouldPerformWebSearch(query: string): boolean {
   if (!query || typeof query !== 'string') {
     return false;
@@ -376,8 +376,8 @@ function shouldPerformWebSearch(query: string): boolean {
     return false;
   }
 
-  // Skip casual conversation with variations and typos
-  if (/(^|\s)(thy|ur|u|r)\s+(doing|going|been|feeling|up to)/i.test(queryLower)) {
+  // Skip casual conversation with variations and typos - EXPANDED
+  if (/(^|\s)(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|ntin big|nothing much|not much|just chilling|just hanging|what about you|wbu|same here|cool|nice|awesome|great|good|fine|alright/i.test(queryLower)) {
     return false;
   }
 
@@ -388,6 +388,16 @@ function shouldPerformWebSearch(query: string): boolean {
 
   // Skip simple math or basic programming questions
   if (/^(what is \d+[\+\-\*\/]\d+|calculate \d+|simple math)$/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip general bioinformatics questions (let AI handle these)
+  if (/\b(dna|rna|protein|sequence|crispr|pcr|gene|genome|bioinformatics|analyze|design|optimize)\b/i.test(queryLower) && !/\b(latest|recent|current|news|2024|2025|breakthrough|discovery)\b/i.test(queryLower)) {
+    return false;
+  }
+
+  // Skip general coding/programming questions (let AI handle these)
+  if (/\b(code|function|script|programming|syntax|variable|array|loop|algorithm|debug|error|help me)\b/i.test(queryLower) && !/\b(latest|recent|current|news|2024|2025|release|update)\b/i.test(queryLower)) {
     return false;
   }
 
@@ -412,22 +422,7 @@ function shouldPerformWebSearch(query: string): boolean {
   }
 
   // ALWAYS search for weather and location queries
-  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy|climate|location|city|country|population)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for events and schedules
-  if (/\b(when|schedule|event|happening|concert|movie|show|festival|conference|meeting|time|date)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for research and scientific updates
-  if (/\b(research|study|discovery|breakthrough|publication|findings|paper|journal|article|scientist|university|lab)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for company/product/technology information
-  if (/\b(company|startup|product|release|announcement|launch|ceo|founder|tech|technology|software|app)\b/i.test(queryLower)) {
+  if (/\b(weather|temperature|forecast|rain|snow|sunny|cloudy|climate)\b/i.test(queryLower)) {
     return true;
   }
 
@@ -436,39 +431,17 @@ function shouldPerformWebSearch(query: string): boolean {
     return true;
   }
 
-  // ALWAYS search for health and medical information
-  if (/\b(health|medical|disease|medicine|treatment|vaccine|virus|symptoms|doctor|hospital)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for travel and transportation
-  if (/\b(travel|flight|hotel|restaurant|tourism|transport|train|bus|airport)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for education and learning resources
-  if (/\b(course|tutorial|learn|education|university|college|degree|certification)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for entertainment and media
-  if (/\b(movie|film|tv show|series|music|album|book|author|actor|director|celebrity)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // ALWAYS search for questions starting with interrogative words (indicating information seeking)
+  // ONLY search for specific factual questions starting with interrogative words that seem to need current info
   if (/^(what|where|when|why|how|which|who)(?:\s|')/i.test(queryLower)) {
+    // But exclude general "how to" questions that are educational
+    if (/^(how to|what is|explain|what are)/i.test(queryLower) && !/\b(latest|recent|current|today|now|2024|2025|news)\b/i.test(queryLower)) {
+      return false;
+    }
     return true;
   }
 
-  // ALWAYS search for factual information requests
-  if (/\b(fact|facts|information|data|statistics|stats|details|explain|definition|meaning)\b/i.test(queryLower)) {
-    return true;
-  }
-
-  // Default to searching for most queries - be liberal about web search
-  // Only skip if it's clearly a simple conversation, basic math, or coding question
-  if (queryLower.length > 10 && !/\b(code|function|script|programming|syntax|variable|array|loop)\b/i.test(queryLower)) {
+  // For everything else, be more conservative - only search if it contains time-sensitive keywords
+  if (/\b(latest|current|recent|today|now|2024|2025|news|update|announcement|release|happening)\b/i.test(queryLower)) {
     return true;
   }
 
