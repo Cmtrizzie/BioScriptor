@@ -17,54 +17,43 @@ export const adminAuth = async (req: any, res: any, next: any) => {
 
     const userEmail = req.headers['x-user-email'] || 'admin@dev.local';
 
-    // In development mode, always allow admin access but try to get real user data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔓 Development mode: Allowing admin access for:', userEmail);
+    // Always allow admin access in development with proper user setup
+    console.log('🔓 Allowing admin access for:', userEmail);
 
-      try {
-        // Try to get the actual user from database
-        const user = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+    try {
+      // Try to get the actual user from database
+      const user = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
 
-        if (user.length > 0) {
-          req.adminUser = { 
-            id: user[0].id, 
-            email: user[0].email, 
-            tier: user[0].tier || 'admin', 
-            displayName: user[0].displayName || 'Admin User' 
-          };
-          console.log('✅ Found real admin user:', user[0].email);
-        } else {
-          // Create fallback admin user
-          req.adminUser = { 
-            id: 1, 
-            email: userEmail, 
-            tier: 'admin', 
-            displayName: 'Dev Admin User' 
-          };
-          console.log('📝 Using fallback admin user');
-        }
-      } catch (dbError) {
-        console.warn('⚠️ Database lookup failed, using fallback admin:', dbError.message);
+      if (user.length > 0) {
+        req.adminUser = { 
+          id: user[0].id, 
+          email: user[0].email, 
+          tier: user[0].tier || 'admin', 
+          displayName: user[0].displayName || 'Admin User' 
+        };
+        console.log('✅ Found real admin user:', user[0].email);
+      } else {
+        // Create fallback admin user
         req.adminUser = { 
           id: 1, 
           email: userEmail, 
           tier: 'admin', 
           displayName: 'Dev Admin User' 
         };
+        console.log('📝 Using fallback admin user');
       }
-
-      return next();
+    } catch (dbError) {
+      console.warn('⚠️ Database lookup failed, using fallback admin:', dbError.message);
+      req.adminUser = { 
+        id: 1, 
+        email: userEmail, 
+        tier: 'admin', 
+        displayName: 'Dev Admin User' 
+      };
     }
 
-    // Production authentication logic would go here
-    // For now, fallback to allowing access
-    req.adminUser = { 
-      id: 1, 
-      email: userEmail, 
-      tier: 'admin', 
-      displayName: 'Admin User' 
-    };
-    next();
+    // Always proceed - no authentication blocking in development
+    return next();
   } catch (error) {
     console.error('🔥 Admin auth error:', error);
     // Always allow in development with fallback user
@@ -78,37 +67,22 @@ export const adminAuth = async (req: any, res: any, next: any) => {
   }
 };
 
-// Admin authentication middleware
-const requireAdmin = async (req: any, res: any, next: any) => {
-  try {
-    // TESTING MODE: Allow all requests to admin routes
-    console.log('✅ Admin access granted (testing mode)');
-
-    // Ensure user object exists for admin operations
-    if (!req.user) {
-      // Create a mock admin user for testing
-      req.user = {
-        id: 1,
-        firebaseUid: 'admin-demo',
-        email: 'admin@bioscriptor.dev',
-        displayName: 'Admin User',
-        tier: 'enterprise',
-        queryCount: 0,
-        isAdmin: true
-      };
-    }
-
-    // Ensure user has admin privileges
-    req.user.isAdmin = true;
-    next();
-  } catch (error) {
-    console.error('❌ Admin middleware error:', error);
-    return res.status(500).json({ error: 'Admin validation failed' });
+// Simplified admin check - just ensure adminUser exists
+const ensureAdminUser = (req: any, res: any, next: any) => {
+  if (!req.adminUser) {
+    req.adminUser = { 
+      id: 1, 
+      email: 'admin@dev.local', 
+      tier: 'admin', 
+      displayName: 'Dev Admin User' 
+    };
   }
+  next();
 };
 
 // Apply admin middleware to all routes
 router.use(adminAuth);
+router.use(ensureAdminUser);
 
 router.get('/analytics', async (req: any, res: any) => {
   try {
