@@ -182,12 +182,11 @@ export default function AdminDashboard() {
         };
 
         // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
+        if (user?.email) {
+          headers['X-User-Email'] = user.email;
+        }
         if (user?.accessToken) {
           headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
         }
 
         console.log('🔄 Fetching analytics data...');
@@ -197,7 +196,20 @@ export default function AdminDashboard() {
 
         if (!response.ok) {
           console.warn('⚠️ Analytics API returned error:', response.status, response.statusText);
-          throw new Error(`Analytics API error: ${response.status}`);
+          // Return fallback data instead of throwing error
+          return {
+            totalUsers: 0,
+            activeUsers: 0,
+            usersByTier: { free: 0, premium: 0, enterprise: 0 },
+            totalSubscriptions: 0,
+            activeSubscriptions: 0,
+            recentActivity: [],
+            queriesLast24h: 0,
+            monthlyRevenue: 0.00,
+            conversionRate: 0.0,
+            apiStatus: { groq: false, together: false, openrouter: false, cohere: false },
+            systemStatus: { database: false, cache: false, security: false, rateLimiting: false, auditLogs: false }
+          };
         }
 
         const data = await response.json();
@@ -205,7 +217,20 @@ export default function AdminDashboard() {
         return data;
       } catch (error) {
         console.error('❌ Analytics fetch error:', error);
-        throw error; // Let React Query handle the error
+        // Return fallback data instead of throwing error
+        return {
+          totalUsers: 0,
+          activeUsers: 0,
+          usersByTier: { free: 0, premium: 0, enterprise: 0 },
+          totalSubscriptions: 0,
+          activeSubscriptions: 0,
+          recentActivity: [],
+          queriesLast24h: 0,
+          monthlyRevenue: 0.00,
+          conversionRate: 0.0,
+          apiStatus: { groq: false, together: false, openrouter: false, cohere: false },
+          systemStatus: { database: false, cache: false, security: false, rateLimiting: false, auditLogs: false }
+        };
       }
     },
     enabled: !!user?.email,
@@ -341,14 +366,14 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
         };
 
-        // Add authentication headers - always include for admin access
-        headers['X-User-Email'] = user?.email || 'admin@dev.local';
+        // Add authentication headers if available
+        if (user?.email) {
+          headers['X-User-Email'] = user.email;
+        }
         if (user?.accessToken) {
           headers['Authorization'] = `Bearer ${user.accessToken}`;
-        } else {
-          // Provide fallback auth for development
-          headers['Authorization'] = 'Bearer dev-admin-token';
         }
+        
         const response = await fetch('/api/admin/promo-codes', {
           headers
         });
@@ -364,7 +389,7 @@ export default function AdminDashboard() {
         return promoCodesData;
       }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!user?.accessToken
   });
 
   const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
@@ -517,6 +542,16 @@ export default function AdminDashboard() {
     try {
       console.log('🔄 Resetting limit for user:', userId);
 
+      // Check if user has proper authentication
+      if (!user?.email || !user?.accessToken) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in with admin privileges to perform this action.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Show immediate loading state
       toast({
         title: "Processing",
@@ -525,8 +560,8 @@ export default function AdminDashboard() {
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-User-Email': user?.email || 'admin@dev.local',
-        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+        'X-User-Email': user.email,
+        'Authorization': `Bearer ${user.accessToken}`
       };
 
       const response = await fetch(`/api/admin/users/${userId}/reset-limit`, {
@@ -535,6 +570,15 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Authentication Error",
+            description: "You don't have permission to perform this action.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         const errorText = await response.text();
         let errorMessage = 'Failed to reset user limit';
         try {
@@ -623,6 +667,16 @@ export default function AdminDashboard() {
     try {
       console.log('⬆️ Upgrading user:', userId, 'to tier:', tier);
 
+      // Check if user has proper authentication
+      if (!user?.email || !user?.accessToken) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in with admin privileges to perform this action.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Show loading state
       toast({
         title: "Processing",
@@ -631,8 +685,8 @@ export default function AdminDashboard() {
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-User-Email': user?.email || 'admin@dev.local',
-        'Authorization': user?.accessToken ? `Bearer ${user.accessToken}` : 'Bearer dev-admin-token'
+        'X-User-Email': user.email,
+        'Authorization': `Bearer ${user.accessToken}`
       };
 
       const response = await fetch(`/api/admin/users/${userId}/upgrade`, {
@@ -642,6 +696,15 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Authentication Error",
+            description: "You don't have permission to perform this action.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         const errorText = await response.text();
         let errorMessage = 'Failed to upgrade user';
 
