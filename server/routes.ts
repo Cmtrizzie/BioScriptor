@@ -862,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
 
-      const updatedPromo<code>= await storage.updatePromoCode(parseInt(id), updates);
+      const updatedPromo = await storage.updatePromoCode(parseInt(id), updates);
 
       if (!updatedPromo) {
         return res.status(404).json({ error: 'Promo code not found' });
@@ -871,8 +871,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'update_promo_code',
-        targetResource: <code>promo:${id}</code>,
-        details: <code>Updated promo code: ${JSON.stringify(updates)}</code>
+        targetResource: `promo:${id}`,
+        details: `Updated promo code: ${JSON.stringify(updates)}`
       });
 
       res.json(updatedPromo);
@@ -895,8 +895,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'delete_promo_code',
-        targetResource: <code>promo:${id}</code>,
-        details: <code>Deleted promo code</code>
+        targetResource: `promo:${id}`,
+        details: `Deleted promo code`
       });
 
       res.json({ success: true });
@@ -932,8 +932,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'add_api_provider',
-        targetResource: <code>api:${newProvider.name}</code>,
-        details: <code>Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}</code>
+        targetResource: `api:${newProvider.name}`,
+        details: `Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}`
       });
 
       res.json({ success: true, provider: newProvider });
@@ -955,8 +955,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'toggle_api_provider',
-        targetResource: <code>api:${provider}</code>,
-        details: <code>${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}</code>
+        targetResource: `api:${provider}`,
+        details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}`
       });
 
       res.json({ success: true, enabled, provider });
@@ -1116,8 +1116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'manual_subscription_change',
-        targetResource: <code>user:${user.id}</code>,
-        details: <code>Manual subscription change to ${tier}. Reason: ${reason}</code>
+        targetResource: `user:${user.id}`,
+        details: `Manual subscription change to ${tier}. Reason: ${reason}`
       });
 
       res.json({ success: true, user: updatedUser });
@@ -1150,8 +1150,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'grant_lifetime_access',
-        targetResource: <code>user:${user.id}</code>,
-        details: <code>Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? <code> with features: ${JSON.stringify(customFeatures)}</code> : ''}</code>
+        targetResource: `user:${user.id}`,
+        details: `Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? ` with features: ${JSON.stringify(customFeatures)}` : ''}`
       });
 
       res.json({ success: true, user: updatedUser });
@@ -1255,16 +1255,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Mock successful subscription
         const mockResult = {
           success: true,
-          message: <code>Successfully subscribed to ${tier} plan</code>,
+          message: `Successfully subscribed to ${tier} plan`,
           tier: tier,
           userEmail: userEmail,
-          subscriptionId: <code>mock_${Date.now()}</code>
+          subscriptionId: `mock_${Date.now()}`
         };
 
         // For premium/enterprise tiers, we could return PayPal approval URL
         if (tier !== 'free') {
           // In a real implementation, you'd create PayPal subscription here
-          mockResult.approvalUrl = <code>https://www.sandbox.paypal.com/checkoutnow?token=mock_${Date.now()}</code>;
+          mockResult.approvalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=mock_${Date.now()}`;
         }
 
         return res.json(mockResult);
@@ -1273,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Production subscription logic would go here
       res.json({
         success: true,
-        message: <code>Successfully subscribed to ${tier} plan</code>,
+        message: `Successfully subscribed to ${tier} plan`,
         tier: tier
       });
     } catch (error) {
