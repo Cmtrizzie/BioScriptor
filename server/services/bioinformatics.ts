@@ -1,4 +1,4 @@
-export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'md' | 'json' | 'xml';
+export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'md' | 'json' | 'xml' | 'jpg' | 'jpeg' | 'png' | 'gif' | 'bmp' | 'svg' | 'mp3' | 'wav' | 'mp4' | 'avi' | 'zip' | 'rar' | 'exe' | 'bin';
 
 export interface BioFileAnalysis {
   sequenceType: 'dna' | 'rna' | 'protein' | 'document' | 'data' | 'unknown';
@@ -109,9 +109,49 @@ export async function analyzeBioFile(content: string, fileType: BioFileType): Pr
         features.push('binary_document');
         break;
 
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'svg':
+        sequenceType = 'data';
+        documentContent = extractedContent || `Image file: ${fileType.toUpperCase()} format. Visual content analysis available.`;
+        features.push('image_file');
+        break;
+
+      case 'mp3':
+      case 'wav':
+        sequenceType = 'data';
+        documentContent = extractedContent || `Audio file: ${fileType.toUpperCase()} format. Audio analysis available.`;
+        features.push('audio_file');
+        break;
+
+      case 'mp4':
+      case 'avi':
+        sequenceType = 'data';
+        documentContent = extractedContent || `Video file: ${fileType.toUpperCase()} format. Video analysis available.`;
+        features.push('video_file');
+        break;
+
+      case 'zip':
+      case 'rar':
+        sequenceType = 'data';
+        documentContent = extractedContent || `Archive file: ${fileType.toUpperCase()} format. Archive analysis available.`;
+        features.push('archive_file');
+        break;
+
+      case 'exe':
+      case 'bin':
+        sequenceType = 'data';
+        documentContent = extractedContent || `Binary file: ${fileType.toUpperCase()} format. Binary analysis available.`;
+        features.push('binary_file');
+        break;
+
       default:
+        sequenceType = 'data';
+        documentContent = extractedContent || `File type: ${fileType}. Content analysis available.`;
         sequence = content.substring(0, 1000);
-        sequenceType = 'unknown';
     }
 
     const stats = {

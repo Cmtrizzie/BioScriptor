@@ -215,21 +215,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const fileType = req.file.originalname.split('.').pop()?.toLowerCase();
-        
+
         // Enhanced file content extraction for all file types
         try {
-          if (['pdf', 'docx', 'doc'].includes(fileType || '')) {
-            // For binary document formats, extract readable content
-            const rawContent = req.file.buffer.toString('utf8');
-            // Use more sophisticated extraction
-            fileContent = extractReadableContent(rawContent, fileType!, req.file.originalname);
-          } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(fileType || '')) {
-            // For image files, provide metadata
-            fileContent = `Image file: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB). Image analysis capabilities available - describe what you'd like to know about this image.`;
-          } else {
-            // For text-based files
-            fileContent = req.file.buffer.toString('utf8');
-          }
+          fileContent = await extractFileContent(req.file.buffer, fileType || '', req.file.originalname, req.file.mimetype);
         } catch (error) {
           console.error('File content extraction error:', error);
           fileContent = `File: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB, ${req.file.mimetype}). Content available for analysis.`;
@@ -873,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
 
-      const updatedPromo = await storage.updatePromoCode(parseInt(id), updates);
+      const updatedPromo<code>= await storage.updatePromoCode(parseInt(id), updates);
 
       if (!updatedPromo) {
         return res.status(404).json({ error: 'Promo code not found' });
@@ -882,8 +871,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'update_promo_code',
-        targetResource: `promo:${id}`,
-        details: `Updated promo code: ${JSON.stringify(updates)}`
+        targetResource: <code>promo:${id}</code>,
+        details: <code>Updated promo code: ${JSON.stringify(updates)}</code>
       });
 
       res.json(updatedPromo);
@@ -906,8 +895,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'delete_promo_code',
-        targetResource: `promo:${id}`,
-        details: `Deleted promo code`
+        targetResource: <code>promo:${id}</code>,
+        details: <code>Deleted promo code</code>
       });
 
       res.json({ success: true });
@@ -943,8 +932,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'add_api_provider',
-        targetResource: `api:${newProvider.name}`,
-        details: `Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}`
+        targetResource: <code>api:${newProvider.name}</code>,
+        details: <code>Added new API provider: ${name} (${type}) - Endpoint: ${endpoint}</code>
       });
 
       res.json({ success: true, provider: newProvider });
@@ -966,8 +955,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'toggle_api_provider',
-        targetResource: `api:${provider}`,
-        details: `${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}`
+        targetResource: <code>api:${provider}</code>,
+        details: <code>${enabled ? 'Enabled' : 'Disabled'} API provider: ${provider}</code>
       });
 
       res.json({ success: true, enabled, provider });
@@ -1127,8 +1116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'manual_subscription_change',
-        targetResource: `user:${user.id}`,
-        details: `Manual subscription change to ${tier}. Reason: ${reason}`
+        targetResource: <code>user:${user.id}</code>,
+        details: <code>Manual subscription change to ${tier}. Reason: ${reason}</code>
       });
 
       res.json({ success: true, user: updatedUser });
@@ -1161,8 +1150,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAdminLog({
         adminUserId: req.user.id,
         action: 'grant_lifetime_access',
-        targetResource: `user:${user.id}`,
-        details: `Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? ` with features: ${JSON.stringify(customFeatures)}` : ''}`
+        targetResource: <code>user:${user.id}</code>,
+        details: <code>Granted lifetime access: ${accessLevel}${accessLevel === 'custom' ? <code> with features: ${JSON.stringify(customFeatures)}</code> : ''}</code>
       });
 
       res.json({ success: true, user: updatedUser });
@@ -1266,16 +1255,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Mock successful subscription
         const mockResult = {
           success: true,
-          message: `Successfully subscribed to ${tier} plan`,
+          message: <code>Successfully subscribed to ${tier} plan</code>,
           tier: tier,
           userEmail: userEmail,
-          subscriptionId: `mock_${Date.now()}`
+          subscriptionId: <code>mock_${Date.now()}</code>
         };
 
         // For premium/enterprise tiers, we could return PayPal approval URL
         if (tier !== 'free') {
           // In a real implementation, you'd create PayPal subscription here
-          mockResult.approvalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=mock_${Date.now()}`;
+          mockResult.approvalUrl = <code>https://www.sandbox.paypal.com/checkoutnow?token=mock_${Date.now()}</code>;
         }
 
         return res.json(mockResult);
@@ -1284,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Production subscription logic would go here
       res.json({
         success: true,
-        message: `Successfully subscribed to ${tier} plan`,
+        message: <code>Successfully subscribed to ${tier} plan</code>,
         tier: tier
       });
     } catch (error) {
@@ -1300,34 +1289,393 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Helper function to extract readable content from files
-function extractReadableContent(content: string, fileType: string, filename: string): string {
+// Comprehensive file content extraction function
+async function extractFileContent(buffer: Buffer, fileType: string, filename: string, mimetype: string): Promise<string> {
   try {
-    let extractedText = '';
-    
-    if (fileType === 'pdf') {
-      // Extract readable text from PDF binary content
-      const textMatches = content.match(/[\x20-\x7E\s]{10,}/g) || [];
-      extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
-      
-      if (extractedText.length < 100) {
-        return `PDF Document: ${filename}. This appears to be a PDF file about ${filename.includes('african') ? 'African foods' : 'various topics'}. The document contains ${content.length} bytes of data. For detailed analysis, please describe what specific information you're looking for.`;
+    const sizeKB = Math.round(buffer.length / 1024);
+
+    // Image files
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'tiff', 'ico'].includes(fileType)) {
+      return analyzeImageFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Audio files
+    if (['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg'].includes(fileType)) {
+      return analyzeAudioFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Video files
+    if (['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'].includes(fileType)) {
+      return analyzeVideoFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Archive files
+    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2'].includes(fileType)) {
+      return analyzeArchiveFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Executable files
+    if (['exe', 'msi', 'deb', 'rpm', 'dmg', 'app'].includes(fileType)) {
+      return analyzeExecutableFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Office documents
+    if (['pdf', 'docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(fileType)) {
+      return analyzeOfficeDocument(buffer, filename, fileType, sizeKB);
+    }
+
+    // Code and markup files
+    if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'html', 'css', 'xml', 'json', 'yaml', 'yml'].includes(fileType)) {
+      const content = buffer.toString('utf8');
+      return analyzeCodeFile(content, filename, fileType);
+    }
+
+    // Data files
+    if (['csv', 'tsv', 'txt', 'log', 'md', 'rtf'].includes(fileType)) {
+      const content = buffer.toString('utf8');
+      return analyzeTextDataFile(content, filename, fileType);
+    }
+
+    // Binary data files
+    if (['bin', 'dat', 'db', 'sqlite', 'sql'].includes(fileType)) {
+      return analyzeBinaryDataFile(buffer, filename, fileType, sizeKB);
+    }
+
+    // Try to read as text for unknown types
+    try {
+      const content = buffer.toString('utf8');
+      if (content.length > 0 && isReadableText(content)) {
+        return analyzeTextDataFile(content, filename, fileType);
       }
+    } catch (error) {
+      // Fall through to binary analysis
+    }
+
+    // Default binary file analysis
+    return analyzeBinaryFile(buffer, filename, fileType, mimetype, sizeKB);
+
+  } catch (error) {
+    console.error('File content extraction failed:', error);
+    return <code>File: ${filename} (${Math.round(buffer.length / 1024)}KB, ${mimetype}). Content available for analysis.</code>;
+  }
+}
+
+// Image file analysis
+function analyzeImageFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Image File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  // Basic image format detection
+  const header = buffer.slice(0, 20);
+
+  if (fileType === 'jpg' || fileType === 'jpeg') {
+    analysis.push('JPEG image format detected');
+    // Look for EXIF data
+    if (buffer.indexOf(Buffer.from('Exif')) !== -1) {
+      analysis.push('Contains EXIF metadata');
+    }
+  } else if (fileType === 'png') {
+    analysis.push('PNG image format detected');
+    if (header[25] === 6) analysis.push('RGBA format (with transparency)');
+    else if (header[25] === 2) analysis.push('RGB format');
+  } else if (fileType === 'gif') {
+    analysis.push('GIF image format detected');
+    if (buffer.indexOf(Buffer.from('NETSCAPE2.0')) !== -1) {
+      analysis.push('Animated GIF detected');
+    }
+  } else if (fileType === 'svg') {
+    const content = buffer.toString('utf8');
+    analysis.push('SVG vector image');
+    if (content.includes('<path')) analysis.push('Contains vector paths');
+    if (content.includes('<text')) analysis.push('Contains text elements');
+  }
+
+  analysis.push('I can analyze image content, colors, objects, text extraction, and provide insights about the visual elements.');
+
+  return analysis.join('\n');
+}
+
+// Audio file analysis
+function analyzeAudioFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Audio File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  if (fileType === 'mp3') {
+    analysis.push('MP3 audio format detected');
+    // Look for ID3 tags
+    if (buffer.slice(0, 3).toString() === 'ID3') {
+      analysis.push('Contains ID3 metadata tags');
+    }
+  } else if (fileType === 'wav') {
+    analysis.push('WAV audio format detected');
+    if (buffer.slice(0, 4).toString() === 'RIFF') {
+      analysis.push('Standard RIFF WAV format');
+    }
+  }
+
+  analysis.push('I can analyze audio metadata, format details, and help with audio processing tasks.');
+
+  return analysis.join('\n');
+}
+
+// Video file analysis
+function analyzeVideoFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Video File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  if (fileType === 'mp4') {
+    analysis.push('MP4 video container detected');
+    if (buffer.indexOf(Buffer.from('ftyp')) !== -1) {
+      analysis.push('Standard MP4 format');
+    }
+  } else if (fileType === 'avi') {
+    analysis.push('AVI video format detected');
+  }
+
+  analysis.push('I can analyze video metadata, format information, and assist with video processing workflows.');
+
+  return analysis.join('\n');
+}
+
+// Archive file analysis
+function analyzeArchiveFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Archive File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  if (fileType === 'zip') {
+    analysis.push('ZIP archive detected');
+    // Look for central directory
+    if (buffer.indexOf(Buffer.from('PK\x01\x02')) !== -1) {
+      analysis.push('Contains file directory structure');
+    }
+  } else if (fileType === 'tar') {
+    analysis.push('TAR archive detected');
+  }
+
+  analysis.push('I can help extract information about archive contents and assist with compression/decompression tasks.');
+
+  return analysis.join('\n');
+}
+
+// Executable file analysis
+function analyzeExecutableFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Executable File: ${filename}</code>, <code>Type: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  if (fileType === 'exe') {
+    analysis.push('Windows executable detected');
+    if (buffer.slice(0, 2).toString() === 'MZ') {
+      analysis.push('Valid PE executable format');
+    }
+  } else if (fileType === 'deb') {
+    analysis.push('Debian package detected');
+  }
+
+  analysis.push('⚠️ Executable file detected. I can provide information about file structure and security considerations.');
+
+  return analysis.join('\n');
+}
+
+// Office document analysis
+function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [<code>Office Document: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+
+  try {
+    if (fileType === 'pdf') {
+      const content = buffer.toString('latin1');
+      if (content.includes('%PDF-')) {
+        analysis.push('Valid PDF document');
+        const version = content.match(/%PDF-(\d+\.\d+)/);
+        if (version) analysis.push(<code>PDF version: ${version[1]}</code>);
+      }
+
+      // Extract readable text
+      const textMatches = content.match(/[\x20-\x7E\s]{20,}/g) || [];
+      const extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
+
+      if (extractedText.length > 100) {
+        analysis.push(<code>Content preview: ${extractedText.substring(0, 300)}...</code>);
+      } else {
+        analysis.push('Document contains primarily non-text content or requires specialized PDF parsing.');
+      }
+
     } else if (fileType === 'docx' || fileType === 'doc') {
-      // Extract readable text from Word document
-      const textMatches = content.match(/[\x20-\x7E\s]{10,}/g) || [];
-      extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
-      
-      if (extractedText.length < 100) {
-        return `Word Document: ${filename}. This appears to be a Word document${filename.includes('african') ? ' about African foods' : ''}. The document contains ${content.length} bytes. I can help analyze the content - please let me know what specific aspects you'd like me to focus on.`;
+      if (fileType === 'docx') {
+        analysis.push('Modern Word document (Office Open XML)');
+      } else {
+        analysis.push('Legacy Word document (OLE format)');
+      }
+
+      // Try to extract readable text
+      const content = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
+      const textMatches = content.match(/[\x20-\x7E\s]{20,}/g) || [];
+      const extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
+
+      if (extractedText.length > 100) {
+        analysis.push(<code>Content preview: ${extractedText.substring(0, 300)}...</code>);
+      } else {
+        analysis.push('Document structure detected. For full text extraction, specialized document parsing is recommended.');
       }
     }
-    
-    // Return extracted text, limited to reasonable length
-    return extractedText.substring(0, 3000);
   } catch (error) {
-    return `Document: ${filename}. File successfully uploaded and ready for analysis. Please describe what you'd like to know about this document.`;
+    analysis.push('Document format detected but content extraction requires specialized parsing.');
   }
+
+  analysis.push('I can help analyze document structure, extract metadata, and assist with document processing workflows.');
+
+  return analysis.join('\n');
+}
+
+// Code file analysis
+function analyzeCodeFile(content: string, filename: string, fileType: string): string {
+  const lines = content.split('\n');
+  const analysis = [
+    <code>Code File: ${filename}</code>,
+    <code>Language: ${fileType.toUpperCase()}</code>,
+    <code>Lines: ${lines.length}</code>,
+    <code>Characters: ${content.length}</code>
+  ];
+
+  // Language-specific analysis
+  if (fileType === 'js' || fileType === 'ts') {
+    const functions = (content.match(/function\s+\w+|const\s+\w+\s*=\s*\(|\w+\s*=>\s*/g) || []).length;
+    analysis.push(<code>Functions/Methods: ~${functions}</code>);
+    if (content.includes('import ') || content.includes('require(')) {
+      analysis.push('Contains module imports');
+    }
+  } else if (fileType === 'py') {
+    const functions = (content.match(/def\s+\w+/g) || []).length;
+    const classes = (content.match(/class\s+\w+/g) || []).length;
+    analysis.push(<code>Functions: ${functions}</code>, <code>Classes: ${classes}</code>);
+  }
+
+  // Show preview
+  const preview = content.substring(0, 500);
+  analysis.push(<code>\nCode preview:\n${preview}${content.length > 500 ? '...' : ''}</code>);
+
+  return analysis.join('\n');
+}
+
+// Text/data file analysis
+function analyzeTextDataFile(content: string, filename: string, fileType: string): string {
+  const lines = content.split('\n');
+  const words = content.split(/\s+/).length;
+
+  const analysis = [
+    <code>Text File: ${filename}</code>,
+    <code>Format: ${fileType.toUpperCase()}</code>,
+    <code>Lines: ${lines.length}</code>,
+    <code>Words: ${words}</code>,
+    <code>Characters: ${content.length}</code>
+  ];
+
+  if (fileType === 'csv') {
+    const headers = lines[0]?.split(',') || [];
+    analysis.push(<code>Columns: ${headers.length}</code>);
+    if (headers.length > 0) {
+      analysis.push(<code>Headers: ${headers.slice(0, 5).join(', ')}${headers.length > 5 ? '...' : ''}</code>);
+    }
+  } else if (fileType === 'json') {
+    try {
+      const parsed = JSON.parse(content);
+      analysis.push(<code>JSON structure: ${typeof parsed}</code>);
+      if (Array.isArray(parsed)) {
+        analysis.push(<code>Array with ${parsed.length} items</code>);
+      } else if (typeof parsed === 'object') {
+        const keys = Object.keys(parsed);
+        analysis.push(<code>Object with keys: ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '...' : ''}</code>);
+      }
+    } catch (error) {
+      analysis.push('Invalid JSON format');
+    }
+  }
+
+  // Show content preview
+  const preview = content.substring(0, 1000);
+  analysis.push(<code>\nContent preview:\n${preview}${content.length > 1000 ? '...' : ''}</code>);
+
+  return analysis.join('\n');
+}
+
+// Binary data file analysis
+function analyzeBinaryDataFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
+  const analysis = [
+    <code>Binary Data File: ${filename}</code>,
+    <code>Format: ${fileType.toUpperCase()}</code>,
+    <code>Size: ${sizeKB}KB</code>
+  ];
+
+  if (fileType === 'sqlite' || fileType === 'db') {
+    if (buffer.slice(0, 16).toString() === 'SQLite format 3\0') {
+      analysis.push('SQLite database detected');
+      analysis.push('I can help analyze database structure and queries.');
+    }
+  }
+
+  // Analyze entropy to detect compression/encryption
+  const entropy = calculateEntropy(buffer.slice(0, 1024));
+  if (entropy > 7.5) {
+    analysis.push('High entropy detected (possibly compressed or encrypted)');
+  } else if (entropy < 4) {
+    analysis.push('Low entropy detected (structured or repetitive data)');
+  }
+
+  analysis.push('I can analyze binary structure, hex dumps, and assist with data processing.');
+
+  return analysis.join('\n');
+}
+
+// Generic binary file analysis
+function analyzeBinaryFile(buffer: Buffer, filename: string, fileType: string, mimetype: string, sizeKB: number): string {
+  const analysis = [
+    <code>Binary File: ${filename}</code>,
+    <code>Type: ${fileType ? fileType.toUpperCase() : 'Unknown'}</code>,
+    <code>MIME: ${mimetype}</code>,
+    <code>Size: ${sizeKB}KB</code>
+  ];
+
+  // Analyze file signature
+  const signature = buffer.slice(0, 16);
+  const hex = signature.toString('hex').toUpperCase();
+  analysis.push(<code>File signature: ${hex}</code>);
+
+  // Common file type detection by magic bytes
+  if (hex.startsWith('FFD8FF')) {
+    analysis.push('JPEG image detected by signature');
+  } else if (hex.startsWith('89504E47')) {
+    analysis.push('PNG image detected by signature');
+  } else if (hex.startsWith('474946')) {
+    analysis.push('GIF image detected by signature');
+  } else if (hex.startsWith('25504446')) {
+    analysis.push('PDF document detected by signature');
+  } else if (hex.startsWith('504B0304')) {
+    analysis.push('ZIP archive detected by signature');
+  }
+
+  analysis.push('I can analyze file structure, extract metadata, and provide format-specific insights.');
+
+  return analysis.join('\n');
+}
+
+// Helper function to check if content is readable text
+function isReadableText(content: string): boolean {
+  const printableChars = content.match(/[\x20-\x7E\n\r\t]/g) || [];
+  return printableChars.length / content.length > 0.7;
+}
+
+// Helper function to calculate entropy
+function calculateEntropy(buffer: Buffer): number {
+  const freq: { [key: number]: number } = {};
+
+  for (let i = 0; i < buffer.length; i++) {
+    const byte = buffer[i];
+    freq[byte] = (freq[byte] || 0) + 1;
+  }
+
+  let entropy = 0;
+  const len = buffer.length;
+
+  for (const count of Object.values(freq)) {
+    const p = count / len;
+    entropy -= p * Math.log2(p);
+  }
+
+  return entropy;
 }
 
 const verifyFirebaseToken = async (token: string) => {
