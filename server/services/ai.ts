@@ -56,223 +56,226 @@ export interface ConversationContext {
         tokensUsed: number;
         shouldTruncate: boolean;
     };
+    emotionalContext?: string;
+    userTier?: string;
+    userExpertiseLevel?: 'beginner' | 'intermediate' | 'expert';
+    conversationFlow?: 'exploratory' | 'task_focused' | 'learning';
+    preferredResponseStyle?: 'detailed' | 'concise' | 'visual';
 }
 
 export type BioinformaticsQueryType = 'crispr' | 'pcr' | 'codon_optimization' | 'sequence_analysis' | 'general';
 
-export interface BioinformaticsQuery {
-    type: BioinformaticsQueryType;
-    content: string;
-    fileAnalysis?: BioFileAnalysis;
+export type ProgrammingIntentType = 'coding' | 'planning' | 'debugging' | 'architecture' | 'learning' | 'none';
+
+export type QueryClassificationType = 'bioinformatics' | 'programming' | 'planning' | 'debugging' | 'general' | 'creative' | 'technical';
+
+export type UserIntentType = 'casual_greeting' | 'greeting' | 'farewell' | 'general_trending' | 'technical_question' | 'assistance_request' | 'small_talk' | 'file_analysis' | 'general_query';
+
+// ========== Constants and Configuration ==========
+const MAX_CONVERSATION_AGE_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_HISTORY_LENGTH = 10;
+const MAX_FILE_PREVIEW_LENGTH = 200;
+const IDEAL_RESPONSE_LENGTHS = {
+    concise: 200,
+    balanced: 400,
+    detailed: 800
+};
+
+// Initialize AI configuration with validation
+const aiConfig: ProviderConfig = {
+    groq: {
+        apiKey: process.env.GROQ_API_KEY || '',
+        endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    },
+    together: {
+        apiKey: process.env.TOGETHER_API_KEY || '',
+        endpoint: 'https://api.together.xyz/v1/chat/completions',
+    },
+    openrouter: {
+        apiKey: process.env.OPENROUTER_API_KEY || '',
+        endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    },
+    cohere: {
+        apiKey: process.env.COHERE_API_KEY || '',
+        endpoint: 'https://api.cohere.ai/v1/generate',
+    },
+    ollama: {
+        endpoint: process.env.OLLAMA_ENDPOINT || 'http://0.0.0.0:11434',
+        model: 'mistral',
+    },
+};
+
+// Log configuration status
+console.log('AI Provider Configuration:');
+console.log(`- Groq API Key: ${aiConfig.groq.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- Together API Key: ${aiConfig.together.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- OpenRouter API Key: ${aiConfig.openrouter.apiKey ? 'Set' : 'Missing'}`);
+console.log(`- Cohere API Key: ${aiConfig.cohere.apiKey ? 'Set' : 'Missing'}`);
+
+const faultTolerantAI = new FaultTolerantAI(aiConfig);
+
+// ========== Helper Functions ==========
+function generateUniqueId(prefix = 'msg'): string {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
-// Enhanced AI response generation
-async function getEnhancedAIResponse(
-    query: string, 
-    provider: string, 
-    conversationContext: ConversationContext,
-    history: ChatMessage[]
-): Promise<ChatMessage> {
-    const systemPrompt = buildEnhancedSystemPrompt(conversationContext, query);
+function getTimeBasedGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+}
 
-    const conversationHistory = history.slice(-6).map(m => ({
-        role: m.role,
-        content: m.content
-    }));
+function sanitizeErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message.replace(/api[_\s]?key[s]?/gi, '[API_KEY]');
+    }
+    return 'Unknown error occurred';
+}
 
-    conversationHistory.unshift({ role: 'system', content: systemPrompt });
-
-    const aiResponse = await faultTolerantAI.processQuery(
-        query,
-        { 
-            conversationContext,
-            userIntent: detectUserIntent(query)
-        },
-        conversationContext.emotionalContext,
-        conversationHistory,
-        'pro' // Always use best tier for enhanced responses
-    );
-
+function createErrorMessage(message: string, error?: unknown): ChatMessage {
     return {
         id: generateUniqueId(),
-        role: 'assistant',
-        content: aiResponse.content,
+        role: 'error',
+        content: `${message}${error ? `\n\nError: ${sanitizeErrorMessage(error)}` : ''}`,
         timestamp: Date.now(),
-        status: 'complete',
-        metadata: {
-            provider,
-            confidence: 0.85,
-            processingTime: 1200
+        status: 'error',
+        metadata: { 
+            confidence: 0,
+            intent: 'error'
         }
     };
 }
 
-async function processBioQuery(
-  query: string,
-  userMessage: ChatMessage,
-  conversationContext: ConversationContext,
-  fileAnalysis?: BioFileAnalysis,
-  userTier?: string
-): Promise<ChatMessage> {
-  const analysisType = detectQueryType(query);
+// ========== Query Classification Functions ==========
+function detectQueryType(text: string): BioinformaticsQueryType {
+    if (!text || typeof text !== 'string') return 'general';
 
-  try {
-    // Enhanced query with file analysis context
-    let enhancedQuery = query;
-
-    if (fileAnalysis) {
-      let fileContext = `\n\n--- UPLOADED FILE ANALYSIS ---\n`;
-      fileContext += `File Type: ${fileAnalysis.fileType}\n`;
-      fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
-
-      if (fileAnalysis.documentContent) {
-        fileContext += `\nDocument Content Analysis:\n${fileAnalysis.documentContent}\n`;
-
-        // Add specific instructions for document analysis
-        if (fileAnalysis.fileType === 'pdf') {
-          fileContext += `\nThis is a PDF document. I have extracted the available text content above. Please analyze this content thoroughly and provide specific insights about what the document contains, its structure, key topics, and any notable information.\n`;
-        } else if (fileAnalysis.fileType === 'docx') {
-          fileContext += `\nThis is a Word document. I have extracted the formatted text content above. Please analyze this content thoroughly and provide specific insights about the document's content, structure, formatting, and key information.\n`;
-        }
-      }
-
-      if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
-        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, 200)}${fileAnalysis.sequence.length > 200 ? '...' : ''}\n`;
-      }
-
-      if (fileAnalysis.stats) {
-        fileContext += `\nFile Statistics:\n`;
-        fileContext += `- Size: ${fileAnalysis.stats.length} characters/bytes\n`;
-        if (fileAnalysis.stats.wordCount) fileContext += `- Word Count: ${fileAnalysis.stats.wordCount}\n`;
-        if (fileAnalysis.stats.lineCount) fileContext += `- Line Count: ${fileAnalysis.stats.lineCount}\n`;
-      }
-
-      if (fileAnalysis.gcContent) {
-        fileContext += `- GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
-      }
-
-      if (fileAnalysis.features && fileAnalysis.features.length > 0) {
-        fileContext += `\nDetected Features: ${fileAnalysis.features.join(', ')}\n`;
-      }
-
-      fileContext += `\n--- END FILE ANALYSIS ---\n\n`;
-      fileContext += `User Question About This File: ${query}\n\n`;
-      fileContext += `Please analyze the uploaded file content and respond to the user's question. Focus on the actual content and provide specific insights based on what's in the file.`;
-
-      enhancedQuery = fileContext;
-    }
-
-    // Use AI for all bioinformatics queries instead of templates
-    const aiResponse = await faultTolerantAI.processQuery(
-      enhancedQuery,
-      { 
-        conversationContext,
-        userIntent: fileAnalysis ? 'file_analysis' : 'bioinformatics_query',
-        fileAnalysis
-      },
-      conversationContext.emotionalContext || 'neutral',
-      conversationContext.history.slice(-6).map(m => ({
-        role: m.role,
-        content: m.content
-      })),
-      userTier || 'free'
-    );
-
-    return {
-      id: generateUniqueId(),
-      role: 'assistant',
-      content: aiResponse.content,
-      timestamp: Date.now(),
-      status: 'complete',
-      metadata: {
-        confidence: 0.95,
-        processingTime: Date.now() - Date.now(),
-        analysisType,
-        model: aiResponse.provider || 'groq',
-        fileAnalysis: fileAnalysis ? {
-          fileType: fileAnalysis.fileType,
-          sequenceType: fileAnalysis.sequenceType,
-          hasDocument: !!fileAnalysis.documentContent
-        } : undefined
-      }
-    };
-  } catch (error) {
-    console.error('Error in processBioQuery:', error);
-    return {
-      id: generateUniqueId(),
-      role: 'assistant',
-      content: 'I encountered an error processing your bioinformatics query. Please try again.',
-      timestamp: Date.now(),
-      status: 'error',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        confidence: 0
-      }
-    };
-  }
+    const lowerText = text.toLowerCase();
+    if (/(crispr|guide rna|grna|cas9)/.test(lowerText)) return 'crispr';
+    if (/(pcr|polymerase chain reaction|primer)/.test(lowerText)) return 'pcr';
+    if (/(codon optimization|codon usage|expression)/.test(lowerText)) return 'codon_optimization';
+    if (/(sequence analysis|sequence alignment|blast|fasta|genbank)/.test(lowerText)) return 'sequence_analysis';
+    return 'general';
 }
 
-// Response comparison and selection
-function selectBestResponse(
-    responses: ChatMessage[], 
-    originalQuery: string, 
-    context: ConversationContext
-): ChatMessage {
-    if (responses.length === 0) {
-        throw new Error('No responses to compare');
-    }
+function detectProgrammingIntent(text: string): ProgrammingIntentType {
+    if (!text || typeof text !== 'string') return 'none';
 
-    if (responses.length === 1) {
-        return responses[0];
-    }
-
-    // Score responses based on multiple criteria
-    const scoredResponses = responses.map(response => ({
-        response,
-        score: scoreResponse(response, originalQuery, context)
-    }));
-
-    // Return highest scoring response
-    scoredResponses.sort((a, b) => b.score - a.score);
-    return scoredResponses[0].response;
+    const lowerText = text.toLowerCase();
+    if (/(write|create|implement|build|code|script|function|class|algorithm|program)/.test(lowerText)) return 'coding';
+    if (/(plan|design|architecture|structure|organize|workflow|pipeline|strategy|roadmap|approach)/.test(lowerText)) return 'planning';
+    if (/(debug|fix|error|bug|issue|problem|troubleshoot|not working)/.test(lowerText)) return 'debugging';
+    if (/(architecture|system design|database schema|api design|microservices|scalability)/.test(lowerText)) return 'architecture';
+    if (/(explain|how does|what is|teach me|learn|understand|tutorial)/.test(lowerText)) return 'learning';
+    return 'none';
 }
 
-function scoreResponse(
-    response: ChatMessage, 
-    query: string, 
-    context: ConversationContext
-): number {
-    let score = 0;
-    const content = response.content.toLowerCase();
-    const queryLower = query.toLowerCase();
+function classifyQuery(query: string): QueryClassificationType {
+    if (!query || typeof query !== 'string') return 'general';
 
-    // Relevance scoring
-    const queryTerms = queryLower.split(' ').filter(term => term.length > 3);
-    const relevanceScore = queryTerms.reduce((acc, term) => {
-        return acc + (content.includes(term) ? 1 : 0);
-    }, 0) / queryTerms.length;
-    score += relevanceScore * 40;
+    const BIO_KEYWORDS = [
+        'dna', 'rna', 'protein', 'sequence', 'genomic', 'alignment',
+        'blast', 'crispr', 'pcr', 'bioinformatics', 'genome', 'variant',
+        'analysis', 'fastq', 'bam', 'vcf', 'snp', 'gene', 'chromosome'
+    ];
 
-    // Length appropriateness
-    const idealLength = context.preferredResponseStyle === 'concise' ? 200 : 
-                       context.preferredResponseStyle === 'detailed' ? 800 : 400;
-    const lengthScore = 1 - Math.abs(response.content.length - idealLength) / idealLength;
-    score += Math.max(0, lengthScore) * 20;
+    const PROGRAMMING_KEYWORDS = [
+        'code', 'script', 'function', 'algorithm', 'implementation', 'programming',
+        'python', 'javascript', 'typescript', 'react', 'node', 'express',
+        'html', 'css', 'api', 'database', 'sql', 'git', 'github',
+        'class', 'method', 'variable', 'loop', 'condition', 'array',
+        'object', 'json', 'async', 'await', 'promise', 'framework'
+    ];
 
-    // Technical depth matching user expertise
-    const technicalTerms = (content.match(/(?:algorithm|optimization|statistical|computational)/g) || []).length;
-    const expertiseMatch = context.userExpertiseLevel === 'expert' ? 
-        Math.min(technicalTerms / 3, 1) : 
-        Math.max(0, 1 - technicalTerms / 5);
-    score += expertiseMatch * 25;
+    const PLANNING_KEYWORDS = [
+        'plan', 'design', 'architecture', 'structure', 'organize',
+        'workflow', 'pipeline', 'strategy', 'roadmap', 'approach',
+        'project', 'task', 'timeline', 'milestone', 'requirements',
+        'documentation', 'folder structure', 'best practices'
+    ];
 
-    // Confidence from metadata
-    score += (response.metadata?.confidence || 0.5) * 15;
+    const DEBUGGING_KEYWORDS = [
+        'debug', 'fix', 'error', 'bug', 'issue', 'problem',
+        'troubleshoot', 'not working', 'broken', 'crash',
+        'exception', 'stack trace', 'syntax error'
+    ];
 
-    return score;
+    const CREATIVE_KEYWORDS = ['story', 'creative', 'imagine', 'brainstorm', 'idea'];
+
+    const lowerQuery = query.toLowerCase();
+
+    if (BIO_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'bioinformatics';
+    if (PROGRAMMING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'programming';
+    if (PLANNING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'planning';
+    if (DEBUGGING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'debugging';
+    if (CREATIVE_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'creative';
+
+    return 'general';
 }
 
-// Enhanced system prompt builder
+function detectUserIntent(query: string): UserIntentType {
+    if (!query || typeof query !== 'string') return 'general_query';
+
+    const lowerQuery = query.toLowerCase().trim();
+
+    // Casual greetings and small talk
+    if (/(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)$)|(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)\s*[!.]*$)|greetings|how are you|how's it going|how are you doing|how r u|how u doing/i.test(lowerQuery)) {
+        return 'casual_greeting';
+    }
+
+    // Casual conversation with variations
+    if (/(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|how are you doing today|what's new|how's your day|nice to meet you|ntin big|nothing much|not much|just chilling|just hanging|what about you|wbu|same here|cool|nice|awesome|great|good|fine|alright/i.test(lowerQuery)) {
+        return 'casual_greeting';
+    }
+
+    // Weather/feeling/emotion talk
+    if (/(weather|hot|cold|feeling|mood|today|good day|bad day|tired|excited)/i.test(lowerQuery)) {
+        return 'small_talk';
+    }
+
+    // Formal greetings
+    if (/(good morning|good afternoon|good evening)/i.test(lowerQuery)) {
+        return 'greeting';
+    }
+
+    // Farewell patterns
+    if (/(bye|goodbye|see you|thanks|thank you|that's all|later|peace)/i.test(lowerQuery)) {
+        return 'farewell';
+    }
+
+    // General trending/news queries
+    if (/(trending|what's happening|news|current events|latest|worldwide|global|arsenal|football|soccer|sports|player|transfer)/i.test(lowerQuery)) {
+        return 'general_trending';
+    }
+
+    // Technical questions
+    if (/(how to|explain|what is|help me|analyze|design|optimize)/i.test(lowerQuery)) {
+        return 'technical_question';
+    }
+
+    // Request for assistance
+    if (/(can you|would you|please|need help|assist)/i.test(lowerQuery)) {
+        return 'assistance_request';
+    }
+
+    return 'general_query';
+}
+
+function detectTone(text: string): string {
+    if (!text || typeof text !== 'string') return 'professional';
+
+    const lowerText = text.toLowerCase();
+
+    if (/(please|thank you|would you|kindly|appreciate)/.test(lowerText)) return 'polite';
+    if (/(urgent|asap|quickly|immediately|emergency)/.test(lowerText)) return 'urgent';
+    if (/(simple|brief|concise|summarize)/.test(lowerText)) return 'concise';
+    if (/(😊|🙂|please|thank)/.test(lowerText)) return 'friendly';
+
+    return 'professional';
+}
+
+// ========== System Prompt Builder ==========
 function buildEnhancedSystemPrompt(context: ConversationContext, query: string): string {
     const queryType = classifyQuery(query);
     const programmingIntent = detectProgrammingIntent(query);
@@ -344,381 +347,7 @@ DEBUGGING CONTEXT: The user has a problem to solve. Focus on:
     return prompt;
 }
 
-// Helper functions for bioinformatics response formatting
-function formatCRISPRResults(guides: any[], context: ConversationContext): string {
-    const style = context.preferredResponseStyle;
-    let response = '';
-
-    if (style === 'concise') {
-        response = `CRISPR Analysis: Found ${guides.length} guide RNAs\n`;
-        response += guides.slice(0, 3).map((g, i) => `${i+1}. ${g.sequence} (Score: ${g.score})`).join('\n');
-    } else {
-        response = `## CRISPR Guide RNA Analysis Results\n\n`;
-        response += `I've analyzed your sequence and identified **${guides.length} potential guide RNAs**:\n\n`;
-        guides.forEach((guide, i) => {
-            response += `### Guide ${i+1}\n`;
-            response += `- **Sequence:** \`${guide.sequence}\`\n`;
-            response += `- **PAM:** ${guide.pam}\n`;
-            response += `- **Score:** ${guide.score}/100\n`;
-            response += `- **Off-targets:** ${guide.offTargets || 0}\n\n`;
-        });
-    }
-
-    return response;
-}
-
-function formatPCRResults(results: any, context: ConversationContext): string {
-    const style = context.preferredResponseStyle;
-
-    if (style === 'concise') {
-        return `PCR: ${results.annealingTemp}°C, ${results.productSize}bp, ${results.efficiency}%`;
-    }
-
-    return `## PCR Simulation Results\n\n` +
-           `- **Optimal Annealing Temperature:** ${results.annealingTemp}°C\n` +
-           `- **Product Size:** ${results.productSize} base pairs\n` +
-           `- **Amplification Efficiency:** ${results.efficiency}%\n` +
-           `- **Primer Specificity:** ${results.specificity || 'High'}\n\n` +
-           `These conditions should give you optimal amplification with minimal off-target effects.`;
-}
-
-function formatOptimizationResults(optimized: any, context: ConversationContext): string {
-    return `## Codon Optimization Results\n\n` +
-           `- **Original CAI:** ${optimized.originalCAI.toFixed(3)}\n` +
-           `- **Optimized CAI:** ${optimized.optimizedCAI.toFixed(3)}\n` +
-           `- **Improvement:** ${((optimized.optimizedCAI - optimized.originalCAI) * 100).toFixed(1)}%\n` +
-           `- **Host Organism:** ${optimized.host}\n\n` +
-           `The optimized sequence should show improved expression levels in your target host.`;
-}
-
-function formatSequenceAnalysis(analysis: BioFileAnalysis, context: ConversationContext): string {
-    let response = `## Sequence Analysis Summary\n\n`;
-    response += `- **Length:** ${analysis.sequence.length} ${analysis.sequenceType === 'protein' ? 'amino acids' : 'nucleotides'}\n`;
-    response += `- **Type:** ${analysis.sequenceType}\n`;
-    if (analysis.gcContent !== undefined) {
-        response += `- **GC Content:** ${analysis.gcContent.toFixed(1)}%\n`;
-    }
-    if (analysis.features) {
-        response += `- **Features:** ${analysis.features.join(', ')}\n`;
-    }
-    return response;
-}
-
-// Enhanced document analysis for application letters with better content extraction
-function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string): string {
-  const content = fileAnalysis.documentContent || '';
-  const analysis = [];
-
-  // Always try to analyze the actual content first, even if extraction seems incomplete
-  analysis.push("## Document Analysis\n");
-
-  // Check if we have any meaningful content to analyze
-  if (content && content.length > 20 && !content.includes('Document structure detected')) {
-    analysis.push("Based on your uploaded document, here's my analysis:\n");
-
-    // Analyze the actual content
-    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
-
-    analysis.push(`**Content Overview:**`);
-    analysis.push(`- Word count: ${wordCount} words`);
-    analysis.push(`- Structure: ${sentences.length} sentences detected`);
-
-    // Look for key application letter elements
-    const hasGreeting = /dear|hello|hi|to whom it may concern/i.test(content);
-    const hasPosition = /position|role|job|apply|application/i.test(content);
-    const hasExperience = /experience|worked|managed|led|developed|achieved/i.test(content);
-    const hasSkills = /skill|ability|proficient|expert|knowledge/i.test(content);
-    const hasClosing = /sincerely|regards|thank you|look forward/i.test(content);
-
-    analysis.push(`\n**Key Elements Present:**`);
-    analysis.push(`${hasGreeting ? '✅' : '❌'} Professional greeting`);
-    analysis.push(`${hasPosition ? '✅' : '❌'} Position/role mentioned`);
-    analysis.push(`${hasExperience ? '✅' : '❌'} Work experience discussed`);
-    analysis.push(`${hasSkills ? '✅' : '❌'} Skills highlighted`);
-    analysis.push(`${hasClosing ? '✅' : '❌'} Professional closing`);
-
-    // Provide specific feedback based on content analysis
-    analysis.push(`\n**Specific Suggestions for Your Document:**`);
-
-    if (wordCount < 200) {
-      analysis.push("- Consider expanding your content to better showcase your qualifications");
-    } else if (wordCount > 500) {
-      analysis.push("- Consider condensing to keep the reader engaged (aim for 300-400 words)");
-    }
-
-    if (!hasPosition) {
-      analysis.push("- Clearly state the specific position you're applying for");
-    }
-
-    if (!hasExperience) {
-      analysis.push("- Add specific examples of your relevant work experience");
-    }
-
-    if (!hasSkills) {
-      analysis.push("- Highlight key skills that match the job requirements");
-    }
-
-    // Look for quantifiable achievements
-    const hasNumbers = /\d+/.test(content);
-    if (!hasNumbers) {
-      analysis.push("- Include quantifiable achievements (e.g., 'increased sales by 25%', 'managed team of 5')");
-    }
-
-    return analysis.join('\n');
-  } else {
-    // Fallback when content extraction fails
-    analysis.push("⚠️ **Content Extraction Issue**: I'm having difficulty reading the full content of your document.");
-    analysis.push("This could be due to complex formatting or document structure.");
-    analysis.push("\n**To get a proper analysis:**");
-    analysis.push("1. Try saving your document as a simple Word file without special formatting");
-    analysis.push("2. Convert to PDF and upload that instead");
-    analysis.push("3. Copy and paste the text directly in the chat for analysis");
-
-    return analysis.join('\n');
-  }
-
-  // Content Quality Analysis
-  analysis.push("## Content Quality Assessment\n");
-
-  const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-  const sentenceCount = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
-  const avgWordsPerSentence = wordCount > 0 ? Math.round(wordCount / sentenceCount) : 0;
-
-  if (wordCount < 150) {
-    analysis.push("⚠️ **Content Length**: Your application letter appears quite brief. Consider expanding it to 200-400 words to provide more comprehensive information about your qualifications.");
-    analysis.push("\n**Suggestions for Content Enhancement:**");
-    analysis.push("- Add specific examples of your achievements and experiences");
-    analysis.push("- Include quantifiable results (e.g., 'increased sales by 20%', 'managed a team of 5')");
-    analysis.push("- Describe how your skills directly relate to the job requirements");
-    analysis.push("- Mention specific projects or accomplishments that demonstrate your capabilities");
-  } else if (wordCount > 500) {
-    analysis.push("📝 **Content Length**: Your letter is quite comprehensive. Consider condensing it to 300-400 words to maintain the reader's attention while covering all essential points.");
-  } else {
-    analysis.push("✅ **Content Length**: Good length for an application letter.");
-  }
-
-  // Structural Analysis
-  analysis.push("\n## Structural Analysis\n");
-
-  const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-  analysis.push(`**Paragraph Structure**: ${paragraphs.length} paragraphs detected`);
-
-  if (paragraphs.length < 3) {
-    analysis.push("\n⚠️ **Structure Recommendation**: Consider organizing your letter into 4-5 clear paragraphs:");
-    analysis.push("1. **Opening**: State the position and how you learned about it");
-    analysis.push("2. **Qualifications**: Highlight your most relevant skills and experiences");
-    analysis.push("3. **Achievements**: Provide specific examples of your accomplishments");
-    analysis.push("4. **Company Connection**: Show why you're interested in this specific company");
-    analysis.push("5. **Closing**: Express enthusiasm and request an interview");
-  }
-
-  // Key Elements Check
-  analysis.push("\n## Essential Elements Checklist\n");
-
-  const hasGreeting = /dear|hello|hi/i.test(content);
-  const hasPosition = /position|role|job|apply/i.test(content);
-  const hasExperience = /experience|worked|managed|led|developed|achieved/i.test(content);
-  const hasSkills = /skill|ability|proficient|expert|knowledge/i.test(content);
-  const hasClosing = /sincerely|regards|thank you|look forward/i.test(content);
-
-  analysis.push(`${hasGreeting ? '✅' : '❌'} Professional greeting`);
-  analysis.push(`${hasPosition ? '✅' : '❌'} Clear mention of the position`);
-  analysis.push(`${hasExperience ? '✅' : '❌'} Relevant work experience`);
-  analysis.push(`${hasSkills ? '✅' : '❌'} Key skills mentioned`);
-  analysis.push(`${hasClosing ? '✅' : '❌'} Professional closing`);
-
-  if (!hasPosition) {
-    analysis.push("\n💡 **Missing Element**: Clearly state the specific position you're applying for in the opening paragraph.");
-  }
-  if (!hasExperience) {
-    analysis.push("\n💡 **Missing Element**: Include specific examples of your work experience and achievements.");
-  }
-  if (!hasSkills) {
-    analysis.push("\n💡 **Missing Element**: Highlight your key skills that match the job requirements.");
-  }
-
-  // Formatting Guidelines
-  analysis.push("\n## Formatting Best Practices\n");
-  analysis.push("**Professional Format Recommendations:**");
-  analysis.push("- Use a standard business letter format with your contact information at the top");
-  analysis.push("- Include the date and employer's contact information");
-  analysis.push("- Use a professional font (Arial, Calibri, or Times New Roman) in 10-12pt size");
-  analysis.push("- Maintain consistent spacing (single or 1.15 line spacing)");
-  analysis.push("- Keep margins at 1 inch on all sides");
-  analysis.push("- Use a professional tone throughout");
-  analysis.push("- Proofread for grammar, spelling, and punctuation errors");
-
-  // Tone and Language Analysis
-  analysis.push("\n## Tone and Language Assessment\n");
-
-  const formalWords = (content.match(/\b(please|kindly|respectfully|sincerely|professional|qualified|experience)\b/gi) || []).length;
-  const casualWords = (content.match(/\b(cool|awesome|hey|gonna|wanna|stuff|things)\b/gi) || []).length;
-
-  if (casualWords > formalWords) {
-    analysis.push("⚠️ **Tone**: Consider using more formal, professional language. Avoid casual expressions and colloquialisms.");
-  } else {
-    analysis.push("✅ **Tone**: Professional tone maintained throughout the letter.");
-  }
-
-  // Action Items
-  analysis.push("\n## Action Items for Improvement\n");
-  analysis.push("**Priority Improvements:**");
-
-  if (wordCount < 150) {
-    analysis.push("1. **Expand content** with specific examples and achievements");
-  }
-  if (!hasPosition) {
-    analysis.push("2. **Clearly state** the position you're applying for");
-  }
-  if (!hasExperience) {
-    analysis.push("3. **Add specific examples** of your work experience and accomplishments");
-  }
-
-  analysis.push("4. **Quantify achievements** with numbers and percentages where possible");
-  analysis.push("5. **Research the company** and mention why you want to work there specifically");
-  analysis.push("6. **Include a call to action** requesting an interview or follow-up");
-
-  return analysis.join('\n');
-}
-
-// Removed template functions to prevent repetitive responses
-// All responses now go through AI processing for natural, contextual answers
-
-// ========== Conversation Manager ==========
-class ConversationManager {
-    private currentConversation: ConversationContext;
-
-    constructor() {
-        this.currentConversation = this.createNewConversation();
-    }
-
-    private createNewConversation(): ConversationContext {
-        return {
-            id: `conv_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-            history: [],
-            lastActive: Date.now(),
-            memory: {
-                topics: new Set<string>(),
-                entities: new Set<string>()
-            }
-        };
-    }
-
-    getContext(): ConversationContext {
-        // Reset conversation if inactive for more than 30 minutes
-        if (Date.now() - this.currentConversation.lastActive > 30 * 60 * 1000) {
-            this.currentConversation = this.createNewConversation();
-        }
-        return this.currentConversation;
-    }
-
-    addMessage(message: ChatMessage): void {
-        const context = this.getContext();
-        context.history.push(message);
-        context.lastActive = Date.now();
-
-        // Update conversation memory
-        this.updateMemory(message.content);
-    }
-
-    private updateMemory(text: string): void {
-        const context = this.getContext();
-
-        // Extract and store topics
-        const topics = this.extractTopics(text);
-        topics.forEach(topic => context.memory.topics.add(topic));
-
-        // Extract and store entities
-        const entities = this.extractEntities(text);
-        entities.forEach(entity => context.memory.entities.add(entity));
-    }
-
-    private extractTopics(text: string): string[] {
-        // Ensure text is a string and not null/undefined
-        if (!text || typeof text !== 'string') {
-            return [];
-        }
-
-        try {
-            const topics = new Set<string>();
-            const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
-            scientificTerms.forEach(term => topics.add(term.toLowerCase()));
-            return Array.from(topics);
-        } catch (error) {
-            console.warn('Error extracting topics:', error);
-            return [];
-        }
-    }
-
-    private extractEntities(text: string): string[] {
-        // Ensure text is a string and not null/undefined
-        if (!text || typeof text !== 'string') {
-            return [];
-        }
-
-        try {
-            const entities = new Set<string>();
-            const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
-            sequenceIds.forEach(id => entities.add(id));
-
-            const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
-            geneNames.forEach(gene => entities.add(gene));
-
-            const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
-            speciesNames.forEach(species => entities.add(species));
-
-            return Array.from(entities);
-        } catch (error) {
-            console.warn('Error extracting entities:', error);
-            return [];
-        }
-    }
-}
-
-// ========== AI Service ==========
-// Initialize AI configuration with validation
-const aiConfig: ProviderConfig = {
-    groq: {
-        apiKey: process.env.GROQ_API_KEY || '',
-        endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-    },
-    together: {
-        apiKey: process.env.TOGETHER_API_KEY || '',
-        endpoint: 'https://api.together.xyz/v1/chat/completions',
-    },
-    openrouter: {
-        apiKey: process.env.OPENROUTER_API_KEY || '',
-        endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-    },
-    cohere: {
-        apiKey: process.env.COHERE_API_KEY || '',
-        endpoint: 'https://api.cohere.ai/v1/generate',
-    },
-    ollama: {
-        endpoint: process.env.OLLAMA_ENDPOINT || 'http://0.0.0.0:11434',
-        model: 'mistral',
-    },
-};
-
-// Log configuration status
-console.log('AI Provider Configuration:');
-console.log(`- Groq API Key: ${aiConfig.groq.apiKey ? 'Set' : 'Missing'}`);
-console.log(`- Together API Key: ${aiConfig.together.apiKey ? 'Set' : 'Missing'}`);
-console.log(`- OpenRouter API Key: ${aiConfig.openrouter.apiKey ? 'Set' : 'Missing'}`);
-console.log(`- Cohere API Key: ${aiConfig.cohere.apiKey ? 'Set' : 'Missing'}`);
-
-
-
-const faultTolerantAI = new FaultTolerantAI(aiConfig);
-const conversationManager = new ConversationManager();
-
-// Helper function to generate unique IDs
-function generateUniqueId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-}
-
-// Helper function to build file analysis prompt
+// ========== File Analysis Functions ==========
 function buildFileAnalysisPrompt(query: string, fileAnalysis: BioFileAnalysis): string {
     let fileContext = `\n\n--- UPLOADED FILE ANALYSIS ---\n`;
     fileContext += `File Type: ${fileAnalysis.fileType}\n`;
@@ -736,7 +365,7 @@ function buildFileAnalysisPrompt(query: string, fileAnalysis: BioFileAnalysis): 
     }
 
     if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
-        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, 200)}${fileAnalysis.sequence.length > 200 ? '...' : ''}\n`;
+        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, MAX_FILE_PREVIEW_LENGTH)}${fileAnalysis.sequence.length > MAX_FILE_PREVIEW_LENGTH ? '...' : ''}\n`;
     }
 
     if (fileAnalysis.stats) {
@@ -761,185 +390,80 @@ function buildFileAnalysisPrompt(query: string, fileAnalysis: BioFileAnalysis): 
     return fileContext;
 }
 
-// Function to detect query type
-function detectQueryType(text: string): BioinformaticsQueryType {
-    const lowerText = text.toLowerCase();
+// ========== Response Processing Functions ==========
+async function processBioQuery(
+    query: string,
+    userMessage: ChatMessage,
+    conversationContext: ConversationContext,
+    fileAnalysis?: BioFileAnalysis,
+    userTier?: string
+): Promise<ChatMessage> {
+    const analysisType = detectQueryType(query);
 
-    if (/(crispr|guide rna|grna|cas9)/.test(lowerText)) return 'crispr';
-    if (/(pcr|polymerase chain reaction|primer)/.test(lowerText)) return 'pcr';
-    if (/(codon optimization|codon usage|expression)/.test(lowerText)) return 'codon_optimization';
-    if (/(sequence analysis|sequence alignment|blast|fasta|genbank)/.test(lowerText)) return 'sequence_analysis';
+    try {
+        // Enhanced query with file analysis context
+        let enhancedQuery = query;
 
-    return 'general';
-}
-
-// Enhanced query classification for programming tasks
-function detectProgrammingIntent(text: string): 'coding' | 'planning' | 'debugging' | 'architecture' | 'learning' | 'none' {
-    const lowerText = text.toLowerCase();
-
-    // Coding patterns
-    if (/(write|create|implement|build|code|script|function|class|algorithm|program)/.test(lowerText)) return 'coding';
-
-    // Planning patterns  
-    if (/(plan|design|architecture|structure|organize|workflow|pipeline|strategy|roadmap|approach)/.test(lowerText)) return 'planning';
-
-    // Debugging patterns
-    if (/(debug|fix|error|bug|issue|problem|troubleshoot|not working)/.test(lowerText)) return 'debugging';
-
-    // Architecture patterns
-    if (/(architecture|system design|database schema|api design|microservices|scalability)/.test(lowerText)) return 'architecture';
-
-    // Learning patterns
-    if (/(explain|how does|what is|teach me|learn|understand|tutorial)/.test(lowerText)) return 'learning';
-
-    return 'none';
-}
-
-// Function to detect tone
-function detectTone(text: string): string {
-    const lowerText = text.toLowerCase();
-
-    if (/(please|thank you|would you|kindly|appreciate)/.test(lowerText)) return 'polite';
-    if (/(urgent|asap|quickly|immediately|emergency)/.test(lowerText)) return 'urgent';
-    if (/(simple|brief|concise|summarize)/.test(lowerText)) return 'concise';
-    if (/(😊|🙂|please|thank)/.test(lowerText)) return 'friendly';
-
-    return 'professional';
-}
-
-// Function to get time-based greeting
-function getTimeBasedGreeting(): string {
-    const hour = new Date().getHours();
-
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-}
-
-// Analyze conversation context and personality
-function analyzeConversationContext(history: ChatMessage[]) {
-    const recentMessages = history.slice(-10);
-    const userMessages = recentMessages.filter(m => m.role === 'user');
-
-    // Detect conversation patterns
-    const hasGreetings = userMessages.some(m => 
-        /(hello|hi|hey|good morning|good afternoon|good evening)/i.test(m.content)
-    );
-
-    const hasTechnicalQueries = userMessages.some(m => 
-        /(sequence|dna|rna|protein|crispr|pcr|gene|genome)/i.test(m.content)
-    );
-
-    const hasGeneralQueries = userMessages.some(m => 
-        /(trending|news|world|latest|current|what's happening)/i.test(m.content)
-    );
-
-    // Determine personality based on context
-    let personality = {
-        name: "Professional",
-        tone: "professional and helpful",
-        explanation_style: "clear, structured explanations with examples",
-        expertise_level: "intermediate to advanced"
-    };
-
-    if (hasGreetings && !hasTechnicalQueries) {
-        personality = {
-            name: "Friendly",
-            tone: "warm and welcoming",
-            explanation_style: "conversational with easy-to-understand examples",
-            expertise_level: "beginner-friendly"
-        };
-    } else if (hasTechnicalQueries) {
-        personality = {
-            name: "Expert",
-            tone: "confident and precise",
-            explanation_style: "detailed technical explanations with scientific rigor",
-            expertise_level: "advanced"
-        };
-    } else if (hasGeneralQueries) {
-        personality = {
-            name: "Informative",
-            tone: "engaging and informative",
-            explanation_style: "structured with clear sections and follow-ups",
-            expertise_level: "general audience"
-        };
-    }
-
-    return {
-        personality,
-        memory: {
-            userPreferences: {
-                technicalLevel: personality.expertise_level,
-                preferredStyle: personality.explanation_style
-            }
+        if (fileAnalysis) {
+            enhancedQuery = buildFileAnalysisPrompt(query, fileAnalysis);
         }
-    };
+
+        // Use AI for all bioinformatics queries
+        const aiResponse = await faultTolerantAI.processQuery(
+            enhancedQuery,
+            { 
+                conversationContext,
+                userIntent: fileAnalysis ? 'file_analysis' : 'bioinformatics_query',
+                fileAnalysis
+            },
+            conversationContext.emotionalContext || 'neutral',
+            conversationContext.history.slice(-6).map(m => ({
+                role: m.role,
+                content: m.content
+            })),
+            userTier || 'free'
+        );
+
+        return {
+            id: generateUniqueId(),
+            role: 'assistant',
+            content: aiResponse.content,
+            timestamp: Date.now(),
+            status: 'complete',
+            metadata: {
+                confidence: 0.95,
+                processingTime: Date.now() - userMessage.timestamp,
+                analysisType,
+                model: aiResponse.provider || 'groq',
+                fileAnalysis: fileAnalysis ? {
+                    fileType: fileAnalysis.fileType,
+                    sequenceType: fileAnalysis.sequenceType,
+                    hasDocument: !!fileAnalysis.documentContent
+                } : undefined
+            }
+        };
+    } catch (error) {
+        console.error('Error in processBioQuery:', error);
+        return createErrorMessage(
+            'I encountered an error processing your bioinformatics query. Please try again.',
+            error
+        );
+    }
 }
 
-// Detect user intent
-function detectUserIntent(query: string): string {
-    if (!query || typeof query !== 'string') {
-        return 'general_query';
-    }
-    const lowerQuery = query.toLowerCase().trim();
-
-    // Casual greetings and small talk - improved detection with typos and variations
-    if (/(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)$)|(^(hi|hello|hey|yo|sup|wazup|wassup|what's up|howdy)\s*[!.]*$)|greetings|how are you|how's it going|how are you doing|how r u|how u doing/i.test(lowerQuery)) {
-        return 'casual_greeting';
-    }
-
-    // Casual conversation with variations and typos - EXPANDED
-    if (/(thy|ur|u|r)\s+(doing|going|been|feeling|up to)|how are you doing today|what's new|how's your day|nice to meet you|ntin big|nothing much|not much|just chilling|just hanging|what about you|wbu|same here|cool|nice|awesome|great|good|fine|alright/i.test(lowerQuery)) {
-        return 'casual_greeting';
-    }
-
-    // Weather/feeling/emotion talk
-    if (/(weather|hot|cold|feeling|mood|today|good day|bad day|tired|excited)/i.test(lowerQuery)) {
-        return 'small_talk';
-    }
-
-    // Formal greetings
-    if (/(good morning|good afternoon|good evening)/i.test(lowerQuery)) {
-        return 'greeting';
-    }
-
-    // Farewell patterns
-    if (/(bye|goodbye|see you|thanks|thank you|that's all|later|peace)/i.test(lowerQuery)) {
-        return 'farewell';
-    }
-
-    // General trending/news queries - expanded patterns
-    if (/(trending|what's happening|news|current events|latest|worldwide|global|arsenal|football|soccer|sports|player|transfer)/i.test(lowerQuery)) {
-        return 'general_trending';
-    }
-
-    // Technical questions
-    if (/(how to|explain|what is|help me|analyze|design|optimize)/i.test(lowerQuery)) {
-        return 'technical_question';
-    }
-
-    // Request for assistance
-    if (/(can you|would you|please|need help|assist)/i.test(lowerQuery)) {
-        return 'assistance_request';
-    }
-
-    return 'general_query';
-}
-
-// Enhanced conversation analysis
+// ========== Context Analysis Functions ==========
 function analyzeConversation(history: ChatMessage[]): ConversationContext {
-    const recentMessages = history.slice(-10);
+    const recentMessages = history.slice(-MAX_HISTORY_LENGTH);
     const userMessages = recentMessages.filter(m => m.role === 'user');
 
     return {
-        id: generateUniqueId(),
+        id: generateUniqueId('conv'),
         history: recentMessages,
         lastActive: Date.now(),
         memory: {
             topics: new Set(extractTopicsFromHistory(recentMessages)),
             entities: new Set()
         },
-        topics: extractTopicsFromHistory(recentMessages),
         userExpertiseLevel: detectUserExpertiseLevel(userMessages),
         conversationFlow: detectConversationFlow(recentMessages),
         emotionalContext: analyzeEmotionalContext(userMessages),
@@ -950,32 +474,39 @@ function analyzeConversation(history: ChatMessage[]): ConversationContext {
 function extractTopicsFromHistory(messages: ChatMessage[]): string[] {
     const topics = new Set<string>();
     messages.forEach(msg => {
-        const bioTerms = msg.content.match(/(?:DNA|RNA|protein|gene|CRISPR|PCR|sequence|analysis)/gi) || [];
-        bioTerms.forEach(term => topics.add(term.toLowerCase()));
+        if (msg.content && typeof msg.content === 'string') {
+            try {
+                const bioTerms = msg.content.match(/(?:DNA|RNA|protein|gene|CRISPR|PCR|sequence|analysis)/gi) || [];
+                bioTerms.forEach(term => topics.add(term.toLowerCase()));
+            } catch (error) {
+                console.warn('Error extracting topics:', error);
+            }
+        }
     });
     return Array.from(topics);
 }
 
 function detectUserExpertiseLevel(userMessages: ChatMessage[]): 'beginner' | 'intermediate' | 'expert' {
-    const expertTerms = userMessages.join(' ').match(/(?:algorithm|optimization|statistical|computational|bioinformatics)/gi) || [];
-    const basicTerms = userMessages.join(' ').match(/(?:help|explain|what is|how to)/gi) || [];
+    const allText = userMessages.map(m => m.content || '').join(' ');
+    const expertTerms = (allText.match(/(?:algorithm|optimization|statistical|computational|bioinformatics)/gi) || []).length;
+    const basicTerms = (allText.match(/(?:help|explain|what is|how to)/gi) || []).length;
 
-    if (expertTerms.length > basicTerms.length) return 'expert';
-    if (basicTerms.length > 2) return 'beginner';
+    if (expertTerms > basicTerms) return 'expert';
+    if (basicTerms > 2) return 'beginner';
     return 'intermediate';
 }
 
 function detectConversationFlow(messages: ChatMessage[]): 'exploratory' | 'task_focused' | 'learning' {
     const lastUserMsg = messages.filter(m => m.role === 'user').slice(-1)[0];
-    if (!lastUserMsg) return 'exploratory';
+    if (!lastUserMsg || !lastUserMsg.content) return 'exploratory';
 
     if (/(implement|create|generate|design)/i.test(lastUserMsg.content)) return 'task_focused';
     if (/(explain|understand|learn|teach)/i.test(lastUserMsg.content)) return 'learning';
     return 'exploratory';
 }
 
-function analyzeEmotionalContext(userMessages: ChatMessage[]): 'frustrated' | 'excited' | 'curious' | 'neutral' {
-    const recentText = userMessages.slice(-3).map(m => m.content).join(' ');
+function analyzeEmotionalContext(userMessages: ChatMessage[]): string {
+    const recentText = userMessages.slice(-3).map(m => m.content || '').join(' ');
 
     if (/(urgent|stuck|error|problem|help)/i.test(recentText)) return 'frustrated';
     if (/(amazing|awesome|love|excited|wow)/i.test(recentText)) return 'excited';
@@ -984,7 +515,7 @@ function analyzeEmotionalContext(userMessages: ChatMessage[]): 'frustrated' | 'e
 }
 
 function detectPreferredStyle(userMessages: ChatMessage[]): 'detailed' | 'concise' | 'visual' {
-    const recentText = userMessages.slice(-5).map(m => m.content).join(' ');
+    const recentText = userMessages.slice(-5).map(m => m.content || '').join(' ');
 
     if (/(detailed|thorough|comprehensive|in-depth)/i.test(recentText)) return 'detailed';
     if (/(quick|brief|short|simple)/i.test(recentText)) return 'concise';
@@ -992,49 +523,7 @@ function detectPreferredStyle(userMessages: ChatMessage[]): 'detailed' | 'concis
     return 'detailed';
 }
 
-// Enhanced query classification
-function classifyQuery(query: string): 'bioinformatics' | 'programming' | 'planning' | 'debugging' | 'general' | 'creative' | 'technical' {
-    const BIO_KEYWORDS = [
-        'dna', 'rna', 'protein', 'sequence', 'genomic', 'alignment',
-        'blast', 'crispr', 'pcr', 'bioinformatics', 'genome', 'variant',
-        'analysis', 'fastq', 'bam', 'vcf', 'snp', 'gene', 'chromosome'
-    ];
-
-    const PROGRAMMING_KEYWORDS = [
-        'code', 'script', 'function', 'algorithm', 'implementation', 'programming',
-        'python', 'javascript', 'typescript', 'react', 'node', 'express',
-        'html', 'css', 'api', 'database', 'sql', 'git', 'github',
-        'class', 'method', 'variable', 'loop', 'condition', 'array',
-        'object', 'json', 'async', 'await', 'promise', 'framework'
-    ];
-
-    const PLANNING_KEYWORDS = [
-        'plan', 'design', 'architecture', 'structure', 'organize',
-        'workflow', 'pipeline', 'strategy', 'roadmap', 'approach',
-        'project', 'task', 'timeline', 'milestone', 'requirements',
-        'documentation', 'folder structure', 'best practices'
-    ];
-
-    const DEBUGGING_KEYWORDS = [
-        'debug', 'fix', 'error', 'bug', 'issue', 'problem',
-        'troubleshoot', 'not working', 'broken', 'crash',
-        'exception', 'stack trace', 'syntax error'
-    ];
-
-    const CREATIVE_KEYWORDS = ['story', 'creative', 'imagine', 'brainstorm', 'idea'];
-
-    const lowerQuery = query.toLowerCase();
-
-    if (BIO_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'bioinformatics';
-    if (PROGRAMMING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'programming';
-    if (PLANNING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'planning';
-    if (DEBUGGING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'debugging';
-    if (CREATIVE_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'creative';
-
-    return 'general';
-}
-
-// Optimal provider selection
+// ========== Provider Selection ==========
 function selectOptimalProvider(query: string, context: ConversationContext): string {
     const queryType = classifyQuery(query);
 
@@ -1072,7 +561,100 @@ function selectOptimalProvider(query: string, context: ConversationContext): str
     return 'groq'; // Fast and reliable
 }
 
-// Main processing function - Enhanced
+// ========== Conversation Manager ==========
+class ConversationManager {
+    private currentConversation: ConversationContext;
+
+    constructor() {
+        this.currentConversation = this.createNewConversation();
+    }
+
+    private createNewConversation(): ConversationContext {
+        return {
+            id: generateUniqueId('conv'),
+            history: [],
+            lastActive: Date.now(),
+            memory: {
+                topics: new Set<string>(),
+                entities: new Set<string>()
+            }
+        };
+    }
+
+    getContext(): ConversationContext {
+        // Reset conversation if inactive for more than 30 minutes
+        if (Date.now() - this.currentConversation.lastActive > MAX_CONVERSATION_AGE_MS) {
+            this.currentConversation = this.createNewConversation();
+        }
+        return this.currentConversation;
+    }
+
+    addMessage(message: ChatMessage): void {
+        const context = this.getContext();
+        context.history.push(message);
+        context.lastActive = Date.now();
+
+        // Update conversation memory
+        this.updateMemory(message.content);
+    }
+
+    private updateMemory(text: string): void {
+        if (!text || typeof text !== 'string') return;
+
+        const context = this.getContext();
+
+        try {
+            // Extract and store topics
+            const topics = this.extractTopics(text);
+            topics.forEach(topic => context.memory.topics.add(topic));
+
+            // Extract and store entities
+            const entities = this.extractEntities(text);
+            entities.forEach(entity => context.memory.entities.add(entity));
+        } catch (error) {
+            console.warn('Error updating conversation memory:', error);
+        }
+    }
+
+    private extractTopics(text: string): string[] {
+        if (!text || typeof text !== 'string') return [];
+
+        try {
+            const topics = new Set<string>();
+            const scientificTerms = text.match(/(?:DNA|RNA|protein|gene|genome|sequence|CRISPR|PCR|plasmid|enzyme|mutation|cell|bacteria|virus|analysis|alignment)/gi) || [];
+            scientificTerms.forEach(term => topics.add(term.toLowerCase()));
+            return Array.from(topics);
+        } catch (error) {
+            console.warn('Error extracting topics:', error);
+            return [];
+        }
+    }
+
+    private extractEntities(text: string): string[] {
+        if (!text || typeof text !== 'string') return [];
+
+        try {
+            const entities = new Set<string>();
+            const sequenceIds = text.match(/[A-Z]{2}_\d+/g) || [];
+            sequenceIds.forEach(id => entities.add(id));
+
+            const geneNames = text.match(/[A-Z]{3,}\d*/g) || [];
+            geneNames.forEach(gene => entities.add(gene));
+
+            const speciesNames = text.match(/[A-Z][a-z]+ [a-z]+/g) || [];
+            speciesNames.forEach(species => entities.add(species));
+
+            return Array.from(entities);
+        } catch (error) {
+            console.warn('Error extracting entities:', error);
+            return [];
+        }
+    }
+}
+
+const conversationManager = new ConversationManager();
+
+// ========== Main Processing Function ==========
 export async function processQuery(
     query: string,
     fileAnalysis?: BioFileAnalysis,
@@ -1083,49 +665,49 @@ export async function processQuery(
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
-        const actualConversationId = conversationId || context.id;        // 1. Enhanced context analysis
+        const actualConversationId = conversationId || context.id;
+
+        // Enhanced context analysis
         const conversationContext = analyzeConversation(context.history);
 
-        // 2. Enhanced query classification
+        // Enhanced query classification
         const queryType = classifyQuery(query);
         const oldQueryType = detectQueryType(query); // Keep for bio processing
         const tone = detectTone(query);
         const userIntent = detectUserIntent(query);
 
-    // Extract previous file analyses from conversation history
-    let contextualFileAnalysis = fileAnalysis;
-    if (!fileAnalysis && conversationHistory) {
-      // Look for the most recent file analysis in conversation history
-      for (let i = conversationHistory.length - 1; i >= 0; i--) {
-        const msg = conversationHistory[i];
-        if (msg.metadata?.fileAnalysis) {
-          contextualFileAnalysis = msg.metadata.fileAnalysis;
-          break;
+        // Extract previous file analyses from conversation history
+        let contextualFileAnalysis = fileAnalysis;
+        if (!fileAnalysis && conversationHistory) {
+            // Look for the most recent file analysis in conversation history
+            for (let i = conversationHistory.length - 1; i >= 0; i--) {
+                const msg = conversationHistory[i];
+                if (msg.metadata?.fileAnalysis) {
+                    contextualFileAnalysis = msg.metadata.fileAnalysis;
+                    break;
+                }
+            }
         }
-      }
-    }
 
-    // Create the message
-    const userMessage: ChatMessage = {
-        id: generateUniqueId(),
-        role: 'user',
-        content: query,
-        timestamp: Date.now(),
-        status: 'complete',
-        metadata: {
-            tone,
-            intent: userIntent,
-            confidence: 1.0,
-            queryType,
-            conversationContext,
-            fileAnalysis: contextualFileAnalysis
-        }
-    };
+        // Create the message
+        const userMessage: ChatMessage = {
+            id: generateUniqueId(),
+            role: 'user',
+            content: query,
+            timestamp: Date.now(),
+            status: 'complete',
+            metadata: {
+                tone,
+                intent: userIntent,
+                confidence: 1.0,
+                fileAnalysis: contextualFileAnalysis
+            }
+        };
 
         // Add to conversation history
         conversationManager.addMessage(userMessage);
 
-        // 2.5. Check conversation token limits before processing
+        // Check conversation token limits before processing
         const tokenLimitCheck = tokenManager.checkConversationLimits(actualConversationId);
 
         // If exceeded, truncate history to maintain context
@@ -1141,13 +723,13 @@ export async function processQuery(
             shouldTruncate: tokenLimitCheck.shouldTruncate
         };
 
-        // 3. Intelligent routing - prioritize bioinformatics and file analysis
+        // Intelligent routing - prioritize bioinformatics and file analysis
         if (queryType === 'bioinformatics' || (oldQueryType !== 'general' && fileAnalysis) || fileAnalysis) {
             // Use specialized bioinformatics processing for any file upload
             return await processBioQuery(query, userMessage, conversationContext, fileAnalysis, userTier);
         }
 
-        // 4. Enhanced web search with more liberal detection and better caching
+        // Enhanced web search with more liberal detection and better caching
         let searchResults = '';
         const needsWebSearch = webSearchService.detectExplicitSearch(query) || 
                               webSearchService.detectImplicitTriggers(query);
@@ -1179,39 +761,39 @@ export async function processQuery(
             }
         }
 
-        // 5. AI provider selection based on query type and context
+        // AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
-    let enhancedPrompt = query;
-    let contextualInfo = '';
+        let enhancedPrompt = query;
+        let contextualInfo = '';
 
-    // Add current file analysis to context if provided
-    if (fileAnalysis) {
-        contextualInfo += buildFileAnalysisPrompt(fileAnalysis, query);
-    }
+        // Add current file analysis to context if provided
+        if (fileAnalysis) {
+            contextualInfo += buildFileAnalysisPrompt(query, fileAnalysis);
+        }
 
-    // Add persistent file context from previous uploads
-    if (fileContext && fileContext.length > 0) {
-        contextualInfo += "\n\n--- PREVIOUSLY UPLOADED FILES IN THIS CONVERSATION ---\n";
-        fileContext.forEach((file, index) => {
-            contextualInfo += `\nFile ${index + 1}: ${file.filename} (${file.fileType})\n`;
-            contextualInfo += `Uploaded: ${new Date(file.timestamp).toLocaleString()}\n`;
-            if (file.content && file.content.length > 0) {
-                contextualInfo += `Content: ${file.content.substring(0, 1000)}${file.content.length > 1000 ? '...' : ''}\n`;
-            }
-            if (file.summary) {
-                contextualInfo += `Previous Analysis: ${file.summary}\n`;
-            }
-            contextualInfo += "---\n";
-        });
-        contextualInfo += "\n";
-    }
+        // Add persistent file context from previous uploads
+        if (fileContext && fileContext.length > 0) {
+            contextualInfo += "\n\n--- PREVIOUSLY UPLOADED FILES IN THIS CONVERSATION ---\n";
+            fileContext.forEach((file, index) => {
+                contextualInfo += `\nFile ${index + 1}: ${file.filename} (${file.fileType})\n`;
+                contextualInfo += `Uploaded: ${new Date(file.timestamp).toLocaleString()}\n`;
+                if (file.content && file.content.length > 0) {
+                    contextualInfo += `Content: ${file.content.substring(0, 1000)}${file.content.length > 1000 ? '...' : ''}\n`;
+                }
+                if (file.summary) {
+                    contextualInfo += `Previous Analysis: ${file.summary}\n`;
+                }
+                contextualInfo += "---\n";
+            });
+            contextualInfo += "\n";
+        }
 
-    if (contextualInfo) {
-        enhancedPrompt = `${contextualInfo}\nUser Question: ${query}`;
-    }
+        if (contextualInfo) {
+            enhancedPrompt = `${contextualInfo}\nUser Question: ${query}`;
+        }
 
-    // 6. Prepare enhanced query with search context and file analysis
+        // Prepare enhanced query with search context and file analysis
         let enhancedQuery = enhancedPrompt;
 
         if (searchResults && searchResults.trim() !== '') {
@@ -1256,7 +838,7 @@ Answer based EXCLUSIVELY on the search results above:`;
             }
         }
 
-    // Build conversation history for context
+        // Build conversation history for context
         const conversationHistoryForAI: Array<{role: string, content: string}> = [];
 
         // Add file context if available
@@ -1279,7 +861,7 @@ Answer based EXCLUSIVELY on the search results above:`;
             });
         }
 
-        // 7. Use the fault-tolerant AI system
+        // Use the fault-tolerant AI system
         const aiResponse = await faultTolerantAI.processQuery(
             enhancedQuery,
             { 
@@ -1287,7 +869,7 @@ Answer based EXCLUSIVELY on the search results above:`;
                 userIntent: detectUserIntent(query),
                 hasWebSearchResults: !!searchResults
             },
-            conversationContext.emotionalContext,
+            conversationContext.emotionalContext || 'neutral',
             conversationHistoryForAI,
             userTier || 'free'
         );
@@ -1306,11 +888,9 @@ Answer based EXCLUSIVELY on the search results above:`;
             metadata: {
                 tone,
                 intent: userIntent,
-                queryType,
                 model: optimalProvider,
-                processingTime: Date.now() - Date.now(),
+                processingTime: Date.now() - userMessage.timestamp,
                 confidence: 0.90,
-                conversationContext,
                 tokenUsage,
                 conversationLimits: {
                     status: updatedTokenLimits.status,
@@ -1330,21 +910,10 @@ Answer based EXCLUSIVELY on the search results above:`;
 
     } catch (error) {
         console.error('Error processing query:', error);
-
-        const errorMessage: ChatMessage = {
-            id: generateUniqueId(),
-            role: 'error',
-            content: `I apologize, but I encountered an error processing your request. Please try again or rephrase your question.
-
-Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            timestamp: Date.now(),
-            status: 'error',
-            metadata: {
-                confidence: 0.0,
-                intent: 'error'
-            }
-        };
-
+        const errorMessage = createErrorMessage(
+            'I apologize, but I encountered an error processing your request. Please try again or rephrase your question.',
+            error
+        );
         conversationManager.addMessage(errorMessage);
         return errorMessage;
     }
