@@ -1356,13 +1356,13 @@ async function extractFileContent(buffer: Buffer, fileType: string, filename: st
 
   } catch (error) {
     console.error('File content extraction failed:', error);
-    return <code>File: ${filename} (${Math.round(buffer.length / 1024)}KB, ${mimetype}). Content available for analysis.</code>;
+    return `File: ${filename} (${Math.round(buffer.length / 1024)}KB, ${mimetype}). Content available for analysis.`;
   }
 }
 
 // Image file analysis
 function analyzeImageFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Image File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Image File: ${filename}`, `Format: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   // Basic image format detection
   const header = buffer.slice(0, 20);
@@ -1396,7 +1396,7 @@ function analyzeImageFile(buffer: Buffer, filename: string, fileType: string, si
 
 // Audio file analysis
 function analyzeAudioFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Audio File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Audio File: ${filename}`, `Format: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   if (fileType === 'mp3') {
     analysis.push('MP3 audio format detected');
@@ -1418,7 +1418,7 @@ function analyzeAudioFile(buffer: Buffer, filename: string, fileType: string, si
 
 // Video file analysis
 function analyzeVideoFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Video File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Video File: ${filename}`, `Format: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   if (fileType === 'mp4') {
     analysis.push('MP4 video container detected');
@@ -1436,7 +1436,7 @@ function analyzeVideoFile(buffer: Buffer, filename: string, fileType: string, si
 
 // Archive file analysis
 function analyzeArchiveFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Archive File: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Archive File: ${filename}`, `Format: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   if (fileType === 'zip') {
     analysis.push('ZIP archive detected');
@@ -1455,7 +1455,7 @@ function analyzeArchiveFile(buffer: Buffer, filename: string, fileType: string, 
 
 // Executable file analysis
 function analyzeExecutableFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Executable File: ${filename}</code>, <code>Type: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Executable File: ${filename}`, `Type: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   if (fileType === 'exe') {
     analysis.push('Windows executable detected');
@@ -1473,7 +1473,7 @@ function analyzeExecutableFile(buffer: Buffer, filename: string, fileType: strin
 
 // Office document analysis
 function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
-  const analysis = [<code>Office Document: ${filename}</code>, <code>Format: ${fileType.toUpperCase()}</code>, <code>Size: ${sizeKB}KB</code>];
+  const analysis = [`Office Document: ${filename}`, `Format: ${fileType.toUpperCase()}`, `Size: ${sizeKB}KB`];
 
   try {
     if (fileType === 'pdf') {
@@ -1481,7 +1481,7 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
       if (content.includes('%PDF-')) {
         analysis.push('Valid PDF document');
         const version = content.match(/%PDF-(\d+\.\d+)/);
-        if (version) analysis.push(<code>PDF version: ${version[1]}</code>);
+        if (version) analysis.push(`PDF version: ${version[1]}`);
       }
 
       // Extract readable text
@@ -1489,7 +1489,7 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
       const extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
 
       if (extractedText.length > 100) {
-        analysis.push(<code>Content preview: ${extractedText.substring(0, 300)}...</code>);
+        analysis.push(`Content preview: ${extractedText.substring(0, 300)}...`);
       } else {
         analysis.push('Document contains primarily non-text content or requires specialized PDF parsing.');
       }
@@ -1507,7 +1507,7 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
       const extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
 
       if (extractedText.length > 100) {
-        analysis.push(<code>Content preview: ${extractedText.substring(0, 300)}...</code>);
+        analysis.push(`Content preview: ${extractedText.substring(0, 300)}...`);
       } else {
         analysis.push('Document structure detected. For full text extraction, specialized document parsing is recommended.');
       }
@@ -1525,28 +1525,28 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
 function analyzeCodeFile(content: string, filename: string, fileType: string): string {
   const lines = content.split('\n');
   const analysis = [
-    <code>Code File: ${filename}</code>,
-    <code>Language: ${fileType.toUpperCase()}</code>,
-    <code>Lines: ${lines.length}</code>,
-    <code>Characters: ${content.length}</code>
+    `Code File: ${filename}`,
+    `Language: ${fileType.toUpperCase()}`,
+    `Lines: ${lines.length}`,
+    `Characters: ${content.length}`
   ];
 
   // Language-specific analysis
   if (fileType === 'js' || fileType === 'ts') {
     const functions = (content.match(/function\s+\w+|const\s+\w+\s*=\s*\(|\w+\s*=>\s*/g) || []).length;
-    analysis.push(<code>Functions/Methods: ~${functions}</code>);
+    analysis.push(`Functions/Methods: ~${functions}`);
     if (content.includes('import ') || content.includes('require(')) {
       analysis.push('Contains module imports');
     }
   } else if (fileType === 'py') {
     const functions = (content.match(/def\s+\w+/g) || []).length;
     const classes = (content.match(/class\s+\w+/g) || []).length;
-    analysis.push(<code>Functions: ${functions}</code>, <code>Classes: ${classes}</code>);
+    analysis.push(`Functions: ${functions}`, `Classes: ${classes}`);
   }
 
   // Show preview
   const preview = content.substring(0, 500);
-  analysis.push(<code>\nCode preview:\n${preview}${content.length > 500 ? '...' : ''}</code>);
+  analysis.push(`\nCode preview:\n${preview}${content.length > 500 ? '...' : ''}`);
 
   return analysis.join('\n');
 }
@@ -1557,28 +1557,28 @@ function analyzeTextDataFile(content: string, filename: string, fileType: string
   const words = content.split(/\s+/).length;
 
   const analysis = [
-    <code>Text File: ${filename}</code>,
-    <code>Format: ${fileType.toUpperCase()}</code>,
-    <code>Lines: ${lines.length}</code>,
-    <code>Words: ${words}</code>,
-    <code>Characters: ${content.length}</code>
+    `Text File: ${filename}`,
+    `Format: ${fileType.toUpperCase()}`,
+    `Lines: ${lines.length}`,
+    `Words: ${words}`,
+    `Characters: ${content.length}`
   ];
 
   if (fileType === 'csv') {
     const headers = lines[0]?.split(',') || [];
-    analysis.push(<code>Columns: ${headers.length}</code>);
+    analysis.push(`Columns: ${headers.length}`);
     if (headers.length > 0) {
-      analysis.push(<code>Headers: ${headers.slice(0, 5).join(', ')}${headers.length > 5 ? '...' : ''}</code>);
+      analysis.push(`Headers: ${headers.slice(0, 5).join(', ')}${headers.length > 5 ? '...' : ''}`);
     }
   } else if (fileType === 'json') {
     try {
       const parsed = JSON.parse(content);
-      analysis.push(<code>JSON structure: ${typeof parsed}</code>);
+      analysis.push(`JSON structure: ${typeof parsed}`);
       if (Array.isArray(parsed)) {
-        analysis.push(<code>Array with ${parsed.length} items</code>);
+        analysis.push(`Array with ${parsed.length} items`);
       } else if (typeof parsed === 'object') {
         const keys = Object.keys(parsed);
-        analysis.push(<code>Object with keys: ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '...' : ''}</code>);
+        analysis.push(`Object with keys: ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '...' : ''}`);
       }
     } catch (error) {
       analysis.push('Invalid JSON format');
@@ -1587,7 +1587,7 @@ function analyzeTextDataFile(content: string, filename: string, fileType: string
 
   // Show content preview
   const preview = content.substring(0, 1000);
-  analysis.push(<code>\nContent preview:\n${preview}${content.length > 1000 ? '...' : ''}</code>);
+  analysis.push(`\nContent preview:\n${preview}${content.length > 1000 ? '...' : ''}`);
 
   return analysis.join('\n');
 }
@@ -1595,9 +1595,9 @@ function analyzeTextDataFile(content: string, filename: string, fileType: string
 // Binary data file analysis
 function analyzeBinaryDataFile(buffer: Buffer, filename: string, fileType: string, sizeKB: number): string {
   const analysis = [
-    <code>Binary Data File: ${filename}</code>,
-    <code>Format: ${fileType.toUpperCase()}</code>,
-    <code>Size: ${sizeKB}KB</code>
+    `Binary Data File: ${filename}`,
+    `Format: ${fileType.toUpperCase()}`,
+    `Size: ${sizeKB}KB`
   ];
 
   if (fileType === 'sqlite' || fileType === 'db') {
@@ -1623,16 +1623,16 @@ function analyzeBinaryDataFile(buffer: Buffer, filename: string, fileType: strin
 // Generic binary file analysis
 function analyzeBinaryFile(buffer: Buffer, filename: string, fileType: string, mimetype: string, sizeKB: number): string {
   const analysis = [
-    <code>Binary File: ${filename}</code>,
-    <code>Type: ${fileType ? fileType.toUpperCase() : 'Unknown'}</code>,
-    <code>MIME: ${mimetype}</code>,
-    <code>Size: ${sizeKB}KB</code>
+    `Binary File: ${filename}`,
+    `Type: ${fileType ? fileType.toUpperCase() : 'Unknown'}`,
+    `MIME: ${mimetype}`,
+    `Size: ${sizeKB}KB`
   ];
 
   // Analyze file signature
   const signature = buffer.slice(0, 16);
   const hex = signature.toString('hex').toUpperCase();
-  analysis.push(<code>File signature: ${hex}</code>);
+  analysis.push(`File signature: ${hex}`);
 
   // Common file type detection by magic bytes
   if (hex.startsWith('FFD8FF')) {
