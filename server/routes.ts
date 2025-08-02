@@ -865,8 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Promo code deletion error:', error);
       res.status(500).json({ error: 'Failed to delete promo code' });
-    }
-  ```
+        }
   });
 
   // API Management Routes
