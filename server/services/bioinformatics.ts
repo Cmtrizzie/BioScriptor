@@ -489,42 +489,67 @@ function getAminoAcid(codon: string): string | null {
 // Enhanced helper function to extract and convert text content based on file type
 async function extractTextContent(content: string, fileType: BioFileType): Promise<string> {
   try {
+    console.log(`🔍 Starting content extraction for ${fileType} (${Math.round(content.length / 1024)}KB)`);
+    
     // First convert the file to a readable format, then extract content
     const convertedContent = await convertFileToReadableFormat(content, fileType);
+    console.log(`✅ File conversion completed, processing ${convertedContent.length} characters`);
+    
+    let extractedContent = '';
     
     switch (fileType) {
       case 'pdf':
-        return extractPDFContent(convertedContent);
+        extractedContent = await extractPDFContent(convertedContent);
+        break;
       case 'docx':
       case 'doc':
-        return extractDocxContent(convertedContent);
+        extractedContent = await extractDocxContent(convertedContent);
+        break;
       case 'json':
-        return analyzeJSONContent(convertedContent);
+        extractedContent = analyzeJSONContent(convertedContent);
+        break;
       case 'csv':
-        return analyzeCSVContent(convertedContent);
+        extractedContent = analyzeCSVContent(convertedContent);
+        break;
       case 'xml':
-        return extractXMLContent(convertedContent);
+        extractedContent = extractXMLContent(convertedContent);
+        break;
       case 'rtf':
-        return extractRTFContent(convertedContent);
+        extractedContent = extractRTFContent(convertedContent);
+        break;
       case 'html':
-        return extractHTMLContent(convertedContent);
+        extractedContent = extractHTMLContent(convertedContent);
+        break;
       case 'xlsx':
       case 'xls':
-        return extractExcelContent(convertedContent);
+        extractedContent = await extractExcelContent(convertedContent);
+        break;
       case 'pptx':
       case 'ppt':
-        return extractPowerPointContent(convertedContent);
+        extractedContent = await extractPowerPointContent(convertedContent);
+        break;
       case 'txt':
       case 'md':
         const sequence = extractPotentialSequences(convertedContent);
-        return sequence.length > 0 ?
-          `Text file containing biological sequences of type: ${determineSequenceType(sequence)}` :
-          convertedContent.substring(0, 2000) || 'Text document detected, no specific sequences found.';
+        extractedContent = sequence.length > 0 ?
+          `Text file containing biological sequences of type: ${determineSequenceType(sequence)}\n\nContent:\n${convertedContent.substring(0, 2000)}` :
+          convertedContent.substring(0, 2000) || 'Text document detected.';
+        break;
       default:
-        return `File type ${fileType} processed. Content available for analysis.`;
+        extractedContent = convertedContent.substring(0, 2000) || `File type ${fileType} processed. Content available for analysis.`;
     }
+    
+    console.log(`📄 Content extraction result: ${extractedContent.length} characters extracted`);
+    
+    // Ensure we return meaningful content
+    if (extractedContent.length < 50) {
+      console.log('⚠️ Low content extraction, trying fallback methods');
+      return await fallbackContentExtraction(content, fileType);
+    }
+    
+    return extractedContent;
   } catch (error) {
-    console.warn('Content extraction failed, attempting fallback:', error);
+    console.warn('❌ Content extraction failed, attempting fallback:', error);
     return await fallbackContentExtraction(content, fileType);
   }
 }
@@ -553,7 +578,7 @@ async function convertFileToReadableFormat(content: string, fileType: BioFileTyp
   }
 }
 
-// Enhanced DOCX to text conversion
+// Enhanced DOCX to text conversion with better text extraction
 async function convertDocxToText(content: string): Promise<string> {
   try {
     const textChunks: string[] = [];
@@ -568,12 +593,26 @@ async function convertDocxToText(content: string): Promise<string> {
     if (authorMatch) metadataChunks.push(`Author: ${decodeHTMLEntities(authorMatch[1])}`);
     if (subjectMatch) metadataChunks.push(`Subject: ${decodeHTMLEntities(subjectMatch[1])}`);
 
-    // Extract main document text with better structure preservation
+    // Method 1: Extract all text elements directly
+    const allTextMatches = content.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
+    const directText = allTextMatches
+      .map(match => {
+        const textMatch = match.match(/<w:t[^>]*>(.*?)<\/w:t>/);
+        return textMatch ? decodeHTMLEntities(textMatch[1]) : '';
+      })
+      .filter(text => text.trim() && !isXMLNoise(text) && text.length > 1)
+      .join(' ');
+
+    if (directText.length > 100) {
+      textChunks.push(directText);
+    }
+
+    // Method 2: Extract structured content from document body
     const documentXML = content.match(/<w:document[^>]*>(.*?)<\/w:document>/s);
-    if (documentXML) {
+    if (documentXML && textChunks.length === 0) {
       const documentContent = documentXML[1];
       
-      // Extract paragraphs with structure
+      // Extract paragraphs with better structure preservation
       const paragraphMatches = documentContent.match(/<w:p[^>]*>(.*?)<\/w:p>/gs) || [];
       
       for (const paragraph of paragraphMatches) {
@@ -586,7 +625,7 @@ async function convertDocxToText(content: string): Promise<string> {
           .filter(text => text.trim() && !isXMLNoise(text))
           .join(' ');
         
-        if (paragraphText.trim()) {
+        if (paragraphText.trim() && paragraphText.length > 3) {
           textChunks.push(paragraphText);
         }
       }
@@ -603,98 +642,185 @@ async function convertDocxToText(content: string): Promise<string> {
           .filter(text => text.trim() && !isXMLNoise(text))
           .join(' | ');
         
-        if (tableContent.trim()) {
-          textChunks.push(`[Table Content] ${tableContent}`);
+        if (tableContent.trim() && tableContent.length > 5) {
+          textChunks.push(`[Table] ${tableContent}`);
         }
       }
+    }
+
+    // Method 3: Fallback - extract any readable text patterns
+    if (textChunks.length === 0) {
+      const readablePatterns = content.match(/[A-Za-z][A-Za-z0-9\s\.,!?\-;:'"()]{20,}/g) || [];
+      const filteredPatterns = readablePatterns
+        .filter(text => !isXMLNoise(text) && hasReadableContent(text))
+        .slice(0, 50);
+      textChunks.push(...filteredPatterns);
     }
 
     // Combine metadata and content
     const allContent = [...metadataChunks, ...textChunks]
       .filter(chunk => chunk.trim().length > 2)
-      .join('\n');
+      .join('\n\n');
 
-    return allContent || 'Document structure detected but content extraction incomplete.';
+    return allContent.length > 50 ? allContent : 'Document structure detected but readable content extraction incomplete.';
   } catch (error) {
     throw new Error(`DOCX conversion failed: ${error.message}`);
   }
 }
 
-// Enhanced PDF to text conversion
+// Enhanced PDF to text conversion with aggressive text extraction
 async function convertPDFToText(content: string): Promise<string> {
   try {
     const textChunks: string[] = [];
     
-    // Method 1: Extract from text objects (BT...ET blocks)
+    // Method 1: Extract from text objects (BT...ET blocks) - Enhanced
     const textObjectRegex = /BT\s+(.*?)\s+ET/gs;
     const textObjects = content.match(textObjectRegex) || [];
 
     for (const textObj of textObjects) {
-      // Extract text from Tj operators
-      const tjMatches = textObj.match(/\((.*?)\)\s*Tj/g) || [];
-      for (const tjMatch of tjMatches) {
-        const textMatch = tjMatch.match(/\((.*?)\)\s*Tj/);
-        if (textMatch) {
-          const text = textMatch[1].replace(/\\[()]/g, (m) => m[1]);
-          if (text.trim() && hasReadableContent(text)) {
-            textChunks.push(text);
+      // Extract text from various Tj operators
+      const tjPatterns = [
+        /\((.*?)\)\s*Tj/g,
+        /\((.*?)\)\s*TJ/g,
+        /'(.*?)'\s*Tj/g,
+        /"(.*?)"\s*Tj/g
+      ];
+
+      for (const pattern of tjPatterns) {
+        const matches = textObj.match(pattern) || [];
+        for (const match of matches) {
+          const textMatch = match.match(/[\("'](.*?)[\)"']\s*T[jJ]/);
+          if (textMatch) {
+            const text = textMatch[1].replace(/\\[()]/g, (m) => m[1]);
+            if (text.trim() && hasReadableContent(text) && text.length > 2) {
+              textChunks.push(text);
+            }
           }
         }
       }
 
-      // Extract from TJ arrays
+      // Extract from TJ arrays with better parsing
       const tjArrayMatches = textObj.match(/\[(.*?)\]\s*TJ/g) || [];
       for (const tjArray of tjArrayMatches) {
         const arrayMatch = tjArray.match(/\[(.*?)\]\s*TJ/);
         if (arrayMatch) {
           const textParts = arrayMatch[1].match(/\(([^)]*)\)/g) || [];
-          for (const part of textParts) {
-            const cleanText = part.slice(1, -1).replace(/\\[()]/g, (m) => m[1]);
-            if (cleanText.trim() && hasReadableContent(cleanText)) {
-              textChunks.push(cleanText);
-            }
+          const combinedText = textParts
+            .map(part => part.slice(1, -1).replace(/\\[()]/g, (m) => m[1]))
+            .filter(text => text.trim() && text.length > 1)
+            .join(' ');
+          
+          if (combinedText.trim() && hasReadableContent(combinedText)) {
+            textChunks.push(combinedText);
           }
         }
       }
     }
 
-    // Method 2: Extract document metadata
+    // Method 2: Extract document metadata with better parsing
     const metadataPatterns = [
       { pattern: /\/Title\s*\((.*?)\)/g, label: 'Title' },
       { pattern: /\/Author\s*\((.*?)\)/g, label: 'Author' },
       { pattern: /\/Subject\s*\((.*?)\)/g, label: 'Subject' },
-      { pattern: /\/Creator\s*\((.*?)\)/g, label: 'Creator' }
+      { pattern: /\/Creator\s*\((.*?)\)/g, label: 'Creator' },
+      { pattern: /\/Producer\s*\((.*?)\)/g, label: 'Producer' }
     ];
 
     for (const { pattern, label } of metadataPatterns) {
       const matches = content.match(pattern) || [];
       for (const match of matches) {
         const metadataMatch = match.match(/\((.*?)\)/);
-        if (metadataMatch && metadataMatch[1].trim()) {
+        if (metadataMatch && metadataMatch[1].trim() && metadataMatch[1].length > 2) {
           textChunks.unshift(`${label}: ${metadataMatch[1]}`);
         }
       }
     }
 
-    // Method 3: Extract readable text patterns as fallback
-    if (textChunks.length === 0) {
-      const readablePatterns = content.match(/[A-Za-z]{4,}[\s\w.,!?;:'"()-]{15,}/g) || [];
-      textChunks.push(...readablePatterns.filter(text => 
+    // Method 3: Extract from stream content
+    const streamRegex = /stream\s+(.*?)\s+endstream/gs;
+    const streams = content.match(streamRegex) || [];
+    
+    for (const stream of streams) {
+      // Look for readable text patterns in streams
+      const streamText = stream.match(/[A-Za-z][A-Za-z0-9\s\.,!?\-;:'"()]{10,}/g) || [];
+      textChunks.push(...streamText.filter(text => 
+        hasReadableContent(text) && 
+        !text.includes('obj') && 
+        !text.includes('endobj')
+      ).slice(0, 10));
+    }
+
+    // Method 4: Extract readable text patterns as comprehensive fallback
+    if (textChunks.length < 5) {
+      const readablePatterns = content.match(/[A-Za-z]{3,}[\s\w\.,!?\-;:'"()]{10,}/g) || [];
+      const filteredPatterns = readablePatterns.filter(text => 
         hasReadableContent(text) && 
         !text.includes('PDF') && 
-        !text.includes('stream')
-      ).slice(0, 20));
+        !text.includes('stream') &&
+        !text.includes('obj') &&
+        !text.includes('endobj') &&
+        text.split(' ').length > 2
+      ).slice(0, 30);
+      
+      textChunks.push(...filteredPatterns);
+    }
+
+    // Method 5: Look for specific content patterns (for CVs, resumes, etc.)
+    const contentPatterns = [
+      /(?:Name|FULL NAME|Full Name)[:\s]+([A-Za-z\s]+)/gi,
+      /(?:Email|E-mail|EMAIL)[:\s]+([A-Za-z0-9@\.\-_]+)/gi,
+      /(?:Phone|Tel|Mobile|Contact)[:\s]+([+\d\s\-()]+)/gi,
+      /(?:Address|Location)[:\s]+([A-Za-z0-9\s,\.\-]+)/gi,
+      /(?:Education|EDUCATION)[\s\S]{0,200}/gi,
+      /(?:Experience|EXPERIENCE|Work Experience)[\s\S]{0,300}/gi,
+      /(?:Skills|SKILLS)[\s\S]{0,200}/gi
+    ];
+
+    for (const pattern of contentPatterns) {
+      const matches = content.match(pattern) || [];
+      textChunks.push(...matches.slice(0, 3));
     }
 
     const extractedText = textChunks
       .map(chunk => cleanText(chunk))
-      .filter(chunk => chunk.length > 3)
+      .filter(chunk => chunk.length > 3 && chunk.trim())
+      .filter((chunk, index, array) => array.indexOf(chunk) === index) // Remove duplicates
       .join('\n');
 
-    return extractedText || 'PDF document processed - content extraction requires specialized parsing.';
+    return extractedText.length > 50 ? extractedText : generatePDFAnalysis(content);
   } catch (error) {
     throw new Error(`PDF conversion failed: ${error.message}`);
   }
+}
+
+// Generate PDF analysis when content extraction is minimal
+function generatePDFAnalysis(content: string): string {
+  const sizeKB = Math.round(content.length / 1024);
+  const pageCount = (content.match(/\/Type\s*\/Page[^s]/g) || []).length;
+  const hasImages = content.includes('/XObject') && content.includes('/Image');
+  const hasText = content.includes('/Font') || content.includes('Tj') || content.includes('TJ');
+  const hasForms = content.includes('/AcroForm') || content.includes('/XFA');
+  
+  let analysis = `PDF Document Analysis (${sizeKB}KB):\n\n`;
+  
+  if (pageCount > 0) analysis += `• Pages: ${pageCount}\n`;
+  if (hasText) analysis += `• Contains text content\n`;
+  if (hasImages) analysis += `• Contains images/graphics\n`;
+  if (hasForms) analysis += `• Contains form fields\n`;
+  
+  // Try to extract any readable content fragments
+  const fragments = content.match(/[A-Za-z]{4,}[\s\w\.,!?\-;:'"()]{15,}/g) || [];
+  const cleanFragments = fragments
+    .filter(text => hasReadableContent(text) && !text.includes('PDF'))
+    .slice(0, 10);
+  
+  if (cleanFragments.length > 0) {
+    analysis += `\nReadable content fragments:\n${cleanFragments.join('\n').substring(0, 1500)}`;
+  }
+  
+  analysis += `\n\nThis appears to be a structured PDF document. For complete text extraction, the document may require specialized PDF parsing tools.`;
+  
+  return analysis;
 }
 
 // Enhanced Excel to text conversion
