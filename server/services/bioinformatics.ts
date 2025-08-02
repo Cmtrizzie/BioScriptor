@@ -578,278 +578,343 @@ async function convertFileToReadableFormat(content: string, fileType: BioFileTyp
   }
 }
 
-// Enhanced DOCX to text conversion with better text extraction
+// Enhanced DOCX to text conversion with aggressive content extraction
 async function convertDocxToText(content: string): Promise<string> {
   try {
     const textChunks: string[] = [];
     const metadataChunks: string[] = [];
 
-    console.log(`🔍 DOCX parsing: Processing ${Math.round(content.length / 1024)}KB of XML content`);
+    console.log(`🔍 DOCX parsing: Processing ${Math.round(content.length / 1024)}KB of content`);
 
-    // Extract document metadata first
-    const titleMatch = content.match(/<dc:title[^>]*>(.*?)<\/dc:title>/);
-    const authorMatch = content.match(/<dc:creator[^>]*>(.*?)<\/dc:creator>/);
-    const subjectMatch = content.match(/<dc:subject[^>]*>(.*?)<\/dc:subject>/);
-
-    if (titleMatch) metadataChunks.push(`Title: ${decodeHTMLEntities(titleMatch[1])}`);
-    if (authorMatch) metadataChunks.push(`Author: ${decodeHTMLEntities(authorMatch[1])}`);
-    if (subjectMatch) metadataChunks.push(`Subject: ${decodeHTMLEntities(subjectMatch[1])}`);
-
-    // Method 1: Enhanced direct text extraction with better filtering
-    const allTextMatches = content.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-    console.log(`📝 Found ${allTextMatches.length} text elements`);
-    
-    for (const match of allTextMatches) {
-      const textMatch = match.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
-      if (textMatch && textMatch[1]) {
-        const text = decodeHTMLEntities(textMatch[1]).trim();
-        if (text && text.length > 1 && !isXMLNoise(text) && hasReadableContent(text)) {
-          textChunks.push(text);
-        }
-      }
-    }
-
-    console.log(`✅ Extracted ${textChunks.length} valid text chunks`);
-
-    // Method 2: Extract from document.xml specifically  
-    const documentXMLMatch = content.match(/document\.xml.*?<w:document[^>]*>(.*?)<\/w:document>/s);
-    if (documentXMLMatch) {
-      const documentContent = documentXMLMatch[1];
-      console.log(`📄 Processing document.xml content`);
-      
-      // Extract paragraph content with better structure
-      const paragraphs = documentContent.match(/<w:p[^>]*>(.*?)<\/w:p>/gs) || [];
-      console.log(`📝 Found ${paragraphs.length} paragraphs`);
-      
-      for (const paragraph of paragraphs) {
-        const paragraphTexts = paragraph.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-        const paragraphContent = paragraphTexts
-          .map(textElem => {
-            const match = textElem.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
-            return match ? decodeHTMLEntities(match[1]).trim() : '';
-          })
-          .filter(text => text && !isXMLNoise(text))
-          .join(' ');
-        
-        if (paragraphContent.trim() && paragraphContent.length > 3) {
-          textChunks.push(paragraphContent);
-        }
-      }
-
-      // Extract table content
-      const tables = documentContent.match(/<w:tbl[^>]*>(.*?)<\/w:tbl>/gs) || [];
-      for (const table of tables) {
-        const tableCells = table.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-        const tableText = tableCells
-          .map(cell => {
-            const match = cell.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
-            return match ? decodeHTMLEntities(match[1]).trim() : '';
-          })
-          .filter(text => text && !isXMLNoise(text))
-          .join(' | ');
-        
-        if (tableText.trim() && tableText.length > 5) {
-          textChunks.push(`[Table] ${tableText}`);
-        }
-      }
-    }
-
-    // Method 3: Extract from specific document parts
-    const documentParts = [
-      /word\/document\.xml.*?<w:body[^>]*>(.*?)<\/w:body>/s,
-      /word\/header\d*\.xml.*?<w:hdr[^>]*>(.*?)<\/w:hdr>/gs,
-      /word\/footer\d*\.xml.*?<w:ftr[^>]*>(.*?)<\/w:ftr>/gs
+    // Method 1: Extract ALL w:t elements with more aggressive patterns
+    const allTextPatterns = [
+      /<w:t[^>]*>(.*?)<\/w:t>/gs,
+      /<w:t>(.*?)<\/w:t>/gs,
+      /<t[^>]*>(.*?)<\/t>/gs, // Some DOCX files use simplified tags
     ];
 
-    for (const partRegex of documentParts) {
-      const partMatches = content.match(partRegex) || [];
-      for (const part of partMatches) {
-        const partTexts = part.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-        for (const textElem of partTexts) {
-          const match = textElem.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
-          if (match && match[1]) {
-            const text = decodeHTMLEntities(match[1]).trim();
-            if (text && text.length > 1 && !isXMLNoise(text) && hasReadableContent(text)) {
-              textChunks.push(text);
-            }
+    for (const pattern of allTextPatterns) {
+      const matches = content.match(pattern) || [];
+      console.log(`📝 Pattern found ${matches.length} text elements`);
+      
+      for (const match of matches) {
+        const textContent = match.replace(/<[^>]*>/g, '').trim();
+        if (textContent && textContent.length > 0 && !isXMLNoise(textContent)) {
+          const decodedText = decodeHTMLEntities(textContent);
+          if (decodedText.length > 0) {
+            textChunks.push(decodedText);
           }
         }
       }
     }
 
-    // Method 4: Advanced fallback with comprehensive text extraction
-    if (textChunks.length < 10) {
-      console.log(`⚠️ Low text extraction, trying comprehensive approach`);
-      
-      // Extract any text between w:t tags with more flexible patterns
-      const flexibleTextPattern = /<w:t[^>]*>((?:[^<]|<(?!\/w:t>))*)<\/w:t>/g;
-      let flexibleMatch;
-      while ((flexibleMatch = flexibleTextPattern.exec(content)) !== null) {
-        const text = decodeHTMLEntities(flexibleMatch[1]).trim();
-        if (text && text.length > 2 && hasReadableContent(text) && !isXMLNoise(text)) {
-          textChunks.push(text);
+    // Method 2: Extract from document body with relaxed patterns
+    const bodyPatterns = [
+      /document\.xml.*?<w:body[^>]*>(.*?)<\/w:body>/gs,
+      /<w:body[^>]*>(.*?)<\/w:body>/gs,
+      /<body[^>]*>(.*?)<\/body>/gs,
+    ];
+
+    for (const pattern of bodyPatterns) {
+      const bodyMatches = content.match(pattern) || [];
+      for (const bodyMatch of bodyMatches) {
+        // Extract all text content from body, ignoring structure
+        const bodyText = bodyMatch
+          .replace(/<w:t[^>]*>(.*?)<\/w:t>/gs, '$1 ')
+          .replace(/<t[^>]*>(.*?)<\/t>/gs, '$1 ')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (bodyText.length > 10) {
+          textChunks.push(decodeHTMLEntities(bodyText));
         }
       }
-
-      // Extract readable content patterns as last resort
-      const readablePatterns = content.match(/[A-Za-z]{3,}(?:[\s\w.,!?;:'"()-]){10,}[A-Za-z0-9.,!?;:'"()-]/g) || [];
-      const filteredPatterns = readablePatterns
-        .filter(text => hasReadableContent(text) && 
-                       !text.includes('xml') && 
-                       !text.includes('Microsoft') &&
-                       !text.includes('Office') &&
-                       text.split(' ').length > 2)
-        .slice(0, 20);
-      
-      textChunks.push(...filteredPatterns);
     }
 
-    // Remove duplicates and combine content
-    const uniqueTextChunks = [...new Set(textChunks)];
-    console.log(`📊 Final extraction: ${uniqueTextChunks.length} unique text chunks`);
-    
-    const extractedText = uniqueTextChunks
-      .filter(chunk => chunk.length > 2)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    // Method 3: Brute force text extraction - look for any readable content
+    const readableTextPatterns = [
+      /[A-Za-z]{2,}(?:\s+[A-Za-z0-9.,!?;:'"()-]+){3,}/g,
+      /[A-Z][a-z]+(?:\s+[A-Za-z0-9.,!?;:'"()-]+){2,}/g,
+      /\b[A-Za-z]+(?:\s+[A-Za-z0-9.,!?;:'"()-]+){5,}/g,
+    ];
 
-    // Combine metadata and content
-    const allContent = [...metadataChunks, extractedText]
-      .filter(chunk => chunk.trim().length > 2)
-      .join('\n\n');
+    for (const pattern of readableTextPatterns) {
+      const matches = content.match(pattern) || [];
+      for (const match of matches) {
+        const cleanMatch = match.trim();
+        if (cleanMatch.length > 15 && 
+            !cleanMatch.includes('<') && 
+            !cleanMatch.includes('xml') &&
+            !cleanMatch.includes('Microsoft') &&
+            hasReadableContent(cleanMatch)) {
+          textChunks.push(cleanMatch);
+        }
+      }
+    }
 
-    console.log(`✅ Total extracted content: ${allContent.length} characters`);
-    
-    return allContent.length > 50 ? allContent : generateDocumentAnalysis(content);
+    // Method 4: Extract from paragraph and table structures
+    const structuralPatterns = [
+      /<w:p[^>]*>.*?<\/w:p>/gs,
+      /<w:tc[^>]*>.*?<\/w:tc>/gs, // Table cells
+      /<w:tr[^>]*>.*?<\/w:tr>/gs, // Table rows
+    ];
+
+    for (const pattern of structuralPatterns) {
+      const matches = content.match(pattern) || [];
+      for (const match of matches) {
+        // Extract text from structural elements
+        const textContent = match
+          .replace(/<w:t[^>]*>(.*?)<\/w:t>/gs, '$1 ')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (textContent.length > 5 && hasReadableContent(textContent)) {
+          textChunks.push(decodeHTMLEntities(textContent));
+        }
+      }
+    }
+
+    // Method 5: Last resort - extract any alphabetic sequences
+    if (textChunks.length < 5) {
+      console.log(`⚠️ Very low extraction, using emergency patterns`);
+      
+      // Look for any text that looks like sentences or phrases
+      const emergencyPatterns = content.match(/[A-Za-z][A-Za-z\s.,!?;:'"()-]{20,}/g) || [];
+      for (const pattern of emergencyPatterns) {
+        const cleanPattern = pattern
+          .replace(/[<>]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (cleanPattern.length > 20 && 
+            !cleanPattern.includes('xml') &&
+            !cleanPattern.includes('docx') &&
+            hasReadableContent(cleanPattern)) {
+          textChunks.push(cleanPattern);
+        }
+      }
+    }
+
+    // Extract metadata if available
+    const metadataPatterns = [
+      { pattern: /<dc:title[^>]*>(.*?)<\/dc:title>/g, label: 'Title' },
+      { pattern: /<dc:creator[^>]*>(.*?)<\/dc:creator>/g, label: 'Author' },
+      { pattern: /<dc:subject[^>]*>(.*?)<\/dc:subject>/g, label: 'Subject' },
+    ];
+
+    for (const { pattern, label } of metadataPatterns) {
+      const matches = content.match(pattern) || [];
+      for (const match of matches) {
+        const metaMatch = match.match(/>(.*?)</);
+        if (metaMatch && metaMatch[1].trim()) {
+          metadataChunks.push(`${label}: ${decodeHTMLEntities(metaMatch[1])}`);
+        }
+      }
+    }
+
+    // Process and clean all extracted text
+    const allTextChunks = textChunks
+      .map(chunk => cleanText(chunk))
+      .filter(chunk => chunk.length > 3)
+      .filter((chunk, index, array) => array.indexOf(chunk) === index); // Remove duplicates
+
+    console.log(`✅ Extracted ${allTextChunks.length} text chunks totaling ${allTextChunks.join(' ').length} characters`);
+
+    if (allTextChunks.length > 0) {
+      const combinedContent = [...metadataChunks, ...allTextChunks]
+        .filter(chunk => chunk.trim().length > 0)
+        .join('\n');
+      
+      return combinedContent.length > 20 ? combinedContent : generateDocumentAnalysis(content);
+    }
+
+    return generateDocumentAnalysis(content);
   } catch (error) {
     console.error(`❌ DOCX conversion error:`, error);
-    throw new Error(`DOCX conversion failed: ${error.message}`);
+    return generateDocumentAnalysis(content);
   }
 }
 
-// Enhanced PDF to text conversion with aggressive text extraction
+// Enhanced PDF to text conversion with more aggressive extraction
 async function convertPDFToText(content: string): Promise<string> {
   try {
     const textChunks: string[] = [];
+    console.log(`🔍 PDF parsing: Processing ${Math.round(content.length / 1024)}KB of content`);
     
-    // Method 1: Extract from text objects (BT...ET blocks) - Enhanced
-    const textObjectRegex = /BT\s+(.*?)\s+ET/gs;
-    const textObjects = content.match(textObjectRegex) || [];
+    // Method 1: Enhanced text object extraction with multiple patterns
+    const textObjectPatterns = [
+      /BT\s+(.*?)\s+ET/gs,
+      /BT(.*?)ET/gs,
+    ];
 
-    for (const textObj of textObjects) {
-      // Extract text from various Tj operators
-      const tjPatterns = [
-        /\((.*?)\)\s*Tj/g,
-        /\((.*?)\)\s*TJ/g,
-        /'(.*?)'\s*Tj/g,
-        /"(.*?)"\s*Tj/g
-      ];
+    for (const pattern of textObjectPatterns) {
+      const textObjects = content.match(pattern) || [];
+      console.log(`📝 Found ${textObjects.length} text objects with pattern`);
+      
+      for (const textObj of textObjects) {
+        // Extract text from various Tj operators with more patterns
+        const tjPatterns = [
+          /\((.*?)\)\s*Tj/g,
+          /\((.*?)\)\s*TJ/g,
+          /'(.*?)'\s*Tj/g,
+          /"(.*?)"\s*Tj/g,
+          /\((.*?)\)Tj/g,
+          /\((.*?)\)TJ/g,
+        ];
 
-      for (const pattern of tjPatterns) {
-        const matches = textObj.match(pattern) || [];
-        for (const match of matches) {
-          const textMatch = match.match(/[\("'](.*?)[\)"']\s*T[jJ]/);
-          if (textMatch) {
-            const text = textMatch[1].replace(/\\[()]/g, (m) => m[1]);
-            if (text.trim() && hasReadableContent(text) && text.length > 2) {
-              textChunks.push(text);
+        for (const tjPattern of tjPatterns) {
+          const matches = textObj.match(tjPattern) || [];
+          for (const match of matches) {
+            const textMatch = match.match(/[\("'](.*?)[\)"']\s*T[jJ]?/);
+            if (textMatch && textMatch[1]) {
+              const text = textMatch[1]
+                .replace(/\\[()]/g, (m) => m[1])
+                .replace(/\\n/g, ' ')
+                .replace(/\\r/g, ' ')
+                .trim();
+              
+              if (text.length > 1 && hasReadableContent(text)) {
+                textChunks.push(text);
+              }
             }
           }
         }
-      }
 
-      // Extract from TJ arrays with better parsing
-      const tjArrayMatches = textObj.match(/\[(.*?)\]\s*TJ/g) || [];
-      for (const tjArray of tjArrayMatches) {
-        const arrayMatch = tjArray.match(/\[(.*?)\]\s*TJ/);
-        if (arrayMatch) {
-          const textParts = arrayMatch[1].match(/\(([^)]*)\)/g) || [];
-          const combinedText = textParts
-            .map(part => part.slice(1, -1).replace(/\\[()]/g, (m) => m[1]))
-            .filter(text => text.trim() && text.length > 1)
-            .join(' ');
-          
-          if (combinedText.trim() && hasReadableContent(combinedText)) {
-            textChunks.push(combinedText);
+        // Extract from TJ arrays with improved parsing
+        const tjArrayMatches = textObj.match(/\[(.*?)\]\s*TJ/g) || [];
+        for (const tjArray of tjArrayMatches) {
+          const arrayMatch = tjArray.match(/\[(.*?)\]\s*TJ/);
+          if (arrayMatch) {
+            // More flexible text part extraction
+            const textParts = arrayMatch[1].match(/\(([^)]*)\)|'([^']*)'/g) || [];
+            const combinedText = textParts
+              .map(part => {
+                const cleaned = part.replace(/[()'"]/g, '').replace(/\\[()]/g, (m) => m[1]);
+                return cleaned.trim();
+              })
+              .filter(text => text.length > 0)
+              .join(' ');
+            
+            if (combinedText.trim() && hasReadableContent(combinedText)) {
+              textChunks.push(combinedText);
+            }
           }
         }
       }
     }
 
-    // Method 2: Extract document metadata with better parsing
+    // Method 2: Extract text from stream objects with better parsing
+    const streamPatterns = [
+      /stream\s+(.*?)\s+endstream/gs,
+      /stream(.*?)endstream/gs,
+    ];
+
+    for (const pattern of streamPatterns) {
+      const streams = content.match(pattern) || [];
+      for (const stream of streams) {
+        // Look for text patterns within streams
+        const streamTextPatterns = [
+          /\((.*?)\)\s*Tj/g,
+          /[A-Za-z]{3,}[\s\w.,!?;:'"()-]{10,}/g,
+        ];
+        
+        for (const textPattern of streamTextPatterns) {
+          const streamTexts = stream.match(textPattern) || [];
+          for (const streamText of streamTexts) {
+            const cleanedText = streamText
+              .replace(/[()]/g, '')
+              .replace(/\s*Tj\s*$/, '')
+              .trim();
+            
+            if (cleanedText.length > 5 && 
+                hasReadableContent(cleanedText) && 
+                !cleanedText.includes('obj') &&
+                !cleanedText.includes('endobj')) {
+              textChunks.push(cleanedText);
+            }
+          }
+        }
+      }
+    }
+
+    // Method 3: Brute force readable text extraction
+    const readablePatterns = [
+      /[A-Za-z]{3,}(?:\s+[A-Za-z0-9.,!?;:'"()-]+){3,}/g,
+      /[A-Z][a-zA-Z\s]{10,}/g,
+      /\b[A-Za-z]+(?:\s+[A-Za-z0-9.,!?;:'"()-]+){4,}/g,
+    ];
+
+    for (const pattern of readablePatterns) {
+      const matches = content.match(pattern) || [];
+      for (const match of matches) {
+        const cleanMatch = match.trim();
+        if (cleanMatch.length > 15 && 
+            !cleanMatch.includes('PDF') && 
+            !cleanMatch.includes('stream') &&
+            !cleanMatch.includes('obj') &&
+            !cleanMatch.includes('endobj') &&
+            !cleanMatch.includes('/') &&
+            hasReadableContent(cleanMatch)) {
+          textChunks.push(cleanMatch);
+        }
+      }
+    }
+
+    // Method 4: Extract document metadata
     const metadataPatterns = [
       { pattern: /\/Title\s*\((.*?)\)/g, label: 'Title' },
       { pattern: /\/Author\s*\((.*?)\)/g, label: 'Author' },
       { pattern: /\/Subject\s*\((.*?)\)/g, label: 'Subject' },
       { pattern: /\/Creator\s*\((.*?)\)/g, label: 'Creator' },
-      { pattern: /\/Producer\s*\((.*?)\)/g, label: 'Producer' }
+      { pattern: /\/Keywords\s*\((.*?)\)/g, label: 'Keywords' }
     ];
 
     for (const { pattern, label } of metadataPatterns) {
       const matches = content.match(pattern) || [];
       for (const match of matches) {
         const metadataMatch = match.match(/\((.*?)\)/);
-        if (metadataMatch && metadataMatch[1].trim() && metadataMatch[1].length > 2) {
+        if (metadataMatch && metadataMatch[1].trim().length > 2) {
           textChunks.unshift(`${label}: ${metadataMatch[1]}`);
         }
       }
     }
 
-    // Method 3: Extract from stream content
-    const streamRegex = /stream\s+(.*?)\s+endstream/gs;
-    const streams = content.match(streamRegex) || [];
-    
-    for (const stream of streams) {
-      // Look for readable text patterns in streams
-      const streamText = stream.match(/[A-Za-z][A-Za-z0-9\s\.,!?\-;:'"()]{10,}/g) || [];
-      textChunks.push(...streamText.filter(text => 
-        hasReadableContent(text) && 
-        !text.includes('obj') && 
-        !text.includes('endobj')
-      ).slice(0, 10));
-    }
-
-    // Method 4: Extract readable text patterns as comprehensive fallback
-    if (textChunks.length < 5) {
-      const readablePatterns = content.match(/[A-Za-z]{3,}[\s\w\.,!?\-;:'"()]{10,}/g) || [];
-      const filteredPatterns = readablePatterns.filter(text => 
-        hasReadableContent(text) && 
-        !text.includes('PDF') && 
-        !text.includes('stream') &&
-        !text.includes('obj') &&
-        !text.includes('endobj') &&
-        text.split(' ').length > 2
-      ).slice(0, 30);
-      
-      textChunks.push(...filteredPatterns);
-    }
-
-    // Method 5: Look for specific content patterns (for CVs, resumes, etc.)
+    // Method 5: Look for common document content patterns
     const contentPatterns = [
       /(?:Name|FULL NAME|Full Name)[:\s]+([A-Za-z\s]+)/gi,
       /(?:Email|E-mail|EMAIL)[:\s]+([A-Za-z0-9@\.\-_]+)/gi,
       /(?:Phone|Tel|Mobile|Contact)[:\s]+([+\d\s\-()]+)/gi,
       /(?:Address|Location)[:\s]+([A-Za-z0-9\s,\.\-]+)/gi,
-      /(?:Education|EDUCATION)[\s\S]{0,200}/gi,
-      /(?:Experience|EXPERIENCE|Work Experience)[\s\S]{0,300}/gi,
-      /(?:Skills|SKILLS)[\s\S]{0,200}/gi
+      /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/g, // Names
+      /\b\d{1,2}\/\d{1,2}\/\d{4}\b/g, // Dates
+      /\b[A-Za-z]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, // Emails
     ];
 
     for (const pattern of contentPatterns) {
       const matches = content.match(pattern) || [];
-      textChunks.push(...matches.slice(0, 3));
+      textChunks.push(...matches.slice(0, 10));
     }
 
-    const extractedText = textChunks
+    // Clean and combine all extracted text
+    const cleanedChunks = textChunks
       .map(chunk => cleanText(chunk))
-      .filter(chunk => chunk.length > 3 && chunk.trim())
+      .filter(chunk => chunk.length > 2 && chunk.trim())
       .filter((chunk, index, array) => array.indexOf(chunk) === index) // Remove duplicates
-      .join('\n');
+      .slice(0, 100); // Limit to prevent overflow
 
-    return extractedText.length > 50 ? extractedText : generatePDFAnalysis(content);
+    console.log(`✅ PDF extraction completed: ${cleanedChunks.length} chunks, ${cleanedChunks.join(' ').length} total characters`);
+
+    if (cleanedChunks.length > 0) {
+      const extractedText = cleanedChunks.join('\n');
+      return extractedText.length > 50 ? extractedText : generatePDFAnalysis(content);
+    }
+
+    return generatePDFAnalysis(content);
   } catch (error) {
-    throw new Error(`PDF conversion failed: ${error.message}`);
+    console.error(`❌ PDF conversion error:`, error);
+    return generatePDFAnalysis(content);  
   }
 }
 
@@ -1246,16 +1311,22 @@ function decodeHTMLEntities(text: string): string {
 }
 
 function isXMLNoise(text: string): boolean {
+  if (!text || text.length < 2) return true;
+  
   const noisePatterns = [
-    /^[^A-Za-z]*$/,
-    /^\s*w:\w+\s*$/,
-    /xmlns/,
-    /Microsoft/,
-    /Office/,
-    /<?xml/,
-    /^[\d\s\-_]+$/
+    /^[^A-Za-z]*$/, // Only symbols/numbers
+    /^\s*w:\w+\s*$/, // Word XML tags
+    /xmlns/, // XML namespace
+    /<?xml/, // XML declaration
+    /^[\d\s\-_]+$/, // Only digits, spaces, dashes, underscores
+    /^[0-9\s.,\-_]+$/, // Only numbers and basic punctuation
+    /Microsoft Office/i,
+    /Word Document/i,
+    /^(true|false|null|undefined)$/i, // Common non-content values
   ];
-  return noisePatterns.some(pattern => pattern.test(text)) || text.length < 2;
+  
+  // More lenient - only filter out obvious noise
+  return noisePatterns.some(pattern => pattern.test(text));
 }
 
 function cleanText(text: string): string {
@@ -1266,8 +1337,17 @@ function cleanText(text: string): string {
 }
 
 function hasReadableContent(text: string): boolean {
+  if (!text || text.length < 3) return false;
+  
   const letterCount = (text.match(/[A-Za-z]/g) || []).length;
-  return letterCount > text.length * 0.5 && text.split(' ').length > 1;
+  const totalChars = text.length;
+  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+  
+  // More lenient criteria for readable content
+  return letterCount > totalChars * 0.3 && 
+         wordCount > 1 && 
+         letterCount > 5 &&
+         !/^[^A-Za-z]*$/.test(text); // Not just symbols/numbers
 }
 
 function generateDocumentAnalysis(content: string): string {
