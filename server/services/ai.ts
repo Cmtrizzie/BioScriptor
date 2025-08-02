@@ -3,6 +3,7 @@ import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
 import { enhanceResponse } from './response-enhancer';
 import { webSearchService, formatSearchResults } from './web-search';
+import { tokenManager, TokenUsage } from './token-manager';
 
 // ========== Type Definitions ==========
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'error';
@@ -30,6 +31,15 @@ export interface ChatMessage {
             explanation?: string;
         }>;
         confidence: number;
+        tokenUsage?: TokenUsage;
+        conversationLimits?: {
+            status: 'ok' | 'warning' | 'critical' | 'exceeded';
+            tokensUsed: number;
+            tokensRemaining: number;
+            percentageUsed: number;
+            shouldWarn: boolean;
+            message?: string;
+        };
     };
 }
 
@@ -40,6 +50,11 @@ export interface ConversationContext {
     memory: {
         topics: Set<string>;
         entities: Set<string>;
+    };
+    tokenLimits?: {
+        status: 'ok' | 'warning' | 'critical' | 'exceeded';
+        tokensUsed: number;
+        shouldTruncate: boolean;
     };
 }
 
@@ -792,10 +807,12 @@ export const processQuery = async (
     query: string,
     fileAnalysis?: BioFileAnalysis,
     userTier?: string,
-    dataPrivacyMode?: string
+    dataPrivacyMode?: string,
+    conversationId?: string
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
+        const actualConversationId = conversationId || context.id;
 
         // 1. Enhanced context analysis
         const conversationContext = analyzeConversation(context.history);
@@ -825,6 +842,22 @@ export const processQuery = async (
 
         // Add to conversation history
         conversationManager.addMessage(userMessage);
+
+        // 2.5. Check conversation token limits before processing
+        const tokenLimitCheck = tokenManager.checkConversationLimits(actualConversationId);
+        
+        // If exceeded, truncate history to maintain context
+        if (tokenLimitCheck.shouldTruncate) {
+            console.log(`🔄 Truncating conversation ${actualConversationId} - ${tokenLimitCheck.status} (${tokenLimitCheck.percentageUsed.toFixed(1)}% used)`);
+            context.history = tokenManager.truncateConversationHistory(context.history, 30000); // Keep recent 30k tokens
+        }
+
+        // Update context with token limit info
+        context.tokenLimits = {
+            status: tokenLimitCheck.status,
+            tokensUsed: tokenLimitCheck.tokensUsed,
+            shouldTruncate: tokenLimitCheck.shouldTruncate
+        };
 
         // 3. Intelligent routing - prioritize bioinformatics
         if (queryType === 'bioinformatics' || (oldQueryType !== 'general' && fileAnalysis)) {
@@ -927,7 +960,11 @@ Answer based EXCLUSIVELY on the search results above:`;
             userTier || 'free'
         );
 
-        // Create response message
+        // Track token usage for this exchange
+        const tokenUsage = tokenManager.updateTokenUsage(actualConversationId, query, aiResponse.content);
+        const updatedTokenLimits = tokenManager.checkConversationLimits(actualConversationId);
+
+        // Create response message with token tracking
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
@@ -942,7 +979,16 @@ Answer based EXCLUSIVELY on the search results above:`;
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
-                dataPrivacyMode: dataPrivacyMode || 'private'
+                dataPrivacyMode: dataPrivacyMode || 'private',
+                tokenUsage,
+                conversationLimits: {
+                    status: updatedTokenLimits.status,
+                    tokensUsed: updatedTokenLimits.tokensUsed,
+                    tokensRemaining: updatedTokenLimits.tokensRemaining,
+                    percentageUsed: updatedTokenLimits.percentageUsed,
+                    shouldWarn: updatedTokenLimits.shouldWarn,
+                    message: updatedTokenLimits.message
+                }
             }
         };
 

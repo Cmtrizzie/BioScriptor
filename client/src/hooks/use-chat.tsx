@@ -9,6 +9,22 @@ export interface Message {
   content: string;
   timestamp: Date;
   file?: File;
+  metadata?: {
+    tokenUsage?: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+      estimatedWords: number;
+    };
+    conversationLimits?: {
+      status: 'ok' | 'warning' | 'critical' | 'exceeded';
+      tokensUsed: number;
+      tokensRemaining: number;
+      percentageUsed: number;
+      shouldWarn: boolean;
+      message?: string;
+    };
+  };
 }
 
 export interface ChatSession {
@@ -21,6 +37,7 @@ export interface ChatSession {
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [_, navigate] = useLocation();
@@ -99,7 +116,10 @@ export function useChat() {
               'x-firebase-display-name': activeUser.displayName || '',
               'x-firebase-photo-url': activeUser.photoURL || '',
             },
-            body: JSON.stringify({ message: content }),
+            body: JSON.stringify({ 
+              message: content,
+              conversationId: currentSessionId || `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+            }),
           });
 
           if (!response.ok) throw new Error('Failed to send message');
@@ -212,6 +232,7 @@ export function useChat() {
   const newChat = useCallback(() => {
     console.log('Starting new chat');
     setMessages([]);
+    setCurrentSessionId(null);
     setIsLoading(false);
     navigate('/chat');
 
@@ -227,6 +248,7 @@ export function useChat() {
     }));
 
     setMessages(sessionMessages);
+    setCurrentSessionId(session.id);
     const updatedSessions = [session, ...sessions.filter(s => s.id !== session.id)];
     setSessions(updatedSessions);
     localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
@@ -243,8 +265,10 @@ export function useChat() {
         timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp,
       }));
       setMessages(sessionMessages);
+      setCurrentSessionId(sessionId);
     } else {
       setMessages([]);
+      setCurrentSessionId(null);
     }
   }, []);
 

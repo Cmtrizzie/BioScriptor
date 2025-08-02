@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import CreativeSuggestions from "./CreativeSuggestions";
+import TokenLimitWarning from "./TokenLimitWarning";
 import { useChat } from "@/hooks/use-chat";
 import { getRandom, greetings } from "@/lib/personality";
 
@@ -67,6 +68,14 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         {/* Main content area */}
         <div className="flex-1 overflow-hidden relative">
           <div className="h-full overflow-y-auto pb-40">
+            {/* Token limit warning */}
+            {messages.length > 0 && messages[messages.length - 1]?.metadata?.conversationLimits && (
+              <TokenLimitWarning 
+                conversationLimits={messages[messages.length - 1].metadata.conversationLimits}
+                onNewChat={newChat}
+              />
+            )}
+            
             <MessageList 
               messages={messages} 
               isLoading={isLoading}

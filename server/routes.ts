@@ -157,6 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/chat/message", requireAuth, upload.single('file'), async (req: any, res) => {
     try {
       const { message } = req.body;
+      const conversationId = req.body.conversationId;
       if (!message) {
         return res.status(400).json({ error: 'Message is required' });
       }
@@ -236,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process the query with AI, passing user tier for provider filtering
-      const aiResponse = await processQuery(message, fileAnalysis || undefined, req.user.tier);
+      const aiResponse = await processQuery(message, fileAnalysis || undefined, req.user.tier, conversationId);
 
       // Update user query count
       await storage.updateUser(req.user.id, {
@@ -865,6 +866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Promo code deletion error:', error);
       res.status(500).json({ error: 'Failed to delete promo code' });
     }
+  ```
   });
 
   // API Management Routes
