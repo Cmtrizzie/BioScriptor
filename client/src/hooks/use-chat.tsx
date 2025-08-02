@@ -39,7 +39,7 @@ export function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [_, navigate] = useLocation();
   const { user } = useAuth();
   const bottomRef = useRef<HTMLDivElement | null>(null);
