@@ -127,7 +127,7 @@ async function processBioQuery(
 
       if (fileAnalysis.documentContent) {
         fileContext += `\nDocument Content Analysis:\n${fileAnalysis.documentContent}\n`;
-        
+
         // Add specific instructions for document analysis
         if (fileAnalysis.fileType === 'pdf') {
           fileContext += `\nThis is a PDF document. I have extracted the available text content above. Please analyze this content thoroughly and provide specific insights about what the document contains, its structure, key topics, and any notable information.\n`;
@@ -158,7 +158,7 @@ async function processBioQuery(
       fileContext += `\n--- END FILE ANALYSIS ---\n\n`;
       fileContext += `User Question About This File: ${query}\n\n`;
       fileContext += `Please analyze the uploaded file content and respond to the user's question. Focus on the actual content and provide specific insights based on what's in the file.`;
-      
+
       enhancedQuery = fileContext;
     }
 
@@ -855,9 +855,9 @@ function selectOptimalProvider(query: string, context: ConversationContext): str
 export const processQuery = async (
     query: string,
     fileAnalysis?: BioFileAnalysis,
-    userTier?: string,
-    dataPrivacyMode?: string,
-    conversationId?: string
+    userTier: string = 'free',
+    conversationId?: string,
+    conversationHistory?: any[]
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
@@ -870,22 +870,35 @@ export const processQuery = async (
         const tone = detectTone(query);
         const userIntent = detectUserIntent(query);
 
-        // Create user message with enhanced metadata
-        const userMessage: ChatMessage = {
-            id: generateUniqueId(),
-            role: 'user',
-            content: query,
-            timestamp: Date.now(),
-            status: 'complete',
-            metadata: {
-                fileAnalysis,
-                tone,
-                intent: userIntent,
-                confidence: 1.0,
-                queryType,
-                conversationContext
-            }
-        };
+    // Extract previous file analyses from conversation history
+    let contextualFileAnalysis = fileAnalysis;
+    if (!fileAnalysis && conversationHistory) {
+      // Look for the most recent file analysis in conversation history
+      for (let i = conversationHistory.length - 1; i >= 0; i--) {
+        const msg = conversationHistory[i];
+        if (msg.metadata?.fileAnalysis) {
+          contextualFileAnalysis = msg.metadata.fileAnalysis;
+          break;
+        }
+      }
+    }
+
+    // Create the message
+    const userMessage: ChatMessage = {
+        id: generateUniqueId(),
+        role: 'user',
+        content: query,
+        timestamp: Date.now(),
+        status: 'complete',
+        metadata: {
+            tone,
+            intent: userIntent,
+            confidence: 1.0,
+            queryType,
+            conversationContext,
+            fileAnalysis: contextualFileAnalysis
+        }
+    };
 
         // Add to conversation history
         conversationManager.addMessage(userMessage);
@@ -947,14 +960,20 @@ export const processQuery = async (
         // 5. AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
-        // 6. Prepare enhanced query with search context
+    // Enhanced prompt with context
         let enhancedQuery = query;
+        if (contextualFileAnalysis) {
+            enhancedQuery = buildFileAnalysisPrompt(query, contextualFileAnalysis);
+        }
+
+        // 6. Prepare enhanced query with search context
+        let enhancedQuery2 = query;
         if (searchResults && searchResults.trim() !== '') {
             // Enhanced prompt for sports queries
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
 
             if (isSportsQuery) {
-                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+                enhancedQuery2 = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
 
 ===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
@@ -972,7 +991,7 @@ STRICT INSTRUCTIONS:
 
 Answer based EXCLUSIVELY on the search results above:`;
             } else {
-                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+                enhancedQuery2 = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
 
 ===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
@@ -990,6 +1009,30 @@ STRICT INSTRUCTIONS:
 Answer based EXCLUSIVELY on the search results above:`;
             }
         }
+        const enhancedQuery = enhancedQuery2;
+
+    // Build conversation history for context
+        const conversationHistoryForAI: Array<{role: string, content: string}> = [];
+
+        // Add file context if available
+        if (contextualFileAnalysis) {
+            conversationHistoryForAI.push({
+                role: 'system',
+                content: `File context: You previously analyzed a file "${contextualFileAnalysis.fileType}" with content: ${contextualFileAnalysis.documentContent || contextualFileAnalysis.sequence || 'File uploaded and analyzed'}. The user may be referring to this file in their current question.`
+            });
+        }
+
+        // Add recent conversation history
+        if (conversationHistory && conversationHistory.length > 0) {
+            conversationHistory.slice(-5).forEach(msg => {
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    conversationHistoryForAI.push({
+                        role: msg.role,
+                        content: msg.content
+                    });
+                }
+            });
+        }
 
         // 7. Use the fault-tolerant AI system
         const aiResponse = await faultTolerantAI.processQuery(
@@ -1000,10 +1043,7 @@ Answer based EXCLUSIVELY on the search results above:`;
                 hasWebSearchResults: !!searchResults
             },
             conversationContext.emotionalContext,
-            context.history.slice(-6).map(m => ({
-                role: m.role,
-                content: m.content
-            })),
+            conversationHistoryForAI,
             userTier || 'free'
         );
 
