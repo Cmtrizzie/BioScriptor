@@ -107,60 +107,99 @@ async function getEnhancedAIResponse(
     };
 }
 
-// Enhanced bioinformatics query processing
 async function processBioQuery(
-    query: string,
-    userMessage: ChatMessage,
-    conversationContext: ConversationContext,
-    fileAnalysis?: BioFileAnalysis,
-    userTier?: string
+  query: string,
+  userMessage: ChatMessage,
+  conversationContext: ConversationContext,
+  fileAnalysis?: BioFileAnalysis,
+  userTier?: string
 ): Promise<ChatMessage> {
-    const analysisType = detectQueryType(query);
+  const analysisType = detectQueryType(query);
 
-    try {
-        // Use AI for all bioinformatics queries instead of templates
-        const aiResponse = await faultTolerantAI.processQuery(
-            query,
-            { 
-                conversationContext,
-                userIntent: 'bioinformatics_query',
-                fileAnalysis
-            },
-            conversationContext.emotionalContext || 'neutral',
-            conversationContext.history.slice(-6).map(m => ({
-                role: m.role,
-                content: m.content
-            })),
-            userTier || 'free'
-        );
+  try {
+    // Enhanced query with file analysis context
+    let enhancedQuery = query;
 
-        return {
-            id: generateUniqueId(),
-            role: 'assistant',
-            content: aiResponse.content,
-            timestamp: Date.now(),
-            status: 'complete',
-            metadata: {
-                confidence: 0.95,
-                processingTime: Date.now() - Date.now(),
-                analysisType,
-                model: aiResponse.provider || 'groq'
-            }
-        };
-    } catch (error) {
-        console.error('Error in processBioQuery:', error);
-        return {
-            id: generateUniqueId(),
-            role: 'assistant',
-            content: 'I encountered an error processing your bioinformatics query. Please try again.',
-            timestamp: Date.now(),
-            status: 'error',
-            metadata: {
-                error: error instanceof Error ? error.message : 'Unknown error',
-                confidence: 0
-            }
-        };
+    if (fileAnalysis) {
+      let fileContext = `\n\n--- FILE ANALYSIS ---\n`;
+      fileContext += `File Type: ${fileAnalysis.fileType}\n`;
+      fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
+
+      if (fileAnalysis.documentContent) {
+        fileContext += `Document Content Preview: ${fileAnalysis.documentContent}\n`;
+      }
+
+      if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
+        fileContext += `Sequence Preview: ${fileAnalysis.sequence}\n`;
+      }
+
+      if (fileAnalysis.stats) {
+        fileContext += `Statistics: Length=${fileAnalysis.stats.length}`;
+        if (fileAnalysis.stats.wordCount) fileContext += `, Words=${fileAnalysis.stats.wordCount}`;
+        if (fileAnalysis.stats.lineCount) fileContext += `, Lines=${fileAnalysis.stats.lineCount}`;
+        fileContext += `\n`;
+      }
+
+      if (fileAnalysis.gcContent) {
+        fileContext += `GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
+      }
+
+      if (fileAnalysis.features && fileAnalysis.features.length > 0) {
+        fileContext += `Features: ${fileAnalysis.features.join(', ')}\n`;
+      }
+
+      fileContext += `--- END FILE ANALYSIS ---\n\n`;
+      enhancedQuery = fileContext + query;
     }
+
+    // Use AI for all bioinformatics queries instead of templates
+    const aiResponse = await faultTolerantAI.processQuery(
+      enhancedQuery,
+      { 
+        conversationContext,
+        userIntent: fileAnalysis ? 'file_analysis' : 'bioinformatics_query',
+        fileAnalysis
+      },
+      conversationContext.emotionalContext || 'neutral',
+      conversationContext.history.slice(-6).map(m => ({
+        role: m.role,
+        content: m.content
+      })),
+      userTier || 'free'
+    );
+
+    return {
+      id: generateUniqueId(),
+      role: 'assistant',
+      content: aiResponse.content,
+      timestamp: Date.now(),
+      status: 'complete',
+      metadata: {
+        confidence: 0.95,
+        processingTime: Date.now() - Date.now(),
+        analysisType,
+        model: aiResponse.provider || 'groq',
+        fileAnalysis: fileAnalysis ? {
+          fileType: fileAnalysis.fileType,
+          sequenceType: fileAnalysis.sequenceType,
+          hasDocument: !!fileAnalysis.documentContent
+        } : undefined
+      }
+    };
+  } catch (error) {
+    console.error('Error in processBioQuery:', error);
+    return {
+      id: generateUniqueId(),
+      role: 'assistant',
+      content: 'I encountered an error processing your bioinformatics query. Please try again.',
+      timestamp: Date.now(),
+      status: 'error',
+      metadata: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        confidence: 0
+      }
+    };
+  }
 }
 
 // Response comparison and selection
@@ -509,16 +548,16 @@ function detectProgrammingIntent(text: string): 'coding' | 'planning' | 'debuggi
 
     // Coding patterns
     if (/(write|create|implement|build|code|script|function|class|algorithm|program)/.test(lowerText)) return 'coding';
-    
+
     // Planning patterns  
     if (/(plan|design|architecture|structure|organize|workflow|pipeline|strategy|roadmap|approach)/.test(lowerText)) return 'planning';
-    
+
     // Debugging patterns
     if (/(debug|fix|error|bug|issue|problem|troubleshoot|not working)/.test(lowerText)) return 'debugging';
-    
+
     // Architecture patterns
     if (/(architecture|system design|database schema|api design|microservices|scalability)/.test(lowerText)) return 'architecture';
-    
+
     // Learning patterns
     if (/(explain|how does|what is|teach me|learn|understand|tutorial)/.test(lowerText)) return 'learning';
 
@@ -760,7 +799,7 @@ function classifyQuery(query: string): 'bioinformatics' | 'programming' | 'plann
     if (PLANNING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'planning';
     if (DEBUGGING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'debugging';
     if (CREATIVE_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'creative';
-    
+
     return 'general';
 }
 
@@ -812,9 +851,7 @@ export const processQuery = async (
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
-        const actualConversationId = conversationId || context.id;
-
-        // 1. Enhanced context analysis
+        const actualConversationId = conversationId || context.id;        // 1. Enhanced context analysis
         const conversationContext = analyzeConversation(context.history);
 
         // 2. Enhanced query classification
@@ -845,7 +882,7 @@ export const processQuery = async (
 
         // 2.5. Check conversation token limits before processing
         const tokenLimitCheck = tokenManager.checkConversationLimits(actualConversationId);
-        
+
         // If exceeded, truncate history to maintain context
         if (tokenLimitCheck.shouldTruncate) {
             console.log(`🔄 Truncating conversation ${actualConversationId} - ${tokenLimitCheck.status} (${tokenLimitCheck.percentageUsed.toFixed(1)}% used)`);
@@ -859,9 +896,9 @@ export const processQuery = async (
             shouldTruncate: tokenLimitCheck.shouldTruncate
         };
 
-        // 3. Intelligent routing - prioritize bioinformatics
-        if (queryType === 'bioinformatics' || (oldQueryType !== 'general' && fileAnalysis)) {
-            // Use specialized bioinformatics processing
+        // 3. Intelligent routing - prioritize bioinformatics and file analysis
+        if (queryType === 'bioinformatics' || (oldQueryType !== 'general' && fileAnalysis) || fileAnalysis) {
+            // Use specialized bioinformatics processing for any file upload
             return await processBioQuery(query, userMessage, conversationContext, fileAnalysis, userTier);
         }
 

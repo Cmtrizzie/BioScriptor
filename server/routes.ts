@@ -207,8 +207,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        fileContent = req.file.buffer.toString();
         const fileType = req.file.originalname.split('.').pop()?.toLowerCase();
+        
+        // Handle different file types appropriately
+        if (['pdf', 'docx', 'doc'].includes(fileType || '')) {
+          // For binary document formats, we'll need special handling
+          // For now, extract text representation
+          fileContent = req.file.buffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+        } else {
+          // For text-based files
+          fileContent = req.file.buffer.toString('utf8');
+        }
 
         // Analyze the uploaded file
         fileAnalysis = await analyzeBioFile(fileContent, fileType as any);

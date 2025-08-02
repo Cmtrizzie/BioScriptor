@@ -32,12 +32,14 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
 
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
     const bioTypes = ['fasta', 'gb', 'pdb', 'csv', 'tsv', 'genbank', 'fa', 'fastq', 'fq', 'vcf', 'gtf', 'gff'];
-    const textTypes = ['txt', 'md', 'json', 'xml', 'log'];
+    const textTypes = ['txt', 'md', 'json', 'xml', 'log', 'pdf', 'docx', 'doc', 'rtf'];
+    const documentTypes = ['pdf', 'docx', 'doc', 'rtf'];
 
     if (bioTypes.includes(ext)) return 'bio';
     if (textTypes.includes(ext)) return 'text';
+    if (documentTypes.includes(ext)) return 'text'; // Treat documents as text for UI purposes
 
-    return file.type.startsWith('text/') ? 'text' : 'bio';
+    return file.type.startsWith('text/') || file.type.includes('document') ? 'text' : 'bio';
   };
 
   // Handle file addition with cleanup
@@ -177,8 +179,13 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
     const selectedFiles = Array.from(e.target.files || []);
 
     for (const file of selectedFiles) {
-      // Check file type for bioinformatics files
-      const validExtensions = ['.fasta', '.fa', '.fastq', '.fq', '.vcf', '.gtf', '.gff', '.pdb', '.txt', '.csv', '.tsv', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+      // Check file type for bioinformatics and document files
+      const validExtensions = [
+        '.fasta', '.fa', '.fastq', '.fq', '.vcf', '.gtf', '.gff', '.pdb', 
+        '.txt', '.csv', '.tsv', '.json', '.xml', '.md', 
+        '.pdf', '.docx', '.doc', '.rtf',
+        '.png', '.jpg', '.jpeg', '.gif', '.webp'
+      ];
       const fileName = file.name.toLowerCase();
       const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
 
@@ -187,8 +194,8 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         return;
       }
 
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        alert('File size must be less than 10MB');
+      if (file.size > 25 * 1024 * 1024) { // 25MB limit for documents
+        alert('File size must be less than 25MB');
         return;
       }
 
@@ -235,7 +242,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             <p className="text-bio-blue font-medium">Drop files here</p>
-            <p className="text-sm text-gray-500">Supports .fasta, .gb, .pdb, .csv, images</p>
+            <p className="text-sm text-gray-500">Supports .fasta, .gb, .pdb, .csv, .txt, .pdf, .docx, images</p>
           </div>
         </div>
       )}
@@ -300,7 +307,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
         <input
           ref={fileInputRef}
           type="file"
-          accept=".fasta,.fa,.fastq,.fq,.gb,.pdb,.csv,.tsv,.vcf,.gtf,.gff,.txt,.png,.jpg,.jpeg,.gif,.webp"
+          accept=".fasta,.fa,.fastq,.fq,.gb,.pdb,.csv,.tsv,.vcf,.gtf,.gff,.txt,.json,.xml,.md,.pdf,.docx,.doc,.rtf,.png,.jpg,.jpeg,.gif,.webp"
           onChange={handleFileChange}
           multiple
           className="hidden"
@@ -328,7 +335,7 @@ export default function MessageInput({ onSendMessage, disabled }: MessageInputPr
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             className="absolute left-2 bottom-2 text-gray-500 hover:text-bio-blue dark:hover:text-bio-teal h-8 w-8"
-            title="Upload file (.fasta, .gb, .pdb, .csv, images)"
+            title="Upload file (.fasta, .gb, .pdb, .csv, .txt, .pdf, .docx, images)"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
