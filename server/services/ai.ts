@@ -404,6 +404,115 @@ function formatSequenceAnalysis(analysis: BioFileAnalysis, context: Conversation
     return response;
 }
 
+// Enhanced document analysis for application letters
+function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string): string {
+  const content = fileAnalysis.documentContent || '';
+  const analysis = [];
+
+  // Content Quality Analysis
+  analysis.push("## Content Quality Assessment\n");
+
+  const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+  const sentenceCount = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  const avgWordsPerSentence = wordCount > 0 ? Math.round(wordCount / sentenceCount) : 0;
+
+  if (wordCount < 150) {
+    analysis.push("⚠️ **Content Length**: Your application letter appears quite brief. Consider expanding it to 200-400 words to provide more comprehensive information about your qualifications.");
+    analysis.push("\n**Suggestions for Content Enhancement:**");
+    analysis.push("- Add specific examples of your achievements and experiences");
+    analysis.push("- Include quantifiable results (e.g., 'increased sales by 20%', 'managed a team of 5')");
+    analysis.push("- Describe how your skills directly relate to the job requirements");
+    analysis.push("- Mention specific projects or accomplishments that demonstrate your capabilities");
+  } else if (wordCount > 500) {
+    analysis.push("📝 **Content Length**: Your letter is quite comprehensive. Consider condensing it to 300-400 words to maintain the reader's attention while covering all essential points.");
+  } else {
+    analysis.push("✅ **Content Length**: Good length for an application letter.");
+  }
+
+  // Structural Analysis
+  analysis.push("\n## Structural Analysis\n");
+
+  const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  analysis.push(`**Paragraph Structure**: ${paragraphs.length} paragraphs detected`);
+
+  if (paragraphs.length < 3) {
+    analysis.push("\n⚠️ **Structure Recommendation**: Consider organizing your letter into 4-5 clear paragraphs:");
+    analysis.push("1. **Opening**: State the position and how you learned about it");
+    analysis.push("2. **Qualifications**: Highlight your most relevant skills and experiences");
+    analysis.push("3. **Achievements**: Provide specific examples of your accomplishments");
+    analysis.push("4. **Company Connection**: Show why you're interested in this specific company");
+    analysis.push("5. **Closing**: Express enthusiasm and request an interview");
+  }
+
+  // Key Elements Check
+  analysis.push("\n## Essential Elements Checklist\n");
+
+  const hasGreeting = /dear|hello|hi/i.test(content);
+  const hasPosition = /position|role|job|apply/i.test(content);
+  const hasExperience = /experience|worked|managed|led|developed|achieved/i.test(content);
+  const hasSkills = /skill|ability|proficient|expert|knowledge/i.test(content);
+  const hasClosing = /sincerely|regards|thank you|look forward/i.test(content);
+
+  analysis.push(`${hasGreeting ? '✅' : '❌'} Professional greeting`);
+  analysis.push(`${hasPosition ? '✅' : '❌'} Clear mention of the position`);
+  analysis.push(`${hasExperience ? '✅' : '❌'} Relevant work experience`);
+  analysis.push(`${hasSkills ? '✅' : '❌'} Key skills mentioned`);
+  analysis.push(`${hasClosing ? '✅' : '❌'} Professional closing`);
+
+  if (!hasPosition) {
+    analysis.push("\n💡 **Missing Element**: Clearly state the specific position you're applying for in the opening paragraph.");
+  }
+  if (!hasExperience) {
+    analysis.push("\n💡 **Missing Element**: Include specific examples of your work experience and achievements.");
+  }
+  if (!hasSkills) {
+    analysis.push("\n💡 **Missing Element**: Highlight your key skills that match the job requirements.");
+  }
+
+  // Formatting Guidelines
+  analysis.push("\n## Formatting Best Practices\n");
+  analysis.push("**Professional Format Recommendations:**");
+  analysis.push("- Use a standard business letter format with your contact information at the top");
+  analysis.push("- Include the date and employer's contact information");
+  analysis.push("- Use a professional font (Arial, Calibri, or Times New Roman) in 10-12pt size");
+  analysis.push("- Maintain consistent spacing (single or 1.15 line spacing)");
+  analysis.push("- Keep margins at 1 inch on all sides");
+  analysis.push("- Use a professional tone throughout");
+  analysis.push("- Proofread for grammar, spelling, and punctuation errors");
+
+  // Tone and Language Analysis
+  analysis.push("\n## Tone and Language Assessment\n");
+
+  const formalWords = (content.match(/\b(please|kindly|respectfully|sincerely|professional|qualified|experience)\b/gi) || []).length;
+  const casualWords = (content.match(/\b(cool|awesome|hey|gonna|wanna|stuff|things)\b/gi) || []).length;
+
+  if (casualWords > formalWords) {
+    analysis.push("⚠️ **Tone**: Consider using more formal, professional language. Avoid casual expressions and colloquialisms.");
+  } else {
+    analysis.push("✅ **Tone**: Professional tone maintained throughout the letter.");
+  }
+
+  // Action Items
+  analysis.push("\n## Action Items for Improvement\n");
+  analysis.push("**Priority Improvements:**");
+
+  if (wordCount < 150) {
+    analysis.push("1. **Expand content** with specific examples and achievements");
+  }
+  if (!hasPosition) {
+    analysis.push("2. **Clearly state** the position you're applying for");
+  }
+  if (!hasExperience) {
+    analysis.push("3. **Add specific examples** of your work experience and accomplishments");
+  }
+
+  analysis.push("4. **Quantify achievements** with numbers and percentages where possible");
+  analysis.push("5. **Research the company** and mention why you want to work there specifically");
+  analysis.push("6. **Include a call to action** requesting an interview or follow-up");
+
+  return analysis.join('\n');
+}
+
 // Removed template functions to prevent repetitive responses
 // All responses now go through AI processing for natural, contextual answers
 
@@ -1005,12 +1114,12 @@ export const processQuery = async (
 
     // 6. Prepare enhanced query with search context and file analysis
         let enhancedQuery = query;
-        
+
         // First apply file analysis context if available
         if (contextualFileAnalysis) {
             enhancedQuery = buildFileAnalysisPrompt(query, contextualFileAnalysis);
         }
-        
+
         // Then apply search results context if available
         if (searchResults && searchResults.trim() !== '') {
             // Enhanced prompt for sports queries

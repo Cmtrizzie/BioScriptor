@@ -1526,10 +1526,21 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
         analysis.push('Legacy Word document (OLE format)');
       }
 
-      // Try to extract readable text
-      const content = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
-      const textMatches = content.match(/[\x20-\x7E\s]{20,}/g) || [];
-      const extractedText = textMatches.join(' ').replace(/\s+/g, ' ').trim();
+      // Try to extract readable text with better encoding handling
+      let content = buffer.toString('utf8', 0, Math.min(buffer.length, 50000));
+      
+      // Try different encoding if UTF-8 doesn't work well
+      if (content.includes('�') || content.match(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g)) {
+        content = buffer.toString('latin1', 0, Math.min(buffer.length, 50000));
+      }
+      
+      // Extract readable text patterns - improved regex for better text extraction
+      const textMatches = content.match(/[a-zA-Z0-9\s.,!?;:()\-"']{20,}/g) || [];
+      const extractedText = textMatches
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[^\x20-\x7E\s]/g, '') // Remove non-printable characters
+        .trim();
 
       if (extractedText.length > 100) {
         analysis.push(`Content preview: ${extractedText.substring(0, 300)}...`);
