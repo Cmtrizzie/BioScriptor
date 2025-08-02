@@ -126,7 +126,14 @@ async function processBioQuery(
       fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
 
       if (fileAnalysis.documentContent) {
-        fileContext += `\nDocument Content:\n${fileAnalysis.documentContent}\n`;
+        fileContext += `\nDocument Content Analysis:\n${fileAnalysis.documentContent}\n`;
+        
+        // Add specific instructions for document analysis
+        if (fileAnalysis.fileType === 'pdf') {
+          fileContext += `\nThis is a PDF document. I have extracted the available text content above. Please analyze this content thoroughly and provide specific insights about what the document contains, its structure, key topics, and any notable information.\n`;
+        } else if (fileAnalysis.fileType === 'docx') {
+          fileContext += `\nThis is a Word document. I have extracted the formatted text content above. Please analyze this content thoroughly and provide specific insights about the document's content, structure, formatting, and key information.\n`;
+        }
       }
 
       if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
