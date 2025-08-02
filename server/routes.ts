@@ -862,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
 
-      const updatedPromo = await storage.updatePromoCode(parseInt(id),req.body);
+      const updatedPromo = await storage.updatePromoCode(parseInt(id), req.body);
 
       if (!updatedPromo) {
         return res.status(404).json({ error: 'Promo code not found' });
@@ -872,7 +872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         adminUserId: req.user.id,
         action: 'update_promo_code',
         targetResource: `promo:${id}`,
-        details: `Updated promo code: ${JSON.stringify(updates)}`
+        details: `Updated promo code: ${JSON.stringify(req.body)}`
       });
 
       res.json(updatedPromo);
