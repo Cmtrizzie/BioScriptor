@@ -1,3 +1,4 @@
+
 // services/ai.ts
 import { FaultTolerantAI, ProviderConfig, AIResponse } from './ai-providers';
 import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage } from './bioinformatics';
@@ -662,7 +663,7 @@ export async function processQuery(
     conversationId?: string,
     conversationHistory?: any[],
     fileContext?: any[]
-): Promise<ChatMessage> => {
+): Promise<ChatMessage> {
     try {
         const context = conversationManager.getContext();
         const actualConversationId = conversationId || context.id;
@@ -917,4 +918,4 @@ Answer based EXCLUSIVELY on the search results above:`;
         conversationManager.addMessage(errorMessage);
         return errorMessage;
     }
-};
+}
