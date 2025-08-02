@@ -1,7 +1,4 @@
-` tags.
 
-```
-<replit_final_file>
 export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'md' | 'json' | 'xml' | 'jpg' | 'jpeg' | 'png' | 'gif' | 'bmp' | 'svg' | 'mp3' | 'wav' | 'mp4' | 'avi' | 'zip' | 'rar' | 'exe' | 'bin';
 
 export interface BioFileAnalysis {
