@@ -189,7 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📁 File uploaded:', {
           filename: req.file.originalname,
           size: req.file.size,
-          mimetype: req.file.mimetype
+          mimetype: req.file.mimetype,
+          bufferLength: req.file.buffer?.length
         });
 
         const fileSizeInMB = req.file.size / (1024 * 1024);

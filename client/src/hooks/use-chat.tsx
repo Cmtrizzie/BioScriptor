@@ -60,7 +60,7 @@ export function useChat() {
     setSessions(savedSessions);
   }, []);
 
-  const sendMessage = useCallback(async (content: string, file?: File) => {
+  const sendMessage = useCallback(async (content: string, files?: File[]) => {
     if (isLoading) return; // Prevent multiple sends
 
     try {
@@ -71,12 +71,17 @@ export function useChat() {
         photoURL: null
       };
 
+      // Create user message with proper file data
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
         content,
         timestamp: new Date(),
-        file,
+        file: files?.map(f => ({
+          name: f.name,
+          size: f.size,
+          type: f.type
+        })) || [],
       };
 
       setMessages(prev => [...prev, userMessage]);
@@ -86,10 +91,16 @@ export function useChat() {
       try {
         let responseContent = 'Simulated AI response.';
 
-        if (file) {
+        if (files && files.length > 0) {
           const formData = new FormData();
           formData.append('message', content);
-          formData.append('file', file);
+          formData.append('file', files[0]); // Send first file
+
+          console.log('📤 Sending file:', {
+            name: files[0].name,
+            size: files[0].size,
+            type: files[0].type
+          });
 
           const response = await fetch('/api/chat/message', {
             method: 'POST',
