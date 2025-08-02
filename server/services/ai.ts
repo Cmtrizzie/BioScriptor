@@ -298,6 +298,8 @@ CRITICAL RULES:
 - For bioinformatics: Provide specific technical guidance with examples
 - For programming: Write complete, working code with explanations
 - For planning: Create structured, actionable plans with clear steps
+- For file uploads: Respond directly to the user's request without explaining file analysis metadata
+- Focus on delivering the requested content (extraction, summary, analysis) without verbose technical details
 
 PROGRAMMING EXPERTISE:
 - Write clean, efficient, well-documented code
@@ -350,43 +352,38 @@ DEBUGGING CONTEXT: The user has a problem to solve. Focus on:
 
 // ========== File Analysis Functions ==========
 function buildFileAnalysisPrompt(query: string, fileAnalysis: BioFileAnalysis): string {
-    let fileContext = `\n\n--- UPLOADED FILE ANALYSIS ---\n`;
-    fileContext += `File Type: ${fileAnalysis.fileType}\n`;
-    fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
+    const userIntent = detectUserIntent(query);
+    const lowerQuery = query.toLowerCase();
+    
+    // Detect if user wants extraction, summary, or analysis
+    const wantsExtraction = /(extract|get|show|display|pull|retrieve)\s+(full|complete|entire|all)?\s*(content|text|data)/i.test(lowerQuery);
+    const wantsSummary = /(summar|overview|brief|outline|recap)/i.test(lowerQuery);
+    const wantsAnalysis = /(analy|review|examine|evaluate|assess|check)/i.test(lowerQuery);
 
+    let fileContext = '';
+
+    // Add file content directly without metadata headers
     if (fileAnalysis.documentContent) {
-        fileContext += `\nDocument Content Analysis:\n${fileAnalysis.documentContent}\n`;
-
-        // Add specific instructions for document analysis
-        if (fileAnalysis.fileType === 'pdf') {
-            fileContext += `\nThis is a PDF document. I have extracted the available text content above. Please analyze this content thoroughly and provide specific insights about what the document contains, its structure, key topics, and any notable information.\n`;
-        } else if (fileAnalysis.fileType === 'docx') {
-            fileContext += `\nThis is a Word document. I have extracted the formatted text content above. Please analyze this content thoroughly and provide specific insights about the document's content, structure, formatting, and key information.\n`;
-        }
+        fileContext += `FILE CONTENT:\n${fileAnalysis.documentContent}\n\n`;
     }
 
     if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
-        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, MAX_FILE_PREVIEW_LENGTH)}${fileAnalysis.sequence.length > MAX_FILE_PREVIEW_LENGTH ? '...' : ''}\n`;
+        fileContext += `SEQUENCE DATA:\n${fileAnalysis.sequence.substring(0, 2000)}${fileAnalysis.sequence.length > 2000 ? '...' : ''}\n\n`;
     }
 
-    if (fileAnalysis.stats) {
-        fileContext += `\nFile Statistics:\n`;
-        fileContext += `- Size: ${fileAnalysis.stats.length} characters/bytes\n`;
-        if (fileAnalysis.stats.wordCount) fileContext += `- Word Count: ${fileAnalysis.stats.wordCount}\n`;
-        if (fileAnalysis.stats.lineCount) fileContext += `- Line Count: ${fileAnalysis.stats.lineCount}\n`;
+    // Add contextual instructions based on user intent
+    if (wantsExtraction) {
+        fileContext += `TASK: Extract and present the complete content from this ${fileAnalysis.fileType} file. Focus on delivering the actual content without metadata explanations.\n\n`;
+    } else if (wantsSummary) {
+        fileContext += `TASK: Provide a concise summary of this ${fileAnalysis.fileType} file's key points and main content. Be direct and focus on the essential information.\n\n`;
+    } else if (wantsAnalysis) {
+        fileContext += `TASK: Analyze this ${fileAnalysis.fileType} file and provide insights based on its content. Focus on what the document contains and its significance.\n\n`;
+    } else {
+        fileContext += `TASK: Respond to the user's request about this ${fileAnalysis.fileType} file. Focus on their specific question.\n\n`;
     }
 
-    if (fileAnalysis.gcContent) {
-        fileContext += `- GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
-    }
-
-    if (fileAnalysis.features && fileAnalysis.features.length > 0) {
-        fileContext += `\nDetected Features: ${fileAnalysis.features.join(', ')}\n`;
-    }
-
-    fileContext += `\n--- END FILE ANALYSIS ---\n\n`;
-    fileContext += `User Question About This File: ${query}\n\n`;
-    fileContext += `Please analyze the uploaded file content and respond to the user's question. Focus on the actual content and provide specific insights based on what's in the file.`;
+    fileContext += `USER REQUEST: ${query}\n\n`;
+    fileContext += `Respond directly to the user's request without explaining file metadata or analysis processes.`;
 
     return fileContext;
 }
