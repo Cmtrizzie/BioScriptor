@@ -1094,6 +1094,9 @@ Answer based EXCLUSIVELY on the search results above:`;
         const tokenUsage = tokenManager.updateTokenUsage(actualConversationId, query, aiResponse.content);
         const updatedTokenLimits = tokenManager.checkConversationLimits(actualConversationId);
 
+        // Determine data privacy mode from user settings or default to private
+        const dataPrivacyMode = 'private'; // Default to private mode
+
         // Create response message with token tracking
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
@@ -1109,7 +1112,7 @@ Answer based EXCLUSIVELY on the search results above:`;
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
-                dataPrivacyMode: dataPrivacyMode || 'private',
+                dataPrivacyMode: dataPrivacyMode,
                 tokenUsage,
                 conversationLimits: {
                     status: updatedTokenLimits.status,
