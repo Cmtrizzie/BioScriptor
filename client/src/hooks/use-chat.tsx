@@ -39,7 +39,7 @@ export function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(isTyping);
+  const [isTyping, setIsTyping] = useState(false);
   const [_, navigate] = useLocation();
   const { user } = useAuth();
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -283,6 +283,11 @@ export function useChat() {
     }
   }, []);
 
+  const handleFeedback = useCallback((messageId: string, type: string, value: number) => {
+    console.log('Feedback received:', { messageId, type, value });
+    // You can implement feedback storage/processing here
+  }, []);
+
   return {
     messages,
     sessions,
@@ -290,6 +295,7 @@ export function useChat() {
     newChat,
     switchToSession,
     loadSession,
+    handleFeedback,
     isLoading,
     isTyping,
     bottomRef,

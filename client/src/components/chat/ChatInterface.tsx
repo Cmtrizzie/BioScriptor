@@ -22,6 +22,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
     newChat, 
     switchToSession,
     loadSession,
+    handleFeedback,
     isLoading,
     isTyping,
     bottomRef 
@@ -80,7 +81,8 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
               messages={messages} 
               isLoading={isLoading}
               isTyping={isTyping}
-              bottomRef={bottomRef} 
+              bottomRef={bottomRef}
+              handleFeedback={handleFeedback}
             />
           </div>
         </div>
