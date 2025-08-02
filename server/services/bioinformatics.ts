@@ -1,6 +1,3 @@
-I am now ready to produce the complete and correct code.
-```
-```replit_final_file
 export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'md' | 'json' | 'xml';
 
 export interface BioFileAnalysis {
@@ -192,170 +189,30 @@ function extractPotentialSequences(content: string): string {
   return sequences.join('');
 }
 
-// Helper function to extract sequences from JSON
-function extractSequencesFromJSON(content: string): string {
+// Helper function to analyze JSON content
+function analyzeJSONContent(content: string): string {
   try {
-    const data = JSON.parse(content);
-    const sequences: string[] = [];
-
-    function searchForSequences(obj: any): void {
-      if (typeof obj === 'string' && /[ATCGN]{10,}/i.test(obj)) {
-        sequences.push(obj);
-      } else if (Array.isArray(obj)) {
-        obj.forEach(searchForSequences);
-      } else if (typeof obj === 'object' && obj !== null) {
-        Object.values(obj).forEach(searchForSequences);
-      }
-    }
-
-    searchForSequences(data);
-    return sequences.slice(0, 5).join('\n'); // Limit to first 5 sequences
-  } catch {
-    return '';
+    const parsed = JSON.parse(content);
+    const keys = Object.keys(parsed);
+    const structure = analyzeObjectStructure(parsed);
+    return `JSON file with ${keys.length} top-level keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...' : ''}. Structure: ${structure}`;
+  } catch (error) {
+    return `JSON-like file with ${content.length} characters. Unable to parse as valid JSON.`;
   }
 }
 
-// Helper function to extract sequences from XML
-function extractSequencesFromXML(content: string): string {
-  // Simple XML sequence extraction
-  const sequenceMatches = content.match(/<sequence[^>]*>([^<]+)<\/sequence>/gi);
-  const seqMatches = content.match(/<seq[^>]*>([^<]+)<\/seq>/gi);
+// Analyze object structure
+function analyzeObjectStructure(obj: any, depth = 0): string {
+  if (depth > 2) return '[nested]';
 
-  const sequences: string[] = [];
-
-  if (sequenceMatches) {
-    sequences.push(...sequenceMatches.map(match => 
-      match.replace(/<[^>]+>/g, '').trim()
-    ));
+  if (Array.isArray(obj)) {
+    return `Array[${obj.length}]`;
+  } else if (typeof obj === 'object' && obj !== null) {
+    const keys = Object.keys(obj);
+    return `Object{${keys.slice(0, 3).join(', ')}${keys.length > 3 ? '...' : ''}}`;
+  } else {
+    return typeof obj;
   }
-
-  if (seqMatches) {
-    sequences.push(...seqMatches.map(match => 
-      match.replace(/<[^>]+>/g, '').trim()
-    ));
-  }
-
-  return sequences.slice(0, 5).join('\n');
-}
-
-function analyzeFasta(content: string): BioFileAnalysis {
-  const sequences = content.split('>').filter(seq => seq.trim().length > 0);
-  let totalLength = 0;
-  let gcCount = 0;
-  let totalBases = 0;
-
-  sequences.forEach(seq => {
-    const lines = seq.split('\n');
-    const sequence = lines.slice(1).join('').replace(/\s/g, '').toUpperCase();
-    totalLength += sequence.length;
-
-    for (const base of sequence) {
-      if (base === 'G' || base === 'C') gcCount++;
-      if (['A', 'T', 'G', 'C'].includes(base)) totalBases++;
-    }
-  });
-
-  const gcContent = totalBases > 0 ? (gcCount / totalBases) * 100 : 0;
-
-  return {
-    sequenceType: 'dna',
-    sequence: content.substring(0, 1000),
-    fileType: 'fasta',
-    gcContent: Math.round(gcContent * 100) / 100,
-    stats: {
-      length: totalLength,
-      composition: {
-        A: 0,
-        T: 0,
-        G: 0,
-        C: 0
-      },
-    }
-  };
-}
-
-function analyzeGenBank(content: string): BioFileAnalysis {
-  const features: Array<{ type: string; location: string; description: string }> = [];
-  const lines = content.split('\n');
-
-  let inFeatures = false;
-  let sequenceLength = 0;
-
-  for (const line of lines) {
-    if (line.startsWith('FEATURES')) {
-      inFeatures = true;
-      continue;
-    }
-
-    if (line.startsWith('ORIGIN')) {
-      inFeatures = false;
-      continue;
-    }
-
-    if (inFeatures && line.trim().startsWith('CDS')) {
-      const match = line.match(/CDS\s+(.+)/);
-      if (match) {
-        features.push({
-          type: 'CDS',
-          location: match[1],
-          description: 'Coding sequence'
-        });
-      }
-    }
-
-    if (line.match(/^\s*\d+/)) {
-      const sequence = line.replace(/[^ATGC]/gi, '');
-      sequenceLength += sequence.length;
-    }
-  }
-
-  return {
-    sequenceType: 'dna',
-    sequence: content.substring(0, 1000),
-    fileType: 'genbank',
-    stats: {
-      length: sequenceLength,
-      composition: {
-        A: 0,
-        T: 0,
-        G: 0,
-        C: 0
-      },
-    }
-  };
-}
-
-function analyzePDB(content: string): BioFileAnalysis {
-  const lines = content.split('\n');
-  const chains = new Set<string>();
-  let atomCount = 0;
-  let residueCount = 0;
-
-  for (const line of lines) {
-    if (line.startsWith('ATOM') || line.startsWith('HETATM')) {
-      atomCount++;
-      const chainId = line.charAt(21);
-      chains.add(chainId);
-
-      const resNum = parseInt(line.substring(22, 26).trim());
-      if (resNum > residueCount) residueCount = resNum;
-    }
-  }
-
-  return {
-    sequenceType: 'protein',
-    sequence: content.substring(0, 1000),
-    fileType: 'pdb',
-    stats: {
-      length: atomCount,
-      composition: {
-        A: 0,
-        T: 0,
-        G: 0,
-        C: 0
-      },
-    }
-  };
 }
 
 function parseFastaSequence(content: string): string {
@@ -404,27 +261,10 @@ function parsePDBFile(content: string): { sequence: string; features: string[] }
   return { sequence, features };
 }
 
-function parseVCFFile(content: string): { variants: string[]; features: string[] } {
-  const lines = content.split('\n');
-  const variants: string[] = [];
-  const features: string[] = [];
-
-  for (const line of lines) {
-    if (!line.startsWith('#')) {
-      const columns = line.split('\t');
-      if (columns.length > 4) {
-        variants.push(columns[4]);
-        features.push(columns[7] || 'variant');
-      }
-    }
-  }
-
-  return { variants, features };
-}
-
-function parseFastqSequence(content: string): string {
+function parseFastqFile(content: string): { sequence: string; features: string[] } {
   const lines = content.split('\n');
   let sequence = '';
+  const features: string[] = [];
 
   for (let i = 1; i < lines.length; i += 4) {
     if (lines[i]) {
@@ -432,7 +272,7 @@ function parseFastqSequence(content: string): string {
     }
   }
 
-  return sequence;
+  return { sequence, features };
 }
 
 function calculateGCContent(sequence: string): number {
@@ -664,46 +504,6 @@ function extractDocxContent(content: string): string {
   }
 }
 
-// Analyze JSON content structure
-function analyzeJSONContent(content: string): string {
-  try {
-    const parsed = JSON.parse(content);
-    const keys = Object.keys(parsed);
-    const structure = analyzeObjectStructure(parsed);
-    return `JSON file with ${keys.length} top-level keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...' : ''}. Structure: ${structure}`;
-  } catch (error) {
-    return `JSON-like file with ${content.length} characters. Unable to parse as valid JSON.`;
-  }
-}
-
-// Analyze CSV content structure
-function analyzeObjectStructure(obj: any, depth = 0): string {
-  if (depth > 2) return '[nested]';
-
-  if (Array.isArray(obj)) {
-    return `Array[${obj.length}]`;
-  } else if (typeof obj === 'object' && obj !== null) {
-    const keys = Object.keys(obj);
-    return `Object{${keys.slice(0, 3).join(', ')}${keys.length > 3 ? '...' : ''}}`;
-  } else {
-    return typeof obj;
-  }
-}
-
-function parseFastqFile(content: string): { sequence: string; features: string[] } {
-  const lines = content.split('\n');
-  let sequence = '';
-  const features: string[] = [];
-
-  for (let i = 1; i < lines.length; i += 4) {
-    if (lines[i]) {
-      sequence += lines[i].trim();
-    }
-  }
-
-  return { sequence, features };
-}
-
 // Sanitize and extract readable content
 function sanitizeContent(content: string): string {
   try {
@@ -719,4 +519,3 @@ function sanitizeContent(content: string): string {
     return `File content (${content.length} bytes) - requires specialized parsing for this format.`;
   }
 }
-```This code enhances file processing to handle various file types and extract meaningful content for analysis.
