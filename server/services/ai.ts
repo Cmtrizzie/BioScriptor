@@ -411,60 +411,60 @@ function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string
 
   // Always try to analyze the actual content first, even if extraction seems incomplete
   analysis.push("## Document Analysis\n");
-  
+
   // Check if we have any meaningful content to analyze
   if (content && content.length > 20 && !content.includes('Document structure detected')) {
     analysis.push("Based on your uploaded document, here's my analysis:\n");
-    
+
     // Analyze the actual content
     const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
     const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    
+
     analysis.push(`**Content Overview:**`);
     analysis.push(`- Word count: ${wordCount} words`);
     analysis.push(`- Structure: ${sentences.length} sentences detected`);
-    
+
     // Look for key application letter elements
     const hasGreeting = /dear|hello|hi|to whom it may concern/i.test(content);
     const hasPosition = /position|role|job|apply|application/i.test(content);
     const hasExperience = /experience|worked|managed|led|developed|achieved/i.test(content);
     const hasSkills = /skill|ability|proficient|expert|knowledge/i.test(content);
     const hasClosing = /sincerely|regards|thank you|look forward/i.test(content);
-    
+
     analysis.push(`\n**Key Elements Present:**`);
     analysis.push(`${hasGreeting ? '✅' : '❌'} Professional greeting`);
     analysis.push(`${hasPosition ? '✅' : '❌'} Position/role mentioned`);
     analysis.push(`${hasExperience ? '✅' : '❌'} Work experience discussed`);
     analysis.push(`${hasSkills ? '✅' : '❌'} Skills highlighted`);
     analysis.push(`${hasClosing ? '✅' : '❌'} Professional closing`);
-    
+
     // Provide specific feedback based on content analysis
     analysis.push(`\n**Specific Suggestions for Your Document:**`);
-    
+
     if (wordCount < 200) {
       analysis.push("- Consider expanding your content to better showcase your qualifications");
     } else if (wordCount > 500) {
       analysis.push("- Consider condensing to keep the reader engaged (aim for 300-400 words)");
     }
-    
+
     if (!hasPosition) {
       analysis.push("- Clearly state the specific position you're applying for");
     }
-    
+
     if (!hasExperience) {
       analysis.push("- Add specific examples of your relevant work experience");
     }
-    
+
     if (!hasSkills) {
       analysis.push("- Highlight key skills that match the job requirements");
     }
-    
+
     // Look for quantifiable achievements
     const hasNumbers = /\d+/.test(content);
     if (!hasNumbers) {
       analysis.push("- Include quantifiable achievements (e.g., 'increased sales by 25%', 'managed team of 5')");
     }
-    
+
     return analysis.join('\n');
   } else {
     // Fallback when content extraction fails
@@ -474,7 +474,7 @@ function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string
     analysis.push("1. Try saving your document as a simple Word file without special formatting");
     analysis.push("2. Convert to PDF and upload that instead");
     analysis.push("3. Copy and paste the text directly in the chat for analysis");
-    
+
     return analysis.join('\n');
   }
 
@@ -1073,12 +1073,13 @@ function selectOptimalProvider(query: string, context: ConversationContext): str
 }
 
 // Main processing function - Enhanced
-export const processQuery = async (
+export async function processQuery(
     query: string,
     fileAnalysis?: BioFileAnalysis,
     userTier: string = 'free',
     conversationId?: string,
-    conversationHistory?: any[]
+    conversationHistory?: any[],
+    fileContext?: any[]
 ): Promise<ChatMessage> => {
     try {
         const context = conversationManager.getContext();
@@ -1181,15 +1182,38 @@ export const processQuery = async (
         // 5. AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
+    let enhancedPrompt = query;
+    let contextualInfo = '';
+
+    // Add current file analysis to context if provided
+    if (fileAnalysis) {
+        contextualInfo += buildFileAnalysisPrompt(fileAnalysis, query);
+    }
+
+    // Add persistent file context from previous uploads
+    if (fileContext && fileContext.length > 0) {
+        contextualInfo += "\n\n--- PREVIOUSLY UPLOADED FILES IN THIS CONVERSATION ---\n";
+        fileContext.forEach((file, index) => {
+            contextualInfo += `\nFile ${index + 1}: ${file.filename} (${file.fileType})\n`;
+            contextualInfo += `Uploaded: ${new Date(file.timestamp).toLocaleString()}\n`;
+            if (file.content && file.content.length > 0) {
+                contextualInfo += `Content: ${file.content.substring(0, 1000)}${file.content.length > 1000 ? '...' : ''}\n`;
+            }
+            if (file.summary) {
+                contextualInfo += `Previous Analysis: ${file.summary}\n`;
+            }
+            contextualInfo += "---\n";
+        });
+        contextualInfo += "\n";
+    }
+
+    if (contextualInfo) {
+        enhancedPrompt = `${contextualInfo}\nUser Question: ${query}`;
+    }
+
     // 6. Prepare enhanced query with search context and file analysis
-        let enhancedQuery = query;
+        let enhancedQuery = enhancedPrompt;
 
-        // First apply file analysis context if available
-        if (contextualFileAnalysis) {
-            enhancedQuery = buildFileAnalysisPrompt(query, contextualFileAnalysis);
-        }
-
-        // Then apply search results context if available
         if (searchResults && searchResults.trim() !== '') {
             // Enhanced prompt for sports queries
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);

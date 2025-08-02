@@ -27,11 +27,21 @@ export interface Message {
   };
 }
 
+export interface FileContext {
+  filename: string;
+  content: string;
+  summary: string;
+  timestamp: Date;
+  fileType: string;
+  size: number;
+}
+
 export interface ChatSession {
   id: string;
   title: string;
   timestamp: string;
   messages: Message[];
+  fileContext?: FileContext[];
 }
 
 export function useChat() {
@@ -40,6 +50,7 @@ export function useChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [fileContext, setFileContext] = useState<FileContext[]>([]);
   const [_, navigate] = useLocation();
   const { user } = useAuth();
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -95,6 +106,11 @@ export function useChat() {
           const formData = new FormData();
           formData.append('message', content);
           formData.append('file', files[0]); // Send first file
+          
+          // Include existing file context
+          if (fileContext.length > 0) {
+            formData.append('fileContext', JSON.stringify(fileContext));
+          }
 
           console.log('📤 Sending file:', {
             name: files[0].name,
@@ -117,7 +133,36 @@ export function useChat() {
           if (!response.ok) throw new Error('Failed to send message');
           const data = await response.json();
           responseContent = data.response?.content || data.response?.response || 'AI response';
+          
+          // Store file context for future reference
+          if (data.fileAnalysis) {
+            const newFileContext: FileContext = {
+              filename: files[0].name,
+              content: data.fileAnalysis.documentContent || data.fileAnalysis.sequence || '',
+              summary: responseContent.substring(0, 500) + '...',
+              timestamp: new Date(),
+              fileType: files[0].type,
+              size: files[0].size
+            };
+            
+            setFileContext(prev => [...prev.slice(-2), newFileContext]); // Keep last 3 files
+          }
         } else {
+          // Build conversation history with file context
+          const conversationHistory = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp
+          }));
+
+          // Include file context in the request
+          const requestBody = {
+            message: content,
+            conversationId: currentSessionId || `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            conversationHistory,
+            fileContext: fileContext.length > 0 ? fileContext : undefined
+          };
+
           const response = await fetch('/api/chat/message', {
             method: 'POST',
             headers: {
@@ -127,10 +172,7 @@ export function useChat() {
               'x-firebase-display-name': activeUser.displayName || '',
               'x-firebase-photo-url': activeUser.photoURL || '',
             },
-            body: JSON.stringify({ 
-              message: content,
-              conversationId: currentSessionId || `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-            }),
+            body: JSON.stringify(requestBody),
           });
 
           if (!response.ok) throw new Error('Failed to send message');
@@ -209,6 +251,7 @@ export function useChat() {
           title,
           timestamp: new Date().toLocaleDateString(),
           messages: currentMessages,
+          fileContext: fileContext.length > 0 ? fileContext : undefined,
         };
 
         const updatedSessions = [newSession, ...sessions.filter(s => s.id !== sessionId)];
@@ -244,6 +287,7 @@ export function useChat() {
     console.log('Starting new chat');
     setMessages([]);
     setCurrentSessionId(null);
+    setFileContext([]);
     setIsLoading(false);
     navigate('/chat');
 
@@ -260,6 +304,7 @@ export function useChat() {
 
     setMessages(sessionMessages);
     setCurrentSessionId(session.id);
+    setFileContext(session.fileContext || []);
     const updatedSessions = [session, ...sessions.filter(s => s.id !== session.id)];
     setSessions(updatedSessions);
     localStorage.setItem('bioscriptor-sessions', JSON.stringify(updatedSessions));
@@ -277,9 +322,11 @@ export function useChat() {
       }));
       setMessages(sessionMessages);
       setCurrentSessionId(sessionId);
+      setFileContext(session.fileContext || []);
     } else {
       setMessages([]);
       setCurrentSessionId(null);
+      setFileContext([]);
     }
   }, []);
 
@@ -291,6 +338,8 @@ export function useChat() {
   return {
     messages,
     sessions,
+    fileContext,
+    setFileContext,
     sendMessage,
     newChat,
     switchToSession,
