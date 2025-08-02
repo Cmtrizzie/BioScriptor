@@ -584,7 +584,9 @@ async function convertDocxToText(content: string): Promise<string> {
     const textChunks: string[] = [];
     const metadataChunks: string[] = [];
 
-    // Extract document metadata
+    console.log(`🔍 DOCX parsing: Processing ${Math.round(content.length / 1024)}KB of XML content`);
+
+    // Extract document metadata first
     const titleMatch = content.match(/<dc:title[^>]*>(.*?)<\/dc:title>/);
     const authorMatch = content.match(/<dc:creator[^>]*>(.*?)<\/dc:creator>/);
     const subjectMatch = content.match(/<dc:subject[^>]*>(.*?)<\/dc:subject>/);
@@ -593,77 +595,135 @@ async function convertDocxToText(content: string): Promise<string> {
     if (authorMatch) metadataChunks.push(`Author: ${decodeHTMLEntities(authorMatch[1])}`);
     if (subjectMatch) metadataChunks.push(`Subject: ${decodeHTMLEntities(subjectMatch[1])}`);
 
-    // Method 1: Extract all text elements directly
-    const allTextMatches = content.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
-    const directText = allTextMatches
-      .map(match => {
-        const textMatch = match.match(/<w:t[^>]*>(.*?)<\/w:t>/);
-        return textMatch ? decodeHTMLEntities(textMatch[1]) : '';
-      })
-      .filter(text => text.trim() && !isXMLNoise(text) && text.length > 1)
-      .join(' ');
-
-    if (directText.length > 100) {
-      textChunks.push(directText);
+    // Method 1: Enhanced direct text extraction with better filtering
+    const allTextMatches = content.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+    console.log(`📝 Found ${allTextMatches.length} text elements`);
+    
+    for (const match of allTextMatches) {
+      const textMatch = match.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
+      if (textMatch && textMatch[1]) {
+        const text = decodeHTMLEntities(textMatch[1]).trim();
+        if (text && text.length > 1 && !isXMLNoise(text) && hasReadableContent(text)) {
+          textChunks.push(text);
+        }
+      }
     }
 
-    // Method 2: Extract structured content from document body
-    const documentXML = content.match(/<w:document[^>]*>(.*?)<\/w:document>/s);
-    if (documentXML && textChunks.length === 0) {
-      const documentContent = documentXML[1];
+    console.log(`✅ Extracted ${textChunks.length} valid text chunks`);
+
+    // Method 2: Extract from document.xml specifically  
+    const documentXMLMatch = content.match(/document\.xml.*?<w:document[^>]*>(.*?)<\/w:document>/s);
+    if (documentXMLMatch) {
+      const documentContent = documentXMLMatch[1];
+      console.log(`📄 Processing document.xml content`);
       
-      // Extract paragraphs with better structure preservation
-      const paragraphMatches = documentContent.match(/<w:p[^>]*>(.*?)<\/w:p>/gs) || [];
+      // Extract paragraph content with better structure
+      const paragraphs = documentContent.match(/<w:p[^>]*>(.*?)<\/w:p>/gs) || [];
+      console.log(`📝 Found ${paragraphs.length} paragraphs`);
       
-      for (const paragraph of paragraphMatches) {
-        const textElements = paragraph.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
-        const paragraphText = textElements
-          .map(elem => {
-            const textMatch = elem.match(/<w:t[^>]*>(.*?)<\/w:t>/);
-            return textMatch ? decodeHTMLEntities(textMatch[1]) : '';
+      for (const paragraph of paragraphs) {
+        const paragraphTexts = paragraph.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+        const paragraphContent = paragraphTexts
+          .map(textElem => {
+            const match = textElem.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
+            return match ? decodeHTMLEntities(match[1]).trim() : '';
           })
-          .filter(text => text.trim() && !isXMLNoise(text))
+          .filter(text => text && !isXMLNoise(text))
           .join(' ');
         
-        if (paragraphText.trim() && paragraphText.length > 3) {
-          textChunks.push(paragraphText);
+        if (paragraphContent.trim() && paragraphContent.length > 3) {
+          textChunks.push(paragraphContent);
         }
       }
 
       // Extract table content
-      const tableMatches = documentContent.match(/<w:tbl[^>]*>(.*?)<\/w:tbl>/gs) || [];
-      for (const table of tableMatches) {
-        const cellTexts = table.match(/<w:t[^>]*>(.*?)<\/w:t>/g) || [];
-        const tableContent = cellTexts
+      const tables = documentContent.match(/<w:tbl[^>]*>(.*?)<\/w:tbl>/gs) || [];
+      for (const table of tables) {
+        const tableCells = table.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+        const tableText = tableCells
           .map(cell => {
-            const cellMatch = cell.match(/<w:t[^>]*>(.*?)<\/w:t>/);
-            return cellMatch ? decodeHTMLEntities(cellMatch[1]) : '';
+            const match = cell.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
+            return match ? decodeHTMLEntities(match[1]).trim() : '';
           })
-          .filter(text => text.trim() && !isXMLNoise(text))
+          .filter(text => text && !isXMLNoise(text))
           .join(' | ');
         
-        if (tableContent.trim() && tableContent.length > 5) {
-          textChunks.push(`[Table] ${tableContent}`);
+        if (tableText.trim() && tableText.length > 5) {
+          textChunks.push(`[Table] ${tableText}`);
         }
       }
     }
 
-    // Method 3: Fallback - extract any readable text patterns
-    if (textChunks.length === 0) {
-      const readablePatterns = content.match(/[A-Za-z][A-Za-z0-9\s\.,!?\-;:'"()]{20,}/g) || [];
+    // Method 3: Extract from specific document parts
+    const documentParts = [
+      /word\/document\.xml.*?<w:body[^>]*>(.*?)<\/w:body>/s,
+      /word\/header\d*\.xml.*?<w:hdr[^>]*>(.*?)<\/w:hdr>/gs,
+      /word\/footer\d*\.xml.*?<w:ftr[^>]*>(.*?)<\/w:ftr>/gs
+    ];
+
+    for (const partRegex of documentParts) {
+      const partMatches = content.match(partRegex) || [];
+      for (const part of partMatches) {
+        const partTexts = part.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+        for (const textElem of partTexts) {
+          const match = textElem.match(/<w:t[^>]*>([^<]*)<\/w:t>/);
+          if (match && match[1]) {
+            const text = decodeHTMLEntities(match[1]).trim();
+            if (text && text.length > 1 && !isXMLNoise(text) && hasReadableContent(text)) {
+              textChunks.push(text);
+            }
+          }
+        }
+      }
+    }
+
+    // Method 4: Advanced fallback with comprehensive text extraction
+    if (textChunks.length < 10) {
+      console.log(`⚠️ Low text extraction, trying comprehensive approach`);
+      
+      // Extract any text between w:t tags with more flexible patterns
+      const flexibleTextPattern = /<w:t[^>]*>((?:[^<]|<(?!\/w:t>))*)<\/w:t>/g;
+      let flexibleMatch;
+      while ((flexibleMatch = flexibleTextPattern.exec(content)) !== null) {
+        const text = decodeHTMLEntities(flexibleMatch[1]).trim();
+        if (text && text.length > 2 && hasReadableContent(text) && !isXMLNoise(text)) {
+          textChunks.push(text);
+        }
+      }
+
+      // Extract readable content patterns as last resort
+      const readablePatterns = content.match(/[A-Za-z]{3,}(?:[\s\w.,!?;:'"()-]){10,}[A-Za-z0-9.,!?;:'"()-]/g) || [];
       const filteredPatterns = readablePatterns
-        .filter(text => !isXMLNoise(text) && hasReadableContent(text))
-        .slice(0, 50);
+        .filter(text => hasReadableContent(text) && 
+                       !text.includes('xml') && 
+                       !text.includes('Microsoft') &&
+                       !text.includes('Office') &&
+                       text.split(' ').length > 2)
+        .slice(0, 20);
+      
       textChunks.push(...filteredPatterns);
     }
 
+    // Remove duplicates and combine content
+    const uniqueTextChunks = [...new Set(textChunks)];
+    console.log(`📊 Final extraction: ${uniqueTextChunks.length} unique text chunks`);
+    
+    const extractedText = uniqueTextChunks
+      .filter(chunk => chunk.length > 2)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     // Combine metadata and content
-    const allContent = [...metadataChunks, ...textChunks]
+    const allContent = [...metadataChunks, extractedText]
       .filter(chunk => chunk.trim().length > 2)
       .join('\n\n');
 
-    return allContent.length > 50 ? allContent : 'Document structure detected but readable content extraction incomplete.';
+    console.log(`✅ Total extracted content: ${allContent.length} characters`);
+    
+    return allContent.length > 50 ? allContent : generateDocumentAnalysis(content);
   } catch (error) {
+    console.error(`❌ DOCX conversion error:`, error);
     throw new Error(`DOCX conversion failed: ${error.message}`);
   }
 }
