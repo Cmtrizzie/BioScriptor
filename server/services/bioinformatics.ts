@@ -466,10 +466,6 @@ function extractDocxText(docxContent: string): string {
     return `DOCX parsing failed: ${(error as Error).message}`;
   }
 }
-  } catch (error) {
-    throw new Error(`DOCX parsing failed: ${(error as Error).message}`);
-  }
-}
 
 // Image dimension extraction
 function extractImageDimensions(imageData: string): { width: number; height: number } {
