@@ -353,8 +353,28 @@ export default function MessageList({ messages, isLoading, isTyping, bottomRef, 
               </div>
 
               {message.role === 'user' ? (
-                <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8 max-w-full text-white">
-                  {message.content}
+                <div className="space-y-2">
+                  {/* Show uploaded files if any */}
+                  {message.file && message.file.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {message.file.map((file: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg border border-white/20">
+                          <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-sm text-white/90 truncate">
+                            {file.name || `Uploaded file ${index + 1}`}
+                          </span>
+                          <span className="text-xs text-white/60">
+                            {file.size ? `${(file.size / 1024).toFixed(1)} KB` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="whitespace-pre-wrap font-medium leading-relaxed break-words overflow-wrap-anywhere pr-8 max-w-full text-white">
+                    {message.content}
+                  </div>
                 </div>
               ) : (
                 <div className="prose prose-sm max-w-full leading-relaxed overflow-hidden pr-8 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>

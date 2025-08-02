@@ -186,6 +186,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle file upload if present
       if (req.file) {
+        console.log('📁 File uploaded:', {
+          filename: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype
+        });
+
         const fileSizeInMB = req.file.size / (1024 * 1024);
 
         // Check file size limits based on subscription
@@ -211,25 +217,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Handle different file types appropriately
         if (['pdf', 'docx', 'doc'].includes(fileType || '')) {
-          // For binary document formats, we'll need special handling
-          // For now, extract text representation
-          fileContent = req.file.buffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+          // For binary document formats, try to extract readable text
+          try {
+            fileContent = req.file.buffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ').slice(0, 10000);
+          } catch (error) {
+            fileContent = `[Binary document: ${req.file.originalname}]`;
+          }
         } else {
           // For text-based files
-          fileContent = req.file.buffer.toString('utf8');
+          try {
+            fileContent = req.file.buffer.toString('utf8');
+          } catch (error) {
+            fileContent = `[Unable to read file: ${req.file.originalname}]`;
+          }
         }
 
         // Analyze the uploaded file
-        fileAnalysis = await analyzeBioFile(fileContent, fileType as any);
+        try {
+          fileAnalysis = await analyzeBioFile(fileContent, fileType as any);
+          console.log('🔬 File analysis completed:', {
+            sequenceType: fileAnalysis.sequenceType,
+            fileType: fileAnalysis.fileType,
+            hasContent: !!fileAnalysis.documentContent
+          });
+        } catch (error) {
+          console.error('File analysis error:', error);
+          fileAnalysis = {
+            sequenceType: 'document' as any,
+            sequence: fileContent.substring(0, 1000),
+            fileType: fileType as any,
+            documentContent: fileContent.substring(0, 2000),
+            stats: {
+              length: fileContent.length,
+              composition: {}
+            }
+          };
+        }
 
         // Save file to storage
-        await storage.createBioFile({
-          userId: req.user.id,
-          filename: req.file.originalname,
-          fileType: fileType as any,
-          content: fileContent,
-          analysis: fileAnalysis,
-        });
+        try {
+          await storage.createBioFile({
+            userId: req.user.id,
+            filename: req.file.originalname,
+            fileType: fileType as any,
+            content: fileContent,
+            analysis: fileAnalysis,
+          });
+        } catch (error) {
+          console.error('File storage error:', error);
+          // Continue processing even if storage fails
+        }
       }
 
       // Check if advanced analysis is requested and available
