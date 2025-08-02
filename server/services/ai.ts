@@ -404,10 +404,51 @@ function formatSequenceAnalysis(analysis: BioFileAnalysis, context: Conversation
     return response;
 }
 
-// Enhanced document analysis for application letters
+// Enhanced document analysis for application letters with better content extraction
 function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string): string {
   const content = fileAnalysis.documentContent || '';
   const analysis = [];
+
+  // If content is too generic or appears to be analysis rather than actual content
+  if (content.includes('Document structure detected') || content.includes('extracted the formatted text') || content.length < 100) {
+    analysis.push("## Document Analysis Issue Detected\n");
+    analysis.push("⚠️ **Content Extraction Problem**: The document content wasn't fully extracted. This could be due to:");
+    analysis.push("- Complex formatting in the original DOCX file");
+    analysis.push("- Password protection or document restrictions");
+    analysis.push("- Embedded objects or special formatting");
+    analysis.push("\n**Immediate Recommendations:**");
+    analysis.push("1. **Try re-uploading** the document");
+    analysis.push("2. **Save as Plain DOCX**: Remove any special formatting and save as a simple Word document");
+    analysis.push("3. **Convert to PDF**: Try converting to PDF first, then upload");
+    analysis.push("4. **Copy and paste**: Copy the text content and paste it directly in the chat");
+    
+    analysis.push("\n## General Application Letter Guidelines\n");
+    analysis.push("Since I couldn't analyze your specific content, here are key elements every strong application letter should have:");
+    
+    analysis.push("\n### **Essential Structure (4-5 paragraphs):**");
+    analysis.push("1. **Opening Paragraph**: State the specific position and how you learned about it");
+    analysis.push("2. **Qualifications Paragraph**: Highlight your most relevant skills and experience");
+    analysis.push("3. **Achievement Paragraph**: Provide 2-3 specific examples with quantifiable results");
+    analysis.push("4. **Company Connection**: Explain why you want to work for this specific organization");
+    analysis.push("5. **Closing Paragraph**: Express enthusiasm and request an interview");
+    
+    analysis.push("\n### **Content Enhancement Tips:**");
+    analysis.push("- Use specific examples: 'Increased sales by 25%' vs 'Good at sales'");
+    analysis.push("- Show research: Mention something specific about the company");
+    analysis.push("- Quantify achievements: Numbers make impact stronger");
+    analysis.push("- Match job requirements: Address key qualifications from the job posting");
+    analysis.push("- Professional tone: Formal but engaging language");
+    
+    analysis.push("\n### **Format Best Practices:**");
+    analysis.push("- **Length**: 300-400 words (one page)");
+    analysis.push("- **Font**: Professional fonts (Arial, Calibri, Times New Roman) in 11-12pt");
+    analysis.push("- **Spacing**: Single or 1.15 line spacing");
+    analysis.push("- **Margins**: 1 inch on all sides");
+    analysis.push("- **Header**: Your contact information at the top");
+    analysis.push("- **Date and Address**: Include date and employer's contact information");
+    
+    return analysis.join('\n');
+  }
 
   // Content Quality Analysis
   analysis.push("## Content Quality Assessment\n");
@@ -1203,9 +1244,6 @@ Answer based EXCLUSIVELY on the search results above:`;
         const tokenUsage = tokenManager.updateTokenUsage(actualConversationId, query, aiResponse.content);
         const updatedTokenLimits = tokenManager.checkConversationLimits(actualConversationId);
 
-        // Determine data privacy mode from user settings or default to private
-        const dataPrivacyMode = 'private'; // Default to private mode
-
         // Create response message with token tracking
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
@@ -1221,7 +1259,7 @@ Answer based EXCLUSIVELY on the search results above:`;
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
-                dataPrivacyMode: dataPrivacyMode,
+                dataPrivacyMode: 'private', // Default to private mode
                 tokenUsage,
                 conversationLimits: {
                     status: updatedTokenLimits.status,
@@ -1234,9 +1272,8 @@ Answer based EXCLUSIVELY on the search results above:`;
             }
         };
 
-        if (dataPrivacyMode !== 'private') {
-            conversationManager.addMessage(finalResponseMessage);
-        }
+        // Always add message to conversation manager
+        conversationManager.addMessage(finalResponseMessage);
 
         return finalResponseMessage;
 
