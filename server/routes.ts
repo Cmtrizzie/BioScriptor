@@ -219,11 +219,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Enhanced file content extraction for all file types
         try {
           fileContent = await extractFileContent(req.file.buffer, fileType || '', req.file.originalname, req.file.mimetype);
+          
+          // Log extraction success for debugging
+          console.log(`📄 Content extraction result: ${fileContent.length} characters extracted from ${fileType} file`);
+          
         } catch (error) {
           console.error('File content extraction error:', error);
-          // Provide more specific information based on file type
-          if (fileType === 'docx') {
-            fileContent = `DOCX Document: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB). This appears to be a Word document that likely contains a conditional damage agreement for a Dell laptop. The document probably includes terms, conditions, and procedures related to potential damage scenarios.`;
+          
+          // Try alternative extraction methods for common document types
+          if (fileType === 'pdf' || fileType === 'docx') {
+            try {
+              // Convert buffer to string with different encodings
+              const bufferAsString = req.file.buffer.toString('utf8');
+              const binaryString = req.file.buffer.toString('binary');
+              
+              // Use the content extraction functions directly
+              if (fileType === 'pdf') {
+                const { extractPdfText } = await import('./services/bioinformatics');
+                fileContent = extractPdfText(binaryString);
+              } else if (fileType === 'docx') {
+                const { extractDocxText } = await import('./services/bioinformatics');
+                fileContent = extractDocxText(bufferAsString);
+              }
+              
+              console.log(`📄 Alternative extraction successful: ${fileContent.length} characters`);
+              
+            } catch (altError) {
+              console.error('Alternative extraction failed:', altError);
+              fileContent = `${fileType.toUpperCase()} Document: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB). Document structure detected but content extraction requires specialized parsing. Please ensure the file is not corrupted and try uploading again.`;
+            }
           } else {
             fileContent = `File: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB, ${req.file.mimetype}). Content available for analysis.`;
           }
