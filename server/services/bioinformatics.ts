@@ -1,5 +1,5 @@
 
-export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'md' | 'json' | 'xml' | 'jpg' | 'jpeg' | 'png' | 'gif' | 'bmp' | 'svg' | 'mp3' | 'wav' | 'mp4' | 'avi' | 'zip' | 'rar' | 'exe' | 'bin';
+export type BioFileType = 'fasta' | 'genbank' | 'pdb' | 'csv' | 'vcf' | 'gtf' | 'gff' | 'fastq' | 'txt' | 'pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'pptx' | 'ppt' | 'rtf' | 'html' | 'htm' | 'md' | 'json' | 'xml' | 'yml' | 'yaml' | 'tsv' | 'jpg' | 'jpeg' | 'png' | 'gif' | 'bmp' | 'svg' | 'mp3' | 'wav' | 'mp4' | 'avi' | 'zip' | 'rar' | 'exe' | 'bin';
 
 export interface BioFileAnalysis {
   sequenceType: 'dna' | 'rna' | 'protein' | 'document' | 'data' | 'unknown';
@@ -497,6 +497,18 @@ async function extractTextContent(content: string, fileType: BioFileType): Promi
         return analyzeJSONContent(content);
       case 'csv':
         return analyzeCSVContent(content);
+      case 'xml':
+        return extractXMLContent(content);
+      case 'rtf':
+        return extractRTFContent(content);
+      case 'html':
+        return extractHTMLContent(content);
+      case 'xlsx':
+      case 'xls':
+        return extractExcelContent(content);
+      case 'pptx':
+      case 'ppt':
+        return extractPowerPointContent(content);
       default:
         return sanitizeContent(content);
     }
@@ -509,75 +521,344 @@ async function extractTextContent(content: string, fileType: BioFileType): Promi
 // Extract readable content from PDF (enhanced text extraction)
 function extractPDFContent(content: string): string {
   try {
-    // Enhanced PDF text extraction with better pattern matching
     let extractedText = '';
+    const textChunks: string[] = [];
 
-    // Look for text objects and streams in PDF structure
-    const textObjectRegex = /BT\s+.*?ET/gs;
-    const textMatches = content.match(textObjectRegex) || [];
+    // Method 1: Extract text from PDF text objects (BT...ET blocks)
+    const textObjectRegex = /BT\s+(.*?)\s+ET/gs;
+    const textObjects = content.match(textObjectRegex) || [];
 
-    // Extract text from each text object
-    for (const textObject of textMatches) {
-      // Look for text content within parentheses or brackets
-      const textContentRegex = /\(([^)]+)\)/g;
-      const bracketContentRegex = /\[([^\]]+)\]/g;
-
+    for (const textObj of textObjects) {
+      // Extract text from Tj and TJ operators
+      const tjRegex = /\((.*?)\)\s*Tj/g;
+      const tjArrayRegex = /\[(.*?)\]\s*TJ/g;
+      
       let match;
-      while ((match = textContentRegex.exec(textObject)) !== null) {
-        extractedText += match[1] + ' ';
+      while ((match = tjRegex.exec(textObj)) !== null) {
+        const text = match[1].replace(/\\[()]/g, (m) => m[1]); // Unescape parentheses
+        textChunks.push(text);
       }
-      while ((match = bracketContentRegex.exec(textObject)) !== null) {
-        extractedText += match[1] + ' ';
+      
+      while ((match = tjArrayRegex.exec(textObj)) !== null) {
+        const arrayContent = match[1];
+        const textParts = arrayContent.match(/\(([^)]*)\)/g) || [];
+        textParts.forEach(part => {
+          const cleanText = part.slice(1, -1).replace(/\\[()]/g, (m) => m[1]);
+          textChunks.push(cleanText);
+        });
       }
     }
 
-    // Also look for readable text patterns in the raw content
-    const readableTextRegex = /[A-Za-z]{3,}[A-Za-z0-9\s.,!?;:'"()-]{10,}/g;
-    const readableMatches = content.match(readableTextRegex) || [];
+    // Method 2: Extract from stream objects
+    const streamRegex = /stream\s*(.*?)\s*endstream/gs;
+    const streams = content.match(streamRegex) || [];
+    
+    for (const stream of streams) {
+      // Look for readable text in streams
+      const readableText = stream.match(/[A-Za-z0-9\s.,!?;:'"()-]{4,}/g) || [];
+      textChunks.push(...readableText);
+    }
 
-    // Combine and clean the extracted text
-    const combinedText = (extractedText + ' ' + readableMatches.join(' '))
-      .replace(/[^\x20-\x7E\n\r\t]/g, ' ') // Remove non-printable characters
-      .replace(/\s+/g, ' ') // Normalize whitespace
+    // Method 3: Direct text extraction from PDF content
+    const directTextRegex = /(?:[A-Z][a-z]+\s+){2,}[A-Za-z0-9\s.,!?;:'"()-]*|[A-Za-z0-9]{3,}[\s.,!?;:'"()-]+[A-Za-z0-9\s.,!?;:'"()-]{10,}/g;
+    const directMatches = content.match(directTextRegex) || [];
+    textChunks.push(...directMatches);
+
+    // Method 4: Extract text patterns between common PDF delimiters
+    const patternExtractors = [
+      /\/Title\s*\((.*?)\)/g,
+      /\/Subject\s*\((.*?)\)/g,
+      /\/Author\s*\((.*?)\)/g,
+      /\/Creator\s*\((.*?)\)/g,
+      /\/Producer\s*\((.*?)\)/g,
+      /\/Keywords\s*\((.*?)\)/g
+    ];
+
+    for (const regex of patternExtractors) {
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        textChunks.push(`${regex.source.split('\\')[1]}: ${match[1]}`);
+      }
+    }
+
+    // Combine and clean all extracted text
+    extractedText = textChunks
+      .filter(chunk => chunk && chunk.trim().length > 2)
+      .map(chunk => chunk.replace(/[^\x20-\x7E\n\r\t]/g, ' ').trim())
+      .filter(chunk => chunk.length > 0)
+      .join(' ')
+      .replace(/\s+/g, ' ')
       .trim();
 
-    if (combinedText.length > 100) {
-      return `PDF Document Content:\n\n${combinedText.substring(0, 2000)}${combinedText.length > 2000 ? '...' : ''}`;
+    if (extractedText.length > 50) {
+      return `PDF Document Content:\n\n${extractedText.substring(0, 3000)}${extractedText.length > 3000 ? '\n\n...(content truncated)' : ''}`;
     } else {
-      // Fallback to basic analysis
-      const lines = content.split('\n').filter(line => 
-        /[A-Za-z]{3,}/.test(line) && line.length > 10
-      );
-
-      if (lines.length > 0) {
-        const sampleContent = lines.slice(0, 20).join('\n');
-        return `PDF Document (${content.length} bytes):\n\nSample content extracted:\n${sampleContent.substring(0, 1500)}${sampleContent.length > 1500 ? '...' : ''}`;
+      // Fallback: analyze PDF structure
+      const pageCount = (content.match(/\/Type\s*\/Page[^s]/g) || []).length;
+      const hasImages = content.includes('/XObject') && content.includes('/Image');
+      const hasText = content.includes('/Font') || content.includes('Tj') || content.includes('TJ');
+      
+      let analysis = `PDF Document Analysis:\n\n`;
+      analysis += `• File size: ${Math.round(content.length / 1024)}KB\n`;
+      if (pageCount > 0) analysis += `• Pages: ${pageCount}\n`;
+      if (hasText) analysis += `• Contains text content\n`;
+      if (hasImages) analysis += `• Contains images\n`;
+      
+      // Try to extract any readable fragments
+      const fragments = content.match(/[A-Za-z]{4,}[\s\w.,!?;:'"()-]{10,}/g) || [];
+      if (fragments.length > 0) {
+        analysis += `\nReadable fragments found:\n${fragments.slice(0, 10).join('\n').substring(0, 1000)}`;
       }
-
-      return `PDF document detected (${Math.round(content.length / 1024)}KB). Advanced text extraction shows this appears to be a structured document. I can analyze the document structure and provide insights based on the available metadata and formatting patterns.`;
+      
+      return analysis;
     }
   } catch (error) {
-    return `PDF document (${Math.round(content.length / 1024)}KB) detected. I can analyze the document structure and provide insights about the content based on available patterns and metadata.`;
+    return `PDF document (${Math.round(content.length / 1024)}KB) - Enhanced extraction encountered an error. The document appears to be a structured PDF file that may require specialized parsing.`;
   }
 }
 
 // Extract readable content from Word documents
 function extractDocxContent(content: string): string {
   try {
-    // Basic DOCX text extraction - in production, use a proper DOCX parser
-    let textContent = '';
+    let extractedText = '';
+    const textChunks: string[] = [];
 
-    // Look for readable text patterns in the binary content
-    const textMatches = content.match(/[\x20-\x7E]{10,}/g) || [];
-    textContent = textMatches.join(' ').replace(/\s+/g, ' ').trim();
-
-    if (textContent.length < 100) {
-      return `Word document detected. File contains ${content.length} bytes. This appears to be about African foods based on the filename. For full document text extraction, consider uploading as plain text or using specialized document parsing tools.`;
+    // Method 1: Extract from XML content in DOCX structure
+    // DOCX files contain XML, look for document.xml content
+    const xmlContentRegex = /<w:t[^>]*>(.*?)<\/w:t>/g;
+    let match;
+    while ((match = xmlContentRegex.exec(content)) !== null) {
+      const text = match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'");
+      if (text.trim()) textChunks.push(text);
     }
 
-    return textContent.substring(0, 2000);
+    // Method 2: Extract from paragraph elements
+    const paragraphRegex = /<w:p[^>]*>(.*?)<\/w:p>/gs;
+    while ((match = paragraphRegex.exec(content)) !== null) {
+      const paragraph = match[1];
+      const textInParagraph = paragraph.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (textInParagraph.length > 3) textChunks.push(textInParagraph);
+    }
+
+    // Method 3: Look for readable text patterns in the binary content
+    const readableTextRegex = /[A-Za-z][A-Za-z0-9\s.,!?;:'"()-]{15,}/g;
+    const readableMatches = content.match(readableTextRegex) || [];
+    textChunks.push(...readableMatches.filter(text => 
+      !text.includes('<?xml') && 
+      !text.includes('Microsoft') && 
+      text.split(' ').length > 2
+    ));
+
+    // Method 4: Extract document properties
+    const titleMatch = content.match(/<dc:title[^>]*>(.*?)<\/dc:title>/);
+    const subjectMatch = content.match(/<dc:subject[^>]*>(.*?)<\/dc:subject>/);
+    const creatorMatch = content.match(/<dc:creator[^>]*>(.*?)<\/dc:creator>/);
+    
+    if (titleMatch) textChunks.unshift(`Title: ${titleMatch[1]}`);
+    if (subjectMatch) textChunks.unshift(`Subject: ${subjectMatch[1]}`);
+    if (creatorMatch) textChunks.unshift(`Author: ${creatorMatch[1]}`);
+
+    // Method 5: Extract from shared strings (for embedded Excel data)
+    const sharedStringRegex = /<si[^>]*>.*?<t[^>]*>(.*?)<\/t>.*?<\/si>/gs;
+    while ((match = sharedStringRegex.exec(content)) !== null) {
+      const text = match[1].replace(/&[a-z]+;/g, ' ').trim();
+      if (text.length > 2) textChunks.push(text);
+    }
+
+    // Combine and clean extracted text
+    extractedText = textChunks
+      .filter(chunk => chunk && chunk.trim().length > 1)
+      .map(chunk => chunk
+        .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      )
+      .filter(chunk => chunk.length > 0 && !/^[^A-Za-z]*$/.test(chunk))
+      .join('\n')
+      .replace(/\n\s*\n/g, '\n')
+      .trim();
+
+    if (extractedText.length > 50) {
+      return `Word Document Content:\n\n${extractedText.substring(0, 3000)}${extractedText.length > 3000 ? '\n\n...(content truncated)' : ''}`;
+    } else {
+      // Fallback analysis
+      const hasImages = content.includes('image') || content.includes('picture');
+      const hasTables = content.includes('<w:tbl') || content.includes('table');
+      const hasFormats = content.includes('<w:b/>') || content.includes('<w:i/>');
+      
+      let analysis = `Word Document Analysis:\n\n`;
+      analysis += `• File size: ${Math.round(content.length / 1024)}KB\n`;
+      if (hasImages) analysis += `• Contains images\n`;
+      if (hasTables) analysis += `• Contains tables\n`;
+      if (hasFormats) analysis += `• Contains formatted text\n`;
+      
+      // Extract any meaningful text fragments
+      const fragments = content.match(/[A-Za-z]{3,}[\s\w.,!?;:'"()-]{8,}/g) || [];
+      if (fragments.length > 0) {
+        const cleanFragments = fragments
+          .filter(f => !f.includes('xml') && !f.includes('Microsoft'))
+          .slice(0, 15);
+        if (cleanFragments.length > 0) {
+          analysis += `\nContent fragments:\n${cleanFragments.join('\n').substring(0, 1000)}`;
+        }
+      }
+      
+      return analysis;
+    }
   } catch (error) {
-    return `Word document (${content.length} bytes) - content extraction requires specialized parsing.`;
+    return `Word document (${Math.round(content.length / 1024)}KB) - Enhanced extraction encountered an error. This appears to be a structured document that may contain rich formatting.`;
+  }
+}
+
+// Extract content from XML files
+function extractXMLContent(content: string): string {
+  try {
+    // Remove XML tags but keep text content
+    let textContent = content
+      .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1') // Extract CDATA content
+      .replace(/<!--.*?-->/gs, '') // Remove comments
+      .replace(/<[^>]*>/g, ' ') // Remove tags
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return textContent.length > 0 ? 
+      `XML Document Content:\n\n${textContent.substring(0, 2000)}${textContent.length > 2000 ? '...' : ''}` :
+      'XML document structure detected - contains markup data';
+  } catch (error) {
+    return 'XML document - content extraction failed';
+  }
+}
+
+// Extract content from RTF files
+function extractRTFContent(content: string): string {
+  try {
+    // RTF uses control words, extract readable text
+    let textContent = content
+      .replace(/\\[a-z]+\d*\s?/g, ' ') // Remove RTF control words
+      .replace(/[{}]/g, ' ') // Remove braces
+      .replace(/\\\S/g, ' ') // Remove other RTF codes
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return textContent.length > 0 ?
+      `RTF Document Content:\n\n${textContent.substring(0, 2000)}${textContent.length > 2000 ? '...' : ''}` :
+      'RTF document detected - rich text format';
+  } catch (error) {
+    return 'RTF document - content extraction failed';
+  }
+}
+
+// Extract content from HTML files
+function extractHTMLContent(content: string): string {
+  try {
+    // Extract text from HTML, preserve some structure
+    let textContent = content
+      .replace(/<script[^>]*>.*?<\/script>/gis, '') // Remove scripts
+      .replace(/<style[^>]*>.*?<\/style>/gis, '') // Remove styles
+      .replace(/<!--.*?-->/gs, '') // Remove comments
+      .replace(/<br\s*\/?>/gi, '\n') // Convert breaks to newlines
+      .replace(/<\/?(h[1-6]|p|div|section|article)[^>]*>/gi, '\n') // Add newlines for block elements
+      .replace(/<[^>]*>/g, ' ') // Remove remaining tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n/g, '\n')
+      .trim();
+
+    return textContent.length > 0 ?
+      `HTML Document Content:\n\n${textContent.substring(0, 2500)}${textContent.length > 2500 ? '...' : ''}` :
+      'HTML document detected - web page content';
+  } catch (error) {
+    return 'HTML document - content extraction failed';
+  }
+}
+
+// Extract content from Excel files (basic)
+function extractExcelContent(content: string): string {
+  try {
+    const textChunks: string[] = [];
+
+    // Method 1: Extract from shared strings XML (xlsx)
+    const sharedStringRegex = /<t[^>]*>(.*?)<\/t>/g;
+    let match;
+    while ((match = sharedStringRegex.exec(content)) !== null) {
+      const text = match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .trim();
+      if (text.length > 0) textChunks.push(text);
+    }
+
+    // Method 2: Extract readable text patterns
+    const readableRegex = /[A-Za-z][A-Za-z0-9\s.,!?;:'"()-]{5,}/g;
+    const readableMatches = content.match(readableRegex) || [];
+    textChunks.push(...readableMatches.filter(text => 
+      !text.includes('xml') && 
+      !text.includes('Microsoft') &&
+      text.split(' ').length > 1
+    ));
+
+    const extractedText = textChunks
+      .filter((chunk, index) => textChunks.indexOf(chunk) === index) // Remove duplicates
+      .slice(0, 100) // Limit chunks
+      .join('\n');
+
+    return extractedText.length > 20 ?
+      `Excel Spreadsheet Content:\n\n${extractedText.substring(0, 2000)}${extractedText.length > 2000 ? '...' : ''}` :
+      `Excel spreadsheet detected (${Math.round(content.length / 1024)}KB) - contains spreadsheet data and formulas`;
+  } catch (error) {
+    return 'Excel document - content extraction failed';
+  }
+}
+
+// Extract content from PowerPoint files (basic)
+function extractPowerPointContent(content: string): string {
+  try {
+    const textChunks: string[] = [];
+
+    // Extract from slide content XML
+    const slideTextRegex = /<a:t[^>]*>(.*?)<\/a:t>/g;
+    let match;
+    while ((match = slideTextRegex.exec(content)) !== null) {
+      const text = match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .trim();
+      if (text.length > 0) textChunks.push(text);
+    }
+
+    // Extract from paragraph elements
+    const paragraphRegex = /<p:txBody[^>]*>(.*?)<\/p:txBody>/gs;
+    while ((match = paragraphRegex.exec(content)) !== null) {
+      const paragraph = match[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (paragraph.length > 3) textChunks.push(paragraph);
+    }
+
+    const extractedText = textChunks
+      .filter((chunk, index) => textChunks.indexOf(chunk) === index)
+      .slice(0, 50)
+      .join('\n');
+
+    return extractedText.length > 20 ?
+      `PowerPoint Presentation Content:\n\n${extractedText.substring(0, 2000)}${extractedText.length > 2000 ? '...' : ''}` :
+      `PowerPoint presentation detected (${Math.round(content.length / 1024)}KB) - contains slide content`;
+  } catch (error) {
+    return 'PowerPoint document - content extraction failed';
   }
 }
 
