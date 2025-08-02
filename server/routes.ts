@@ -1700,7 +1700,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Promo Code Management Routes
   app.get("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
-    try {      const promoCodes = await storage.getAllPromoCodes();
+    try {
+      const promoCodes = await storage.getAllPromoCodes();
       res.json(promoCodes);
     } catch (error) {
       console.error('Promo codes fetch error:', error);
