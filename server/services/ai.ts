@@ -409,43 +409,71 @@ function analyzeApplicationDocument(fileAnalysis: BioFileAnalysis, query: string
   const content = fileAnalysis.documentContent || '';
   const analysis = [];
 
-  // If content is too generic or appears to be analysis rather than actual content
-  if (content.includes('Document structure detected') || content.includes('extracted the formatted text') || content.length < 100) {
-    analysis.push("## Document Analysis Issue Detected\n");
-    analysis.push("⚠️ **Content Extraction Problem**: The document content wasn't fully extracted. This could be due to:");
-    analysis.push("- Complex formatting in the original DOCX file");
-    analysis.push("- Password protection or document restrictions");
-    analysis.push("- Embedded objects or special formatting");
-    analysis.push("\n**Immediate Recommendations:**");
-    analysis.push("1. **Try re-uploading** the document");
-    analysis.push("2. **Save as Plain DOCX**: Remove any special formatting and save as a simple Word document");
-    analysis.push("3. **Convert to PDF**: Try converting to PDF first, then upload");
-    analysis.push("4. **Copy and paste**: Copy the text content and paste it directly in the chat");
+  // Always try to analyze the actual content first, even if extraction seems incomplete
+  analysis.push("## Document Analysis\n");
+  
+  // Check if we have any meaningful content to analyze
+  if (content && content.length > 20 && !content.includes('Document structure detected')) {
+    analysis.push("Based on your uploaded document, here's my analysis:\n");
     
-    analysis.push("\n## General Application Letter Guidelines\n");
-    analysis.push("Since I couldn't analyze your specific content, here are key elements every strong application letter should have:");
+    // Analyze the actual content
+    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
     
-    analysis.push("\n### **Essential Structure (4-5 paragraphs):**");
-    analysis.push("1. **Opening Paragraph**: State the specific position and how you learned about it");
-    analysis.push("2. **Qualifications Paragraph**: Highlight your most relevant skills and experience");
-    analysis.push("3. **Achievement Paragraph**: Provide 2-3 specific examples with quantifiable results");
-    analysis.push("4. **Company Connection**: Explain why you want to work for this specific organization");
-    analysis.push("5. **Closing Paragraph**: Express enthusiasm and request an interview");
+    analysis.push(`**Content Overview:**`);
+    analysis.push(`- Word count: ${wordCount} words`);
+    analysis.push(`- Structure: ${sentences.length} sentences detected`);
     
-    analysis.push("\n### **Content Enhancement Tips:**");
-    analysis.push("- Use specific examples: 'Increased sales by 25%' vs 'Good at sales'");
-    analysis.push("- Show research: Mention something specific about the company");
-    analysis.push("- Quantify achievements: Numbers make impact stronger");
-    analysis.push("- Match job requirements: Address key qualifications from the job posting");
-    analysis.push("- Professional tone: Formal but engaging language");
+    // Look for key application letter elements
+    const hasGreeting = /dear|hello|hi|to whom it may concern/i.test(content);
+    const hasPosition = /position|role|job|apply|application/i.test(content);
+    const hasExperience = /experience|worked|managed|led|developed|achieved/i.test(content);
+    const hasSkills = /skill|ability|proficient|expert|knowledge/i.test(content);
+    const hasClosing = /sincerely|regards|thank you|look forward/i.test(content);
     
-    analysis.push("\n### **Format Best Practices:**");
-    analysis.push("- **Length**: 300-400 words (one page)");
-    analysis.push("- **Font**: Professional fonts (Arial, Calibri, Times New Roman) in 11-12pt");
-    analysis.push("- **Spacing**: Single or 1.15 line spacing");
-    analysis.push("- **Margins**: 1 inch on all sides");
-    analysis.push("- **Header**: Your contact information at the top");
-    analysis.push("- **Date and Address**: Include date and employer's contact information");
+    analysis.push(`\n**Key Elements Present:**`);
+    analysis.push(`${hasGreeting ? '✅' : '❌'} Professional greeting`);
+    analysis.push(`${hasPosition ? '✅' : '❌'} Position/role mentioned`);
+    analysis.push(`${hasExperience ? '✅' : '❌'} Work experience discussed`);
+    analysis.push(`${hasSkills ? '✅' : '❌'} Skills highlighted`);
+    analysis.push(`${hasClosing ? '✅' : '❌'} Professional closing`);
+    
+    // Provide specific feedback based on content analysis
+    analysis.push(`\n**Specific Suggestions for Your Document:**`);
+    
+    if (wordCount < 200) {
+      analysis.push("- Consider expanding your content to better showcase your qualifications");
+    } else if (wordCount > 500) {
+      analysis.push("- Consider condensing to keep the reader engaged (aim for 300-400 words)");
+    }
+    
+    if (!hasPosition) {
+      analysis.push("- Clearly state the specific position you're applying for");
+    }
+    
+    if (!hasExperience) {
+      analysis.push("- Add specific examples of your relevant work experience");
+    }
+    
+    if (!hasSkills) {
+      analysis.push("- Highlight key skills that match the job requirements");
+    }
+    
+    // Look for quantifiable achievements
+    const hasNumbers = /\d+/.test(content);
+    if (!hasNumbers) {
+      analysis.push("- Include quantifiable achievements (e.g., 'increased sales by 25%', 'managed team of 5')");
+    }
+    
+    return analysis.join('\n');
+  } else {
+    // Fallback when content extraction fails
+    analysis.push("⚠️ **Content Extraction Issue**: I'm having difficulty reading the full content of your document.");
+    analysis.push("This could be due to complex formatting or document structure.");
+    analysis.push("\n**To get a proper analysis:**");
+    analysis.push("1. Try saving your document as a simple Word file without special formatting");
+    analysis.push("2. Convert to PDF and upload that instead");
+    analysis.push("3. Copy and paste the text directly in the chat for analysis");
     
     return analysis.join('\n');
   }
