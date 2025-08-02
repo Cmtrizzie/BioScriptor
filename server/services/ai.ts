@@ -121,35 +121,38 @@ async function processBioQuery(
     let enhancedQuery = query;
 
     if (fileAnalysis) {
-      let fileContext = `\n\n--- FILE ANALYSIS ---\n`;
+      let fileContext = `\n\n--- UPLOADED FILE ANALYSIS ---\n`;
       fileContext += `File Type: ${fileAnalysis.fileType}\n`;
       fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
 
       if (fileAnalysis.documentContent) {
-        fileContext += `Document Content Preview: ${fileAnalysis.documentContent}\n`;
+        fileContext += `\nDocument Content:\n${fileAnalysis.documentContent}\n`;
       }
 
       if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
-        fileContext += `Sequence Preview: ${fileAnalysis.sequence}\n`;
+        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, 200)}${fileAnalysis.sequence.length > 200 ? '...' : ''}\n`;
       }
 
       if (fileAnalysis.stats) {
-        fileContext += `Statistics: Length=${fileAnalysis.stats.length}`;
-        if (fileAnalysis.stats.wordCount) fileContext += `, Words=${fileAnalysis.stats.wordCount}`;
-        if (fileAnalysis.stats.lineCount) fileContext += `, Lines=${fileAnalysis.stats.lineCount}`;
-        fileContext += `\n`;
+        fileContext += `\nFile Statistics:\n`;
+        fileContext += `- Size: ${fileAnalysis.stats.length} characters/bytes\n`;
+        if (fileAnalysis.stats.wordCount) fileContext += `- Word Count: ${fileAnalysis.stats.wordCount}\n`;
+        if (fileAnalysis.stats.lineCount) fileContext += `- Line Count: ${fileAnalysis.stats.lineCount}\n`;
       }
 
       if (fileAnalysis.gcContent) {
-        fileContext += `GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
+        fileContext += `- GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
       }
 
       if (fileAnalysis.features && fileAnalysis.features.length > 0) {
-        fileContext += `Features: ${fileAnalysis.features.join(', ')}\n`;
+        fileContext += `\nDetected Features: ${fileAnalysis.features.join(', ')}\n`;
       }
 
-      fileContext += `--- END FILE ANALYSIS ---\n\n`;
-      enhancedQuery = fileContext + query;
+      fileContext += `\n--- END FILE ANALYSIS ---\n\n`;
+      fileContext += `User Question About This File: ${query}\n\n`;
+      fileContext += `Please analyze the uploaded file content and respond to the user's question. Focus on the actual content and provide specific insights based on what's in the file.`;
+      
+      enhancedQuery = fileContext;
     }
 
     // Use AI for all bioinformatics queries instead of templates
