@@ -540,6 +540,49 @@ function generateUniqueId(): string {
     return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
+// Helper function to build file analysis prompt
+function buildFileAnalysisPrompt(query: string, fileAnalysis: BioFileAnalysis): string {
+    let fileContext = `\n\n--- UPLOADED FILE ANALYSIS ---\n`;
+    fileContext += `File Type: ${fileAnalysis.fileType}\n`;
+    fileContext += `Content Type: ${fileAnalysis.sequenceType}\n`;
+
+    if (fileAnalysis.documentContent) {
+        fileContext += `\nDocument Content Analysis:\n${fileAnalysis.documentContent}\n`;
+
+        // Add specific instructions for document analysis
+        if (fileAnalysis.fileType === 'pdf') {
+            fileContext += `\nThis is a PDF document. I have extracted the available text content above. Please analyze this content thoroughly and provide specific insights about what the document contains, its structure, key topics, and any notable information.\n`;
+        } else if (fileAnalysis.fileType === 'docx') {
+            fileContext += `\nThis is a Word document. I have extracted the formatted text content above. Please analyze this content thoroughly and provide specific insights about the document's content, structure, formatting, and key information.\n`;
+        }
+    }
+
+    if (fileAnalysis.sequence && fileAnalysis.sequenceType !== 'document') {
+        fileContext += `\nBiological Sequence Preview: ${fileAnalysis.sequence.substring(0, 200)}${fileAnalysis.sequence.length > 200 ? '...' : ''}\n`;
+    }
+
+    if (fileAnalysis.stats) {
+        fileContext += `\nFile Statistics:\n`;
+        fileContext += `- Size: ${fileAnalysis.stats.length} characters/bytes\n`;
+        if (fileAnalysis.stats.wordCount) fileContext += `- Word Count: ${fileAnalysis.stats.wordCount}\n`;
+        if (fileAnalysis.stats.lineCount) fileContext += `- Line Count: ${fileAnalysis.stats.lineCount}\n`;
+    }
+
+    if (fileAnalysis.gcContent) {
+        fileContext += `- GC Content: ${fileAnalysis.gcContent.toFixed(2)}%\n`;
+    }
+
+    if (fileAnalysis.features && fileAnalysis.features.length > 0) {
+        fileContext += `\nDetected Features: ${fileAnalysis.features.join(', ')}\n`;
+    }
+
+    fileContext += `\n--- END FILE ANALYSIS ---\n\n`;
+    fileContext += `User Question About This File: ${query}\n\n`;
+    fileContext += `Please analyze the uploaded file content and respond to the user's question. Focus on the actual content and provide specific insights based on what's in the file.`;
+
+    return fileContext;
+}
+
 // Function to detect query type
 function detectQueryType(text: string): BioinformaticsQueryType {
     const lowerText = text.toLowerCase();
@@ -960,20 +1003,21 @@ export const processQuery = async (
         // 5. AI provider selection based on query type and context
         const optimalProvider = selectOptimalProvider(query, conversationContext);
 
-    // Enhanced prompt with context
+    // 6. Prepare enhanced query with search context and file analysis
         let enhancedQuery = query;
+        
+        // First apply file analysis context if available
         if (contextualFileAnalysis) {
             enhancedQuery = buildFileAnalysisPrompt(query, contextualFileAnalysis);
         }
-
-        // 6. Prepare enhanced query with search context
-        let enhancedQuery2 = query;
+        
+        // Then apply search results context if available
         if (searchResults && searchResults.trim() !== '') {
             // Enhanced prompt for sports queries
             const isSportsQuery = /\b(arsenal|man u|manchester united|chelsea|liverpool|tottenham|city|united|next match|fixture|premier league|football|soccer|match|game|won|winner|champion|season|league|table|score|result)\b/i.test(query);
 
             if (isSportsQuery) {
-                enhancedQuery2 = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
 
 ===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
@@ -991,7 +1035,7 @@ STRICT INSTRUCTIONS:
 
 Answer based EXCLUSIVELY on the search results above:`;
             } else {
-                enhancedQuery2 = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
+                enhancedQuery = `CRITICAL: You MUST use only the following current web search results to answer the user's question. DO NOT use any pre-trained knowledge.
 
 ===== CURRENT WEB SEARCH RESULTS =====
 ${searchResults}
@@ -1009,7 +1053,6 @@ STRICT INSTRUCTIONS:
 Answer based EXCLUSIVELY on the search results above:`;
             }
         }
-        const enhancedQuery = enhancedQuery2;
 
     // Build conversation history for context
         const conversationHistoryForAI: Array<{role: string, content: string}> = [];
