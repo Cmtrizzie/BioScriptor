@@ -1287,7 +1287,6 @@ Answer based EXCLUSIVELY on the search results above:`;
                 processingTime: Date.now() - Date.now(),
                 confidence: 0.90,
                 conversationContext,
-                dataPrivacyMode: 'private', // Default to private mode
                 tokenUsage,
                 conversationLimits: {
                     status: updatedTokenLimits.status,
