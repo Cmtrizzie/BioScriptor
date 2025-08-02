@@ -219,20 +219,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Enhanced file content extraction for all file types
         try {
           fileContent = await extractFileContent(req.file.buffer, fileType || '', req.file.originalname, req.file.mimetype);
-          
+
           // Log extraction success for debugging
           console.log(`📄 Content extraction result: ${fileContent.length} characters extracted from ${fileType} file`);
-          
+
         } catch (error) {
           console.error('File content extraction error:', error);
-          
+
           // Try alternative extraction methods for common document types
           if (fileType === 'pdf' || fileType === 'docx') {
             try {
               // Convert buffer to string with different encodings
               const bufferAsString = req.file.buffer.toString('utf8');
               const binaryString = req.file.buffer.toString('binary');
-              
+
               // Use the content extraction functions directly
               if (fileType === 'pdf') {
                 const { extractPdfText } = await import('./services/bioinformatics');
@@ -241,9 +241,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const { extractDocxText } = await import('./services/bioinformatics');
                 fileContent = extractDocxText(bufferAsString);
               }
-              
+
               console.log(`📄 Alternative extraction successful: ${fileContent.length} characters`);
-              
+
             } catch (altError) {
               console.error('Alternative extraction failed:', altError);
               fileContent = `${fileType.toUpperCase()} Document: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB). Document structure detected but content extraction requires specialized parsing. Please ensure the file is not corrupted and try uploading again.`;
@@ -848,7 +848,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Promo Code Management Routes
   app.get("/api/admin/promo-codes", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      const promoCodes = await storage.getAllPromoCodes();
+      const promoCodes```text
+ = await storage.getAllPromoCodes();
       res.json(promoCodes);
     } catch (error) {
       console.error('Promo codes fetch error:', error);
@@ -1552,12 +1553,12 @@ function analyzeOfficeDocument(buffer: Buffer, filename: string, fileType: strin
 
       // Try to extract readable text with better encoding handling
       let content = buffer.toString('utf8', 0, Math.min(buffer.length, 50000));
-      
+
       // Try different encoding if UTF-8 doesn't work well
-      if (content.includes('�') || content.match(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g)) {
+      if (content.includes('') || content.match(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g)) {
         content = buffer.toString('latin1', 0, Math.min(buffer.length, 50000));
       }
-      
+
       // Extract readable text patterns - improved regex for better text extraction
       const textMatches = content.match(/[a-zA-Z0-9\s.,!?;:()\-"']{20,}/g) || [];
       const extractedText = textMatches
@@ -1681,8 +1682,7 @@ function analyzeBinaryDataFile(buffer: Buffer, filename: string, fileType: strin
 }
 
 // Generic binary file analysis
-function analyzeBinaryFile(buffer: Buffer, filename: string, fileType: string, mimetype: string, sizeKB: number): string {
-  const analysis = [
+function analyzeBinaryFile(buffer: Buffer, filename: string, fileType: string, mimetype: string, sizeKB: number): string {const analysis = [
     `Binary File: ${filename}`,
     `Type: ${fileType ? fileType.toUpperCase() : 'Unknown'}`,
     `MIME: ${mimetype}`,
