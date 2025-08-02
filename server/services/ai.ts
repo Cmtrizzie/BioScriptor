@@ -211,8 +211,14 @@ function scoreResponse(
 // Enhanced system prompt builder
 function buildEnhancedSystemPrompt(context: ConversationContext, query: string): string {
     const queryType = classifyQuery(query);
+    const programmingIntent = detectProgrammingIntent(query);
 
-    let prompt = `You are BioScriptor, an AI assistant that helps with bioinformatics and general questions.
+    let prompt = `You are BioScriptor, an AI assistant specializing in bioinformatics, programming, and project planning.
+
+CORE CAPABILITIES:
+🧬 **Bioinformatics**: DNA/RNA analysis, CRISPR design, PCR simulation, sequence alignment
+💻 **Programming**: Python, R, JavaScript, TypeScript, Bash scripting, algorithm implementation
+📋 **Planning**: Project architecture, workflow design, task breakdown, documentation
 
 CRITICAL RULES:
 - When web search results are provided, you MUST use ONLY that information
@@ -222,9 +228,54 @@ CRITICAL RULES:
 - Be direct and factual, not vague or generic
 - For sports/current events: Use exact information from search results
 - For bioinformatics: Provide specific technical guidance with examples
-- For general questions: Answer naturally using available data
+- For programming: Write complete, working code with explanations
+- For planning: Create structured, actionable plans with clear steps
+
+PROGRAMMING EXPERTISE:
+- Write clean, efficient, well-documented code
+- Provide multiple implementation approaches when appropriate
+- Include error handling and edge cases
+- Explain code logic and best practices
+- Suggest testing strategies and optimization techniques
+
+PLANNING EXPERTISE:
+- Break down complex projects into manageable tasks
+- Create clear timelines and milestones
+- Identify dependencies and potential bottlenecks
+- Suggest appropriate tools and technologies
+- Provide documentation templates and folder structures
 
 NEVER say you cannot access real-time information when search results are provided.`;
+
+    // Add specific context based on programming intent
+    if (programmingIntent === 'coding') {
+        prompt += `
+
+CODING CONTEXT: The user wants to implement something. Focus on:
+- Writing complete, functional code
+- Including proper imports and dependencies  
+- Adding comments explaining key logic
+- Suggesting improvements or alternatives
+- Providing usage examples`;
+    } else if (programmingIntent === 'planning') {
+        prompt += `
+
+PLANNING CONTEXT: The user needs project planning help. Focus on:
+- Creating structured task breakdowns
+- Identifying required technologies and tools
+- Estimating timelines and complexity
+- Suggesting best practices and methodologies
+- Providing templates for documentation`;
+    } else if (programmingIntent === 'debugging') {
+        prompt += `
+
+DEBUGGING CONTEXT: The user has a problem to solve. Focus on:
+- Identifying likely causes of the issue
+- Providing step-by-step troubleshooting
+- Suggesting debugging techniques
+- Offering multiple solution approaches
+- Explaining why the issue occurred`;
+    }
 
     return prompt;
 }
@@ -437,6 +488,28 @@ function detectQueryType(text: string): BioinformaticsQueryType {
     return 'general';
 }
 
+// Enhanced query classification for programming tasks
+function detectProgrammingIntent(text: string): 'coding' | 'planning' | 'debugging' | 'architecture' | 'learning' | 'none' {
+    const lowerText = text.toLowerCase();
+
+    // Coding patterns
+    if (/(write|create|implement|build|code|script|function|class|algorithm|program)/.test(lowerText)) return 'coding';
+    
+    // Planning patterns  
+    if (/(plan|design|architecture|structure|organize|workflow|pipeline|strategy|roadmap|approach)/.test(lowerText)) return 'planning';
+    
+    // Debugging patterns
+    if (/(debug|fix|error|bug|issue|problem|troubleshoot|not working)/.test(lowerText)) return 'debugging';
+    
+    // Architecture patterns
+    if (/(architecture|system design|database schema|api design|microservices|scalability)/.test(lowerText)) return 'architecture';
+    
+    // Learning patterns
+    if (/(explain|how does|what is|teach me|learn|understand|tutorial)/.test(lowerText)) return 'learning';
+
+    return 'none';
+}
+
 // Function to detect tone
 function detectTone(text: string): string {
     const lowerText = text.toLowerCase();
@@ -635,21 +708,44 @@ function detectPreferredStyle(userMessages: ChatMessage[]): 'detailed' | 'concis
 }
 
 // Enhanced query classification
-function classifyQuery(query: string): 'bioinformatics' | 'general' | 'creative' | 'technical' {
+function classifyQuery(query: string): 'bioinformatics' | 'programming' | 'planning' | 'debugging' | 'general' | 'creative' | 'technical' {
     const BIO_KEYWORDS = [
         'dna', 'rna', 'protein', 'sequence', 'genomic', 'alignment',
         'blast', 'crispr', 'pcr', 'bioinformatics', 'genome', 'variant',
         'analysis', 'fastq', 'bam', 'vcf', 'snp', 'gene', 'chromosome'
     ];
 
-    const TECHNICAL_KEYWORDS = ['code', 'script', 'function', 'algorithm', 'implementation'];
+    const PROGRAMMING_KEYWORDS = [
+        'code', 'script', 'function', 'algorithm', 'implementation', 'programming',
+        'python', 'javascript', 'typescript', 'react', 'node', 'express',
+        'html', 'css', 'api', 'database', 'sql', 'git', 'github',
+        'class', 'method', 'variable', 'loop', 'condition', 'array',
+        'object', 'json', 'async', 'await', 'promise', 'framework'
+    ];
+
+    const PLANNING_KEYWORDS = [
+        'plan', 'design', 'architecture', 'structure', 'organize',
+        'workflow', 'pipeline', 'strategy', 'roadmap', 'approach',
+        'project', 'task', 'timeline', 'milestone', 'requirements',
+        'documentation', 'folder structure', 'best practices'
+    ];
+
+    const DEBUGGING_KEYWORDS = [
+        'debug', 'fix', 'error', 'bug', 'issue', 'problem',
+        'troubleshoot', 'not working', 'broken', 'crash',
+        'exception', 'stack trace', 'syntax error'
+    ];
+
     const CREATIVE_KEYWORDS = ['story', 'creative', 'imagine', 'brainstorm', 'idea'];
 
     const lowerQuery = query.toLowerCase();
 
     if (BIO_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'bioinformatics';
-    if (TECHNICAL_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'technical';
+    if (PROGRAMMING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'programming';
+    if (PLANNING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'planning';
+    if (DEBUGGING_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'debugging';
     if (CREATIVE_KEYWORDS.some(kw => lowerQuery.includes(kw))) return 'creative';
+    
     return 'general';
 }
 
@@ -660,6 +756,21 @@ function selectOptimalProvider(query: string, context: ConversationContext): str
     // Bioinformatics queries need highest accuracy
     if (queryType === 'bioinformatics') {
         return 'groq'; // Most accurate for scientific content
+    }
+
+    // Programming queries need code-focused models
+    if (queryType === 'programming') {
+        return 'together'; // Best for code generation and explanation
+    }
+
+    // Planning queries need structured thinking
+    if (queryType === 'planning') {
+        return 'groq'; // Good for structured responses
+    }
+
+    // Debugging needs problem-solving capabilities
+    if (queryType === 'debugging') {
+        return 'openrouter'; // Good for analytical tasks
     }
 
     // Creative queries need most capable model

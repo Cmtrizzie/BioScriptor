@@ -47,11 +47,20 @@ export const enhanceWithContext = (response: string, context: string) => {
   return response;
 };
 
-// Simple creative suggestions
+// Enhanced creative suggestions with programming focus
 export const creativeSuggestions = [
   "Analyze DNA sequences",
   "Design PCR primers", 
   "CRISPR guide design",
   "Protein analysis",
-  "Genomics pipelines"
+  "Genomics pipelines",
+  "Write Python scripts",
+  "Build web applications",
+  "Create APIs",
+  "Database design",
+  "Project planning",
+  "Code review",
+  "Algorithm optimization",
+  "Debug issues",
+  "System architecture"
 ];
