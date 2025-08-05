@@ -81,7 +81,7 @@ app.use((req, res, next) => {
     log(`🌐 Visit: http://0.0.0.0:${port}`);
   }).on('error', (err) => {
     console.error('❌ Server failed to start:', err);
-    if (err.code === 'EADDRINUSE') {
+    if ((err as any).code === 'EADDRINUSE') {
       console.error(`Port ${port} is already in use. Try a different port.`);
     }
     process.exit(1);
@@ -91,17 +91,13 @@ app.use((req, res, next) => {
 // ========== DATABASE & STORAGE ==========
 import './storage';
 
-// Admin routes - ensure they're mounted before other routes
-import adminRoutes from './routes/admin.js';
-app.use('/api/admin', adminRoutes);
-
 // Check database status on startup
 async function checkDatabaseStatus() {
   try {
-    const { getUserByFirebaseUid } = await import('./storage');
-    await getUserByFirebaseUid('health-check');
+    const { storage } = await import('./storage');
+    await storage.getUserByFirebaseUid('health-check');
     console.log('✅ Database connection healthy');
-  } catch (error) {
+  } catch (error: any) {
     console.warn('⚠️ Database connection issues detected, fallback mode enabled');
   }
 }
@@ -128,14 +124,14 @@ async function checkDatabaseConnection() {
     const testQuery = await db.select().from(users).limit(1);
     console.log('✅ Database connection established and endpoint active');
     return true;
-  } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+  } catch (error: any) {
+    console.error('❌ Database connection failed:', error?.message || error);
 
     // Check for specific Neon endpoint disabled error
-    if (error.message?.includes('endpoint has been disabled')) {
+    if (error?.message?.includes('endpoint has been disabled')) {
       console.log('🔄 Database endpoint is disabled - enable it in Neon console');
       console.log('⚠️ Running in fallback mode with demo data');
-    } else if (error.message?.includes('not a valid URL')) {
+    } else if (error?.message?.includes('not a valid URL')) {
       console.log('🔄 DATABASE_URL format issue - cleaning connection string');
       console.log('⚠️ Running in fallback mode while fixing connection');
     } else {

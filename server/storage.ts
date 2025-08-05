@@ -67,7 +67,7 @@ export const storage = {
     try {
       const users = await db.select().from(schema.users).where(eq(schema.users.firebaseUid, firebaseUid));
       return users[0] || null;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Database error:", error);
       isDatabaseAvailable = false;
       const user = fallbackStorage.users.get(firebaseUid);
@@ -90,7 +90,7 @@ export const storage = {
     try {
       const [user] = await db.insert(schema.users).values(userData).returning();
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Database error:", error);
       isDatabaseAvailable = false;
       const user = {
@@ -118,7 +118,7 @@ export const storage = {
     try {
       const [user] = await db.update(schema.users).set(updates).where(eq(schema.users.id, userId)).returning();
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Database error:", error);
       isDatabaseAvailable = false;
       const existingUser = fallbackStorage.users.get(userId);
