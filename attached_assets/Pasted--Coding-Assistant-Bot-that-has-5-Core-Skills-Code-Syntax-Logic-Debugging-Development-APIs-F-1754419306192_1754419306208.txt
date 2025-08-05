@@ -1,0 +1,61 @@
+ Coding Assistant Bot that has 5 Core Skills:
+
+Code (Syntax, Logic, Debugging)
+
+Development (APIs, Frameworks, Full-stack tasks)
+
+Software Practices (Git, Testing, CI/CD, Clean Code)
+
+System Design (Architecture, Scaling, Databases)
+
+Advanced Technical Knowledge (Security, Optimization, Cloud, AI, etc.)
+
+You want to:
+Use these skills as Functional Modules in the chatbot.
+
+Let the chatbot assist, guide, and solve tasks in each category.
+
+Progressively unlock deeper-level assistance as the user advances.
+
+🎯 Here’s the Logic Architecture for Your Coding Assistant
+1. Skill Modules (Assistant Capabilities):
+Each of these is a Skill Module in your bot logic:
+
+Module Name	Scope of Assistance
+Coding Module	Syntax corrections, logic building, debugging walkthroughs, algorithms help.
+Development Module	API integrations, frontend/backend help, code snippets for frameworks (React, Node, Django, etc.).
+Software Practices Module	Git commands, CI/CD pipeline setup, testing strategies, code review practices.
+System Design Module	Architecture diagrams, scaling strategies, design patterns, database schema design.
+Advanced Technical Module	Security best practices, performance tuning, cloud architecture (AWS/GCP), AI/ML code.
+
+2. User Command Structure (Skill Invocation Logic):
+User Request Example	Bot Logic Response
+“Help me debug this Python code.”	Trigger → Coding Module
+“How to connect React frontend to a Node.js backend?”	Trigger → Development Module
+“Explain how Git branching works.”	Trigger → Software Practices Module
+“Design a scalable e-commerce system.”	Trigger → System Design Module
+“How do I secure a REST API with JWT?”	Trigger → Advanced Technical Module
+
+3. Modular Prompt Template (Dynamic Prompting per Skill)
+json
+Copy
+Edit
+{
+  "SkillModule": "System Design",
+  "SystemPrompt": "You are a System Design Expert. Provide architecture diagrams, trade-offs, and scaling strategies.",
+  "UserInput": "{user's query}",
+  "ResponseFormat": "Step-by-step explanation with code or diagram suggestions if applicable."
+}
+You can switch the SkillModule dynamically based on user’s question intent.
+
+4. Skill Progression Logic (Optional but Powerful)
+You can optionally add skill levels:
+
+Beginner (Simple Q&A)
+
+Intermediate (Guided Code Walkthroughs)
+
+Advanced (Complex Problem Solving)
+
+As users interact more, the bot can start giving less hand-holding and more high-level guidance, simulating real-life engineering growth.
+

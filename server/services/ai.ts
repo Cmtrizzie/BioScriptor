@@ -5,6 +5,13 @@ import { BioFileAnalysis, generateCRISPRGuides, simulatePCR, optimizeCodonUsage 
 import { enhanceResponse } from './response-enhancer';
 import { webSearchService, formatSearchResults } from './web-search';
 import { tokenManager, TokenUsage } from './token-manager';
+import { 
+    processCodingAssistantQuery, 
+    detectSkillModule, 
+    generateSkillRecommendations, 
+    SkillModuleType,
+    SKILL_MODULES 
+} from './coding-assistant';
 
 // ========== Type Definitions ==========
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'error';
@@ -859,13 +866,28 @@ Answer based EXCLUSIVELY on the search results above:`;
             });
         }
 
+        // Check if this is a coding/programming query and enhance with skill modules
+        let finalQuery = enhancedQuery;
+        let skillModuleContext: any = {};
+        
+        if (queryType === 'programming' || queryType === 'technical') {
+            const codingAssistant = processCodingAssistantQuery(query, conversationHistory, userTier);
+            finalQuery = codingAssistant.enhancedPrompt;
+            skillModuleContext = {
+                skillModule: codingAssistant.skillModule,
+                userLevel: codingAssistant.userLevel,
+                isSkillBased: true
+            };
+        }
+
         // Use the fault-tolerant AI system
         const aiResponse = await faultTolerantAI.processQuery(
-            enhancedQuery,
+            finalQuery,
             { 
                 conversationContext,
                 userIntent: detectUserIntent(query),
-                hasWebSearchResults: !!searchResults
+                hasWebSearchResults: !!searchResults,
+                ...skillModuleContext
             },
             conversationContext.emotionalContext || 'neutral',
             conversationHistoryForAI,
@@ -877,12 +899,25 @@ Answer based EXCLUSIVELY on the search results above:`;
         const updatedTokenLimits = tokenManager.checkConversationLimits(actualConversationId);
 
         // Generate contextual recommendations based on query and response
-        const recommendations = generateRecommendations(query, queryType, userTier, contextualFileAnalysis);
+        let recommendations = generateRecommendations(query, queryType, userTier, contextualFileAnalysis);
+        
+        // Enhance with coding assistant skills if programming-related
+        if (queryType === 'programming' || queryType === 'technical') {
+            const codingAssistant = processCodingAssistantQuery(query, conversationHistory, userTier);
+            const skillRecommendations = generateSkillRecommendations(
+                codingAssistant.skillModule, 
+                codingAssistant.userLevel, 
+                query
+            );
+            
+            // Add skill-specific recommendations
+            recommendations += '\n\n' + skillRecommendations.join('\n');
+        }
         
         // Enhanced response with recommendations
         const enhancedContent = aiResponse.content + '\n\n' + recommendations;
 
-        // Create response message with token tracking
+        // Create response message with token tracking and skill module info
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
@@ -903,7 +938,11 @@ Answer based EXCLUSIVELY on the search results above:`;
                     percentageUsed: updatedTokenLimits.percentageUsed,
                     shouldWarn: updatedTokenLimits.shouldWarn,
                     message: updatedTokenLimits.message
-                }
+                },
+                ...(skillModuleContext.isSkillBased && {
+                    skillModule: skillModuleContext.skillModule,
+                    userSkillLevel: skillModuleContext.userLevel
+                })
             }
         };
 
