@@ -876,11 +876,17 @@ Answer based EXCLUSIVELY on the search results above:`;
         const tokenUsage = tokenManager.updateTokenUsage(actualConversationId, query, aiResponse.content);
         const updatedTokenLimits = tokenManager.checkConversationLimits(actualConversationId);
 
+        // Generate contextual recommendations based on query and response
+        const recommendations = generateRecommendations(query, queryType, userTier, contextualFileAnalysis);
+        
+        // Enhanced response with recommendations
+        const enhancedContent = aiResponse.content + '\n\n' + recommendations;
+
         // Create response message with token tracking
         const finalResponseMessage: ChatMessage = {
             id: generateUniqueId(),
             role: 'assistant',
-            content: aiResponse.content,
+            content: enhancedContent,
             timestamp: Date.now(),
             status: 'complete',
             metadata: {
@@ -915,4 +921,134 @@ Answer based EXCLUSIVELY on the search results above:`;
         conversationManager.addMessage(errorMessage);
         return errorMessage;
     }
+}
+
+// ========== RECOMMENDATION SYSTEM ==========
+function generateRecommendations(
+    query: string, 
+    queryType: QueryClassificationType, 
+    userTier: string, 
+    fileAnalysis?: BioFileAnalysis
+): string {
+    const recommendations: string[] = [];
+    
+    // Base recommendations based on query type
+    switch (queryType) {
+        case 'bioinformatics':
+            recommendations.push(
+                "💡 **Next Steps:**",
+                "• Try uploading a FASTA file for sequence analysis",
+                "• Ask about CRISPR guide design for gene editing",
+                "• Explore protein structure prediction tools"
+            );
+            
+            if (fileAnalysis) {
+                if (fileAnalysis.fileType === 'fasta') {
+                    recommendations.push("• Run BLAST analysis for sequence homology");
+                    recommendations.push("• Check for conserved domains or motifs");
+                }
+                if (fileAnalysis.fileType === 'csv') {
+                    recommendations.push("• Visualize your data with statistical plots");
+                    recommendations.push("• Perform differential expression analysis");
+                }
+            }
+            break;
+            
+        case 'programming':
+            recommendations.push(
+                "💡 **Programming Tips:**",
+                "• Test your code with edge cases",
+                "• Add error handling for robustness",
+                "• Consider code documentation and comments"
+            );
+            break;
+            
+        case 'planning':
+            recommendations.push(
+                "💡 **Project Planning:**",
+                "• Break down tasks into smaller milestones",
+                "• Set realistic timelines with buffer time",
+                "• Consider potential risks and mitigation strategies"
+            );
+            break;
+            
+        case 'general':
+            recommendations.push(
+                "💡 **Explore More:**",
+                "• Upload biological files for specialized analysis",
+                "• Ask about bioinformatics workflows",
+                "• Try project planning or coding assistance"
+            );
+            break;
+            
+        default:
+            recommendations.push(
+                "💡 **Suggestions:**",
+                "• Upload files for detailed analysis",
+                "• Ask follow-up questions for deeper insights",
+                "• Explore related topics or methodologies"
+            );
+    }
+    
+    // Add tier-specific recommendations
+    if (userTier === 'free') {
+        recommendations.push(
+            "",
+            "🚀 **Upgrade for More:**",
+            "• Premium: Advanced analysis, larger files, priority support",
+            "• Enterprise: Custom workflows, team collaboration, API access"
+        );
+    } else if (userTier === 'premium') {
+        recommendations.push(
+            "",
+            "⭐ **Premium Features Available:**",
+            "• Try advanced bioinformatics workflows",
+            "• Upload larger datasets for analysis",
+            "• Access priority AI models"
+        );
+    }
+    
+    // Add contextual suggestions based on query content
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('error') || lowerQuery.includes('debug')) {
+        recommendations.push(
+            "",
+            "🔧 **Debugging Tips:**",
+            "• Share the full error message for better help",
+            "• Provide sample data or code context",
+            "• Try breaking the problem into smaller parts"
+        );
+    }
+    
+    if (lowerQuery.includes('learn') || lowerQuery.includes('tutorial')) {
+        recommendations.push(
+            "",
+            "📚 **Learning Resources:**",
+            "• Start with practical examples",
+            "• Practice with real datasets",
+            "• Ask for step-by-step guidance"
+        );
+    }
+    
+    if (lowerQuery.includes('performance') || lowerQuery.includes('optimize')) {
+        recommendations.push(
+            "",
+            "⚡ **Optimization Ideas:**",
+            "• Profile your code to find bottlenecks",
+            "• Consider parallel processing for large datasets",
+            "• Use efficient algorithms and data structures"
+        );
+    }
+    
+    // Add general helpful suggestions
+    recommendations.push(
+        "",
+        "❓ **Need More Help?**",
+        "• Ask for specific examples or code samples",
+        "• Request step-by-step explanations",
+        "• Share your data or files for personalized analysis"
+    );
+    
+    return recommendations.join('\n');
 }
