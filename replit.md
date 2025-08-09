@@ -7,6 +7,7 @@ BioScriptor is a fault-tolerant, full-stack web application that serves as an AI
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Recommendation style: Conversational, natural follow-up suggestions (like ChatGPT/Claude) rather than template-style bullet points.
 
 ## System Architecture
 

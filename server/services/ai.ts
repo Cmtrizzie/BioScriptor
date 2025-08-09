@@ -962,132 +962,85 @@ Answer based EXCLUSIVELY on the search results above:`;
     }
 }
 
-// ========== RECOMMENDATION SYSTEM ==========
+// ========== CONVERSATIONAL RECOMMENDATION SYSTEM ==========
 function generateRecommendations(
     query: string, 
     queryType: QueryClassificationType, 
     userTier: string, 
     fileAnalysis?: BioFileAnalysis
 ): string {
-    const recommendations: string[] = [];
-    
-    // Base recommendations based on query type
-    switch (queryType) {
-        case 'bioinformatics':
-            recommendations.push(
-                "💡 **Next Steps:**",
-                "• Try uploading a FASTA file for sequence analysis",
-                "• Ask about CRISPR guide design for gene editing",
-                "• Explore protein structure prediction tools"
-            );
-            
-            if (fileAnalysis) {
-                if (fileAnalysis.fileType === 'fasta') {
-                    recommendations.push("• Run BLAST analysis for sequence homology");
-                    recommendations.push("• Check for conserved domains or motifs");
-                }
-                if (fileAnalysis.fileType === 'csv') {
-                    recommendations.push("• Visualize your data with statistical plots");
-                    recommendations.push("• Perform differential expression analysis");
-                }
-            }
-            break;
-            
-        case 'programming':
-            recommendations.push(
-                "💡 **Programming Tips:**",
-                "• Test your code with edge cases",
-                "• Add error handling for robustness",
-                "• Consider code documentation and comments"
-            );
-            break;
-            
-        case 'planning':
-            recommendations.push(
-                "💡 **Project Planning:**",
-                "• Break down tasks into smaller milestones",
-                "• Set realistic timelines with buffer time",
-                "• Consider potential risks and mitigation strategies"
-            );
-            break;
-            
-        case 'general':
-            recommendations.push(
-                "💡 **Explore More:**",
-                "• Upload biological files for specialized analysis",
-                "• Ask about bioinformatics workflows",
-                "• Try project planning or coding assistance"
-            );
-            break;
-            
-        default:
-            recommendations.push(
-                "💡 **Suggestions:**",
-                "• Upload files for detailed analysis",
-                "• Ask follow-up questions for deeper insights",
-                "• Explore related topics or methodologies"
-            );
-    }
-    
-    // Add tier-specific recommendations
-    if (userTier === 'free') {
-        recommendations.push(
-            "",
-            "🚀 **Upgrade for More:**",
-            "• Premium: Advanced analysis, larger files, priority support",
-            "• Enterprise: Custom workflows, team collaboration, API access"
-        );
-    } else if (userTier === 'premium') {
-        recommendations.push(
-            "",
-            "⭐ **Premium Features Available:**",
-            "• Try advanced bioinformatics workflows",
-            "• Upload larger datasets for analysis",
-            "• Access priority AI models"
-        );
-    }
-    
-    // Add contextual suggestions based on query content
     const lowerQuery = query.toLowerCase();
     
-    if (lowerQuery.includes('error') || lowerQuery.includes('debug')) {
-        recommendations.push(
-            "",
-            "🔧 **Debugging Tips:**",
-            "• Share the full error message for better help",
-            "• Provide sample data or code context",
-            "• Try breaking the problem into smaller parts"
-        );
+    // Analyze conversation context for more natural suggestions
+    const isGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening|howdy|what's up|sup)/i.test(query.trim());
+    const isVague = query.trim().split(' ').length <= 3;
+    const isQuestion = query.includes('?') || lowerQuery.startsWith('how') || lowerQuery.startsWith('what') || lowerQuery.startsWith('why');
+    const isComplaint = lowerQuery.includes('not working') || lowerQuery.includes('broken') || lowerQuery.includes('error');
+    
+    // Return minimal suggestions for simple greetings
+    if (isGreeting && isVague) {
+        const greetingSuggestions = [
+            "What would you like to work on today?",
+            "I can help with coding, bioinformatics analysis, or project planning - what interests you?",
+            "Feel free to upload files for analysis or ask about any technical challenges you're facing."
+        ];
+        return greetingSuggestions[Math.floor(Math.random() * greetingSuggestions.length)];
     }
     
+    // Generate contextual follow-up suggestions
+    if (queryType === 'programming') {
+        if (lowerQuery.includes('debug') || lowerQuery.includes('error')) {
+            return "If you share the specific error message and relevant code, I can provide more targeted debugging help.";
+        }
+        if (lowerQuery.includes('api') || lowerQuery.includes('backend')) {
+            return "Would you like me to help you design the API structure or implement specific endpoints?";
+        }
+        if (lowerQuery.includes('frontend') || lowerQuery.includes('react')) {
+            return "I can help with component design, state management, or styling - what specific aspect would you like to focus on?";
+        }
+        return "Would you like me to review the code, suggest improvements, or help implement additional features?";
+    }
+    
+    if (queryType === 'bioinformatics') {
+        if (fileAnalysis) {
+            if (fileAnalysis.fileType === 'fasta') {
+                return "Would you like me to analyze this sequence for specific features, run similarity searches, or design primers for it?";
+            }
+            if (fileAnalysis.fileType === 'csv') {
+                return "I can help visualize this data, perform statistical analysis, or identify patterns - what would be most useful?";
+            }
+        }
+        return "Feel free to upload biological data files, or let me know what specific analysis you need help with.";
+    }
+    
+    if (queryType === 'planning') {
+        return "Would you like help breaking this down into actionable steps, estimating timelines, or identifying potential challenges?";
+    }
+    
+    // For technical questions, suggest related topics
+    if (isQuestion) {
+        if (lowerQuery.includes('best practice') || lowerQuery.includes('recommend')) {
+            return "I can also explain the reasoning behind these recommendations or suggest alternatives based on your specific use case.";
+        }
+        if (lowerQuery.includes('implement') || lowerQuery.includes('build')) {
+            return "Would you like a step-by-step implementation guide or help with specific technical decisions?";
+        }
+    }
+    
+    // For complaints or issues, offer problem-solving help
+    if (isComplaint) {
+        return "I can help troubleshoot this issue - share any error messages or describe what's happening and I'll guide you through fixing it.";
+    }
+    
+    // Default contextual suggestions based on query content
     if (lowerQuery.includes('learn') || lowerQuery.includes('tutorial')) {
-        recommendations.push(
-            "",
-            "📚 **Learning Resources:**",
-            "• Start with practical examples",
-            "• Practice with real datasets",
-            "• Ask for step-by-step guidance"
-        );
+        return "I can provide step-by-step explanations and practical examples. What specific aspect would you like to dive deeper into?";
     }
     
-    if (lowerQuery.includes('performance') || lowerQuery.includes('optimize')) {
-        recommendations.push(
-            "",
-            "⚡ **Optimization Ideas:**",
-            "• Profile your code to find bottlenecks",
-            "• Consider parallel processing for large datasets",
-            "• Use efficient algorithms and data structures"
-        );
+    if (lowerQuery.includes('optimize') || lowerQuery.includes('improve')) {
+        return "I can suggest specific optimization strategies. Would you like me to focus on performance, code quality, or user experience?";
     }
     
-    // Add general helpful suggestions
-    recommendations.push(
-        "",
-        "❓ **Need More Help?**",
-        "• Ask for specific examples or code samples",
-        "• Request step-by-step explanations",
-        "• Share your data or files for personalized analysis"
-    );
-    
-    return recommendations.join('\n');
+    // Minimal suggestion for general queries
+    return "Is there anything specific about this topic you'd like me to elaborate on or help you implement?";
 }

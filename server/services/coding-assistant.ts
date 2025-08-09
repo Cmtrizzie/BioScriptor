@@ -270,82 +270,66 @@ export function generateSkillBasedPrompt(
 Please provide a comprehensive response following these guidelines.`;
 }
 
-// ========== SKILL MODULE RECOMMENDATIONS ==========
+// ========== CONVERSATIONAL SKILL RECOMMENDATIONS ==========
 export function generateSkillRecommendations(
     skillModule: SkillModuleType,
     userLevel: UserSkillLevel,
     query: string
 ): string[] {
-    const recommendations: string[] = [];
-    const module = SKILL_MODULES[skillModule];
+    const lowerQuery = query.toLowerCase();
     
-    recommendations.push(`🎯 **${module.name} Assistance**`);
-    
+    // Generate natural, conversational follow-up suggestions
     switch (skillModule) {
         case 'coding':
-            recommendations.push(
-                "• Share your complete code for detailed debugging",
-                "• Try explaining the expected vs actual behavior",
-                "• Ask about specific programming language features"
-            );
-            if (userLevel.level === 'beginner') {
-                recommendations.push("• Request step-by-step code walkthroughs");
+            if (lowerQuery.includes('debug') || lowerQuery.includes('error')) {
+                return ["Want me to walk through debugging this step-by-step, or would you prefer me to explain what might be causing the issue?"];
             }
-            break;
+            if (lowerQuery.includes('algorithm') || lowerQuery.includes('optimize')) {
+                return ["I can suggest more efficient approaches or explain the time/space complexity trade-offs. Which would be more helpful?"];
+            }
+            if (userLevel.level === 'beginner') {
+                return ["Would you like me to explain the underlying concepts or focus on getting this specific code working first?"];
+            }
+            return ["Need help with the logic flow, or would you prefer suggestions for code improvements?"];
             
         case 'development':
-            recommendations.push(
-                "• Share your project structure for better guidance",
-                "• Ask about specific framework integration patterns",
-                "• Request complete API implementation examples"
-            );
-            break;
+            if (lowerQuery.includes('api')) {
+                return ["Should I help design the API structure, implement the endpoints, or focus on testing and documentation?"];
+            }
+            if (lowerQuery.includes('frontend') || lowerQuery.includes('react')) {
+                return ["Want help with the component architecture, state management, or styling approach?"];
+            }
+            return ["Would you like me to focus on the technical implementation or discuss the overall project structure?"];
             
         case 'practices':
-            recommendations.push(
-                "• Ask for team workflow recommendations",
-                "• Request CI/CD pipeline templates",
-                "• Get code review checklists for your project"
-            );
-            break;
+            if (lowerQuery.includes('git')) {
+                return ["Need help with the Git workflow, branching strategy, or resolving merge conflicts?"];
+            }
+            if (lowerQuery.includes('test')) {
+                return ["Should I help write the tests, set up the testing framework, or design the testing strategy?"];
+            }
+            return ["Want to focus on code quality practices, team workflows, or deployment processes?"];
             
         case 'design':
-            recommendations.push(
-                "• Describe your system requirements for tailored architecture",
-                "• Ask about specific scalability challenges",
-                "• Request database schema optimization"
-            );
-            break;
+            if (lowerQuery.includes('database')) {
+                return ["Should I help with schema design, query optimization, or choosing the right database technology?"];
+            }
+            if (lowerQuery.includes('scale')) {
+                return ["Want to focus on horizontal scaling, caching strategies, or load balancing approaches?"];
+            }
+            return ["Would you like me to start with high-level architecture or dive into specific technical decisions?"];
             
         case 'advanced':
-            recommendations.push(
-                "• Share your performance bottlenecks for optimization",
-                "• Ask about security assessment for your application",
-                "• Request cloud architecture best practices"
-            );
-            break;
+            if (lowerQuery.includes('security')) {
+                return ["Should I focus on authentication, data protection, or vulnerability assessment?"];
+            }
+            if (lowerQuery.includes('performance')) {
+                return ["Want help with profiling, optimization strategies, or monitoring setup?"];
+            }
+            return ["Should I focus on the technical implementation or discuss enterprise-level considerations?"];
     }
     
-    // Add level-specific recommendations
-    if (userLevel.level === 'beginner') {
-        recommendations.push(
-            "",
-            "📚 **Learning Path:**",
-            "• Start with fundamental concepts",
-            "• Practice with guided examples",
-            "• Ask for resource recommendations"
-        );
-    } else if (userLevel.level === 'advanced') {
-        recommendations.push(
-            "",
-            "🚀 **Advanced Challenges:**",
-            "• Explore enterprise-level solutions",
-            "• Ask about industry best practices",
-            "• Request architecture review"
-        );
-    }
-    
-    return recommendations;
+    return ["What specific aspect would you like me to dive deeper into?"];
 }
 
 // ========== EXPORT MAIN PROCESSING FUNCTION ==========
