@@ -1,0 +1,50 @@
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+at t.value (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ Analytics fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON↵ at queryFn (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/src/pages/AdminDashboard.tsx:120:37)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://d52938ff-19bf-46e7-9c46-0f169571075c-00-1saksc705q5cf.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching analytics data...
+❌ Analytics fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
+
+🔄 Fetching activity logs...
+❌ Activity logs fetch error: 
+SyntaxError {message: "Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}
